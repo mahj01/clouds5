@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; }
+      .row { display: flex; gap: 12px; flex-wrap: wrap; }
+      label { display: block; font-size: 14px; margin: 12px 0 6px; }
+      input { width: 320px; max-width: 100%; padding: 10px; }
+      button { padding: 10px 14px; margin-top: 14px; cursor: pointer; }
+      pre { background: #f4f4f4; padding: 12px; overflow: auto; }
+      .muted { color: #666; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <h1>Firebase Login</h1>
+    <p class="muted">
+      Fill in your Firebase Web config in this file (firebaseConfig) and create a user in Firebase Authentication.
+    </p>
+
+    <div class="row">
+      <div>
+        <label>Email</label>
+        <input id="email" type="email" placeholder="you@example.com" />
+      </div>
+      <div>
+        <label>Password</label>
+        <input id="password" type="password" placeholder="••••••••" />
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="loginBtn">Login</button>
+      <button id="logoutBtn" type="button">Logout</button>
+      <button id="meBtn" type="button">Call /auth/me</button>
+    </div>
+
+    <h2>Status</h2>
+    <pre id="out">Ready.</pre>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import {
+        getAuth,
+        signInWithEmailAndPassword,
+        signOut,
+      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+      // TODO: replace with your Firebase Web app config (from Firebase console)
+      const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT.firebaseapp.com",
+        projectId: "YOUR_PROJECT_ID",
+        appId: "YOUR_APP_ID",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+
+      const out = document.getElementById("out");
+      const emailEl = document.getElementById("email");
+      const passwordEl = document.getElementById("password");
+
+      function print(obj) {
+        out.textContent = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
+      }
+
+      async function getIdTokenOrThrow() {
+        const user = auth.currentUser;
+        if (!user) throw new Error("Not logged in");
+        return await user.getIdToken(true);
+      }
+
+      document.getElementById("loginBtn").addEventListener("click", async () => {
+        try {
+          const email = emailEl.value;
+          const password = passwordEl.value;
+          if (!email || !password) return print("Enter email + password");
+
+          const cred = await signInWithEmailAndPassword(auth, email, password);
+          const token = await cred.user.getIdToken(true);
+          print({ message: "Logged in", uid: cred.user.uid, idTokenPreview: token.slice(0, 24) + "..." });
+        } catch (e) {
+          print({ error: e?.message ?? String(e) });
+        }
+      });
+
+      document.getElementById("logoutBtn").addEventListener("click", async () => {
+        try {
+          await signOut(auth);
+          print("Logged out");
+        } catch (e) {
+          print({ error: e?.message ?? String(e) });
+        }
+      });
+
+      document.getElementById("meBtn").addEventListener("click", async () => {
+        try {
+          const idToken = await getIdTokenOrThrow();
+          const res = await fetch("/auth/me", {
+            headers: {
+              Authorization: `Bearer ${idToken}`,
+            },
+          });
+          const json = await res.json();
+          print(json);
+        } catch (e) {
+          print({ error: e?.message ?? String(e) });
+        }
+      });
+    </script>
+  </body>
+</html>
