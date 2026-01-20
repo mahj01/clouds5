@@ -14,7 +14,8 @@ export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
   @Post('login')
-  @ApiOperation({ summary: 'Login (optional credentials). Empty body returns visiteur.' })
+  @ApiOperation({ summary: 'Login and get session token (optional credentials). Empty body returns visiteur.' })
+  @ApiResponse({ status: 200, description: 'Returns token, expiry and user on credential login.' })
   login(@Body() body: LoginDto) {
     return this.auth.login(body?.email, body?.motDePasse);
   }

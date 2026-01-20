@@ -4,28 +4,42 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { Role } from '../roles/role.entity';
+import { Session } from '../sessions/session.entity';
+import { ConfigService } from '@nestjs/config';
 import { RegisterDto } from './dto/register.dto';
 import { FirebaseLoginDto } from './dto/firebase-login.dto';
 import { FirebaseRegisterDto } from './dto/firebase-register.dto';
 import { firebaseConfig } from '../firebase';
 import * as bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(Utilisateur) private users: Repository<Utilisateur>,
     @InjectRepository(Role) private role: Repository<Role>,
+    @InjectRepository(Session) private sessions: Repository<Session>,
+    private readonly config: ConfigService,
   ) {}
 
   async login(email?: string, motDePasse?: string) {
     // If credentials provided, try to find matching user
     if (email && motDePasse) {
       const user = await this.users.findOne({ where: { email }, relations: ['role'] });
-      if (user) {
-        // support both plaintext and bcrypt-hashed passwords
-        const matchesHash = await bcrypt.compare(motDePasse, user.motDePasse).catch(() => false);
-        if (user.motDePasse === motDePasse || matchesHash) return user;
-        // otherwise fallthrough to try Firebase authentication
-      }
+
+      if (!user) throw new NotFoundException('Utilisateur not found');
+      const isValid = await bcrypt.compare(motDePasse, user.motDePasse);
+      if (!isValid) throw new NotFoundException('Invalid credentials');
+      // create session token
+      const ttlMinutes = parseInt(this.config.get('AUTH_SESSION_TTL_MINUTES', '120'), 10);
+      const expires = new Date(Date.now() + ttlMinutes * 60 * 1000);
+      const token = randomBytes(48).toString('hex');
+      const session = this.sessions.create({
+        token,
+        dateExpiration: expires,
+        actif: true,
+        utilisateur: user,
+      });
+      
 
       // Attempt Firebase email/password sign-in as fallback
       try {
@@ -48,9 +62,15 @@ export class AuthService {
       } catch (e) {
         // ignore and fallthrough to error
       }
-
-      throw new NotFoundException('Invalid credentials');
+      await this.sessions.save(session);
+      return {
+        token,
+        expiresAt: expires,
+        user,
+      };
+      
     }
+    
 
     // No credentials -> return default visiteur account if exists
     const visiteurRole = await this.role.findOne({ where: { nom: 'visiteur' } });
