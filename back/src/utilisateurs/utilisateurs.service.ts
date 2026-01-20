@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Utilisateur } from './utilisateur.entity';
@@ -13,7 +13,21 @@ export class UtilisateursService {
     @InjectRepository(Role) private roleRepo: Repository<Role>,
   ) {}
 
-  async create(dto: CreateUtilisateurDto) {
+  async create(dto: CreateUtilisateurDto, managerEmail?: string, managerPassword?: string) {
+    // If requesting creation of a client, require manager credentials
+    if (dto.roleId) {
+      const roleCheck = await this.roleRepo.findOne({ where: { id: dto.roleId } });
+      if (roleCheck && roleCheck.nom === 'client') {
+        if (!managerEmail || !managerPassword) throw new UnauthorizedException('Manager credentials required to create client');
+        const managerRole = await this.roleRepo.findOne({ where: { nom: 'manager' } });
+        if (!managerRole) throw new UnauthorizedException('Manager role not configured');
+        const manager = await this.repo.findOne({ where: { email: managerEmail }, relations: ['role'] });
+        if (!manager || manager.motDePasse !== managerPassword || !manager.role || manager.role.id !== managerRole.id) {
+          throw new UnauthorizedException('Invalid manager credentials');
+        }
+      }
+    }
+
     const entity = this.repo.create({
       email: dto.email,
       motDePasse: dto.motDePasse,

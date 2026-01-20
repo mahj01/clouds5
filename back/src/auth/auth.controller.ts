@@ -1,12 +1,22 @@
-import { Body, Controller, Post } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+
+import { Controller, Post, Body } from '@nestjs/common';
+import { ApiTags, ApiOperation,ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
+
 import { RegisterDto } from './dto/register.dto';
+
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
+
+  @Post('login')
+  @ApiOperation({ summary: 'Login (optional credentials). Empty body returns visiteur.' })
+  login(@Body() body: LoginDto) {
+    return this.auth.login(body?.email, body?.motDePasse);
+  }
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
