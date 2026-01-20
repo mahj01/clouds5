@@ -12,7 +12,7 @@ export class SessionAuthGuard implements CanActivate {
     const path: string = req.path || req.url || '';
 
     // Skip auth endpoints
-    if (path.startsWith('/auth')) {
+    if (path.startsWith('/auth') || path.startsWith('/roles')) {
       return true;
     }
 
