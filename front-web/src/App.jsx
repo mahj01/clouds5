@@ -2,13 +2,14 @@ import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
-import Auth from './pages/Auth.jsx'
+import Login from './pages/Login.jsx'
+import Inscription from './pages/Inscription.jsx'
 
 function App() {
   const [count, setCount] = useState(0)
   const [page, setPage] = useState('home')
 
-  if (page === 'auth') {
+  if (page === 'login') {
     return (
       <>
         <div className="nav">
@@ -16,7 +17,20 @@ function App() {
             Retour
           </button>
         </div>
-        <Auth />
+        <Login onGoRegister={() => setPage('inscription')} />
+      </>
+    )
+  }
+
+  if (page === 'inscription') {
+    return (
+      <>
+        <div className="nav">
+          <button className="nav__btn" type="button" onClick={() => setPage('home')}>
+            Retour
+          </button>
+        </div>
+        <Inscription />
       </>
     )
   }
@@ -37,8 +51,8 @@ function App() {
           count is {count}
         </button>
         <div className="card__actions">
-          <button type="button" onClick={() => setPage('auth')}>
-            Login / Inscription
+          <button type="button" onClick={() => setPage('login')}>
+            Se connecter
           </button>
         </div>
         <p>
