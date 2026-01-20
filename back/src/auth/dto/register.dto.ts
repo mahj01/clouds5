@@ -8,7 +8,6 @@ export class RegisterDto {
 
   @ApiProperty({ example: 'StrongPassw0rd!'})
   @IsString()
-  @MinLength(8)
   motDePasse: string;
 
   @ApiProperty({ required: false })
