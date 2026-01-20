@@ -3,6 +3,9 @@ import { ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
 import { UtilisateursService } from './utilisateurs.service';
 import { CreateUtilisateurDto } from './dto/create-utilisateur.dto';
 import { UpdateUtilisateurDto } from './dto/update-utilisateur.dto';
+import { UseGuards, Req } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
+
 
 @ApiTags('utilisateurs')
 @Controller('utilisateurs')
@@ -20,6 +23,7 @@ export class UtilisateursController {
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.svc.findOne(id);
   }
+
   @Post()
   create(@Body() dto: CreateUtilisateurDto) {
     return this.svc.create(dto);
@@ -32,4 +36,10 @@ export class UtilisateursController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.svc.remove(id);
   }
+
+  @Get('email/:me')
+  findByEmail(@Param('me') email: string) {
+    return this.svc.findOneByEmail(email);
+  }
+
 }

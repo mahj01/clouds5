@@ -32,11 +32,22 @@ export class UtilisateursService {
   findAll() {
     return this.repo.find({ relations: ['role'] });
   }
+
   async findOne(id: number) {
     const item = await this.repo.findOne({ where: { id }, relations: ['role'] });
     if (!item) throw new NotFoundException('Utilisateur not found');
     return item;
   }
+
+  async findOneByEmail(email: string) {
+    const user = await this.repo.findOne({
+      where: { email },
+      relations: ['role'],
+    });
+    if (!user) throw new NotFoundException('Utilisateur not found');
+    return user;
+  }
+
   async update(id: number, dto: UpdateUtilisateurDto) {
     const user = await this.findOne(id);
     if (dto.email !== undefined) user.email = dto.email;
@@ -52,8 +63,12 @@ export class UtilisateursService {
     }
     return this.repo.save(user);
   }
+
   async remove(id: number) {
     const item = await this.findOne(id);
     await this.repo.remove(item);
   }
+
+
 }
+

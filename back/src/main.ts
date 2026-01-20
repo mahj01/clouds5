@@ -19,6 +19,7 @@ async function bootstrap() {
       .setTitle('JS Project API')
       .setDescription('API REST documentation')
       .setVersion('1.0')
+      .addBearerAuth()
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
@@ -28,3 +29,4 @@ async function bootstrap() {
   await app.listen(3001);
 }
 bootstrap();
+
