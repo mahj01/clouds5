@@ -18,6 +18,24 @@ export class AuthService {
     private readonly config: ConfigService,
   ) {}
 
+  private async createSessionForUser(user: Utilisateur) {
+    const ttlMinutes = parseInt(this.config.get('AUTH_SESSION_TTL_MINUTES', '120'), 10);
+    const expires = new Date(Date.now() + ttlMinutes * 60 * 1000);
+    const token = randomBytes(48).toString('hex');
+    const session = this.sessions.create({
+      token,
+      dateExpiration: expires,
+      actif: true,
+      utilisateur: user,
+    });
+    await this.sessions.save(session);
+    return {
+      token,
+      expiresAt: expires,
+      user: { id: user.id, role: user.role },
+    };
+  }
+
   async login(email?: string, motDePasse?: string) {
     // If credentials provided, try to find matching user
     if (email && motDePasse) {
@@ -25,22 +43,7 @@ export class AuthService {
       if (!user) throw new NotFoundException('Utilisateur not found');
       const isValid = await bcrypt.compare(motDePasse, user.motDePasse);
       if (!isValid) throw new NotFoundException('Invalid credentials');
-      // create session token
-      const ttlMinutes = parseInt(this.config.get('AUTH_SESSION_TTL_MINUTES', '120'), 10);
-      const expires = new Date(Date.now() + ttlMinutes * 60 * 1000);
-      const token = randomBytes(48).toString('hex');
-      const session = this.sessions.create({
-        token,
-        dateExpiration: expires,
-        actif: true,
-        utilisateur: user,
-      });
-      await this.sessions.save(session);
-      return {
-        token,
-        expiresAt: expires,
-        user: { id: user.id, role: user.role },
-      };
+      return this.createSessionForUser(user);
     }
 
     // No credentials -> return default visiteur account if exists
@@ -49,6 +52,14 @@ export class AuthService {
     const visiteur = await this.users.findOne({ where: { role: { id: visiteurRole.id } }, relations: ['role'] });
     if (!visiteur) throw new NotFoundException('Visiteur account not found');
     return visiteur;
+  }
+
+  async visiteur() {
+    const visiteurRole = await this.role.findOne({ where: { nom: 'visiteur' } });
+    if (!visiteurRole) throw new NotFoundException('Visiteur role not found');
+    const visiteur = await this.users.findOne({ where: { role: { id: visiteurRole.id } }, relations: ['role'] });
+    if (!visiteur) throw new NotFoundException('Visiteur account not found');
+    return this.createSessionForUser(visiteur);
   }
 
   async register(dto: RegisterDto) {

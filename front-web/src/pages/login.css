@@ -52,6 +52,27 @@
   width: 100%;
 }
 
+.login__visitor {
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.login__visitor:hover:enabled {
+  border-color: rgba(100, 108, 255, 0.8);
+}
+
+.login__visitor:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .login__switch {
   width: 100%;
   margin-top: 0.75rem;
