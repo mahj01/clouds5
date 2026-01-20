@@ -20,7 +20,7 @@ export class UtilisateursController {
     return this.svc.findAll();
   }
 
-  @Get('id/:id')
+  @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.svc.findOne(id);
   }
@@ -30,12 +30,12 @@ export class UtilisateursController {
     return this.svc.create(dto, managerEmail, managerPassword);
   }
 
-  @Put('id/:id')
+  @Put(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUtilisateurDto) {
     return this.svc.update(id, dto);
   }
 
-  @Delete('id/:id')
+  @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.svc.remove(id);
   }
