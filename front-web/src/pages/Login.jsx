@@ -9,6 +9,7 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
   const [motDePasse, setMotDePasse] = useState('')
 
   const [loading, setLoading] = useState(false)
+  const [visitorLoading, setVisitorLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [tokenStored, setTokenStored] = useState(false)
@@ -63,6 +64,48 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
     }
   }
 
+  async function handleVisitor() {
+    setError('')
+    setSuccess(false)
+    setTokenStored(false)
+    setVisitorLoading(true)
+
+    try {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+
+      const res = await fetch(`${apiBase}/auth/visiteur`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (!res.ok) {
+        let message = `Erreur ${res.status}`
+        try {
+          const data = await res.json()
+          if (data?.message) {
+            message = Array.isArray(data.message) ? data.message.join(', ') : String(data.message)
+          }
+        } catch {
+          // ignore
+        }
+        throw new Error(message)
+      }
+
+      const data = await res.json()
+      if (data?.token && data?.expiresAt) {
+        onLoginSuccess?.({ token: data.token, expiresAt: data.expiresAt })
+        setTokenStored(true)
+        setSuccess(true)
+      } else {
+        throw new Error('Réponse invalide du serveur')
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur inconnue')
+    } finally {
+      setVisitorLoading(false)
+    }
+  }
+
   return (
     <div className="login">
       <h1>Login</h1>
@@ -98,9 +141,19 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
         </button>
 
         <button
+          className="login__visitor"
+          type="button"
+          onClick={handleVisitor}
+          disabled={loading || visitorLoading}
+        >
+          {visitorLoading ? 'Connexion visiteur…' : 'Continuer en visiteur'}
+        </button>
+
+        <button
           className="login__switch"
           type="button"
           onClick={() => onGoRegister?.()}
+          disabled={loading || visitorLoading}
         >
           Pas de compte ? S’inscrire
         </button>
