@@ -1,7 +1,5 @@
 /node_modules
-<<<<<<< Updated upstream
 *.map
-=======
 /dist
 .env
 .env.*
@@ -10,4 +8,3 @@
 # Common Firebase service account files
 serviceAccount*.json
 firebase-service-account*.json
->>>>>>> Stashed changes
