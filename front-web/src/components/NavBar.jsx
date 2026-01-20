@@ -33,6 +33,22 @@ export default function NavBar({ page, onNavigate }) {
           >
             Inscription
           </button>
+          <button
+            type="button"
+            className="topnav__link"
+            onClick={async () => {
+              try {
+                const res = await fetch('http://localhost:3001/firestore/sync', { method: 'POST' });
+                if (!res.ok) throw new Error('Sync failed');
+                alert('Sync started / completed');
+              } catch (e) {
+                console.error(e);
+                alert('Sync failed. See console for details.');
+              }
+            }}
+          >
+            Sync
+          </button>
         </nav>
       </div>
     </header>

@@ -14,6 +14,7 @@ import { HistoriqueSignalementModule } from './historique_signalement/historique
 import { SynchronisationsModule } from './synchronisations/synchronisations.module';
 import { HistoriqueStatusUtilisateurModule } from './historique_status_utilisateur/historique-status-utilisateur.module';
 import { AuthModule } from './auth/auth.module';
+import { FirestoreModule } from './firestore/firestore.module';
 
 @Module({
   imports: [
@@ -43,6 +44,8 @@ import { AuthModule } from './auth/auth.module';
     SynchronisationsModule,
     HistoriqueStatusUtilisateurModule,
     AuthModule,
+    // Firestore sync module (syncs selected entities to Firestore at startup)
+    FirestoreModule,
   ],
   controllers: [AppController],
   providers: [AppService],

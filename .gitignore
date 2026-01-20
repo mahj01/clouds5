@@ -81,3 +81,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+back/src/test-auth-59124-firebase-adminsdk-fbsvc-dd41bad92e.json
+back/src/serviceAccountKey.json
