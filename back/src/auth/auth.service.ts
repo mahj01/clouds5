@@ -1,16 +1,21 @@
 
-import { Injectable, NotFoundException,ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { Role } from '../roles/role.entity';
+import { Session } from '../sessions/session.entity';
+import { ConfigService } from '@nestjs/config';
 import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(Utilisateur) private users: Repository<Utilisateur>,
     @InjectRepository(Role) private role: Repository<Role>,
+    @InjectRepository(Session) private sessions: Repository<Session>,
+    private readonly config: ConfigService,
   ) {}
 
   async login(email?: string, motDePasse?: string) {
@@ -18,8 +23,24 @@ export class AuthService {
     if (email && motDePasse) {
       const user = await this.users.findOne({ where: { email }, relations: ['role'] });
       if (!user) throw new NotFoundException('Utilisateur not found');
-      if (user.motDePasse !== motDePasse) throw new NotFoundException('Invalid credentials');
-      return user;
+      const isValid = await bcrypt.compare(motDePasse, user.motDePasse);
+      if (!isValid) throw new NotFoundException('Invalid credentials');
+      // create session token
+      const ttlMinutes = parseInt(this.config.get('AUTH_SESSION_TTL_MINUTES', '120'), 10);
+      const expires = new Date(Date.now() + ttlMinutes * 60 * 1000);
+      const token = randomBytes(48).toString('hex');
+      const session = this.sessions.create({
+        token,
+        dateExpiration: expires,
+        actif: true,
+        utilisateur: user,
+      });
+      await this.sessions.save(session);
+      return {
+        token,
+        expiresAt: expires,
+        user,
+      };
     }
 
     // No credentials -> return default visiteur account if exists
