@@ -3,8 +3,16 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { CategoriesModule } from './categories/categories.module';
-import { ProductsModule } from './products/products.module';
+import { RolesModule } from './roles/roles.module';
+import { StatutCompteModule } from './statut_compte/statut-compte.module';
+import { UtilisateursModule } from './utilisateurs/utilisateurs.module';
+import { SessionsModule } from './sessions/sessions.module';
+import { TentativeConnexionModule } from './tentative_connexion/tentative-connexion.module';
+import { EntreprisesModule } from './entreprises/entreprises.module';
+import { SignalementsModule } from './signalements/signalements.module';
+import { HistoriqueSignalementModule } from './historique_signalement/historique-signalement.module';
+import { SynchronisationsModule } from './synchronisations/synchronisations.module';
+import { HistoriqueStatusUtilisateurModule } from './historique_status_utilisateur/historique-status-utilisateur.module';
 
 @Module({
   imports: [
@@ -23,8 +31,16 @@ import { ProductsModule } from './products/products.module';
         synchronize: true, // désactiver en production
       }),
     }),
-    CategoriesModule,
-    ProductsModule,
+    RolesModule,
+    StatutCompteModule,
+    UtilisateursModule,
+    SessionsModule,
+    TentativeConnexionModule,
+    EntreprisesModule,
+    SignalementsModule,
+    HistoriqueSignalementModule,
+    SynchronisationsModule,
+    HistoriqueStatusUtilisateurModule,
   ],
   controllers: [AppController],
   providers: [AppService],
