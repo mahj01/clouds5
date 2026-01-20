@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
 import './login.css'
 
-export default function Login({ onGoRegister } = {}) {
+export default function Login({ onGoRegister, onLoginSuccess } = {}) {
   const emailId = useId()
   const passwordId = useId()
 
@@ -11,11 +11,13 @@ export default function Login({ onGoRegister } = {}) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [tokenStored, setTokenStored] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
     setSuccess(false)
+    setTokenStored(false)
     setLoading(true)
 
     try {
@@ -38,6 +40,19 @@ export default function Login({ onGoRegister } = {}) {
           // ignore JSON parsing error
         }
         throw new Error(message)
+      }
+
+      let data = null
+      try {
+        data = await res.json()
+      } catch {
+        // ignore
+      }
+
+      if (data?.token && data?.expiresAt) {
+        // Le stockage durable est géré par App.jsx (token + expiration uniquement)
+        onLoginSuccess?.({ token: data.token, expiresAt: data.expiresAt })
+        setTokenStored(true)
       }
 
       setSuccess(true)
@@ -91,7 +106,11 @@ export default function Login({ onGoRegister } = {}) {
         </button>
 
         {error && <p className="login__error">{error}</p>}
-        {success && <p className="login__ok">Connexion réussie.</p>}
+        {success && (
+          <p className="login__ok">
+            Connexion réussie{tokenStored ? ' (token enregistré).' : '.'}
+          </p>
+        )}
       </form>
     </div>
   )
