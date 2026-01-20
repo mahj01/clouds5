@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
 import './login.css'
 
-export default function Login({ onGoRegister } = {}) {
+export default function Login({ onGoRegister, onLoginSuccess } = {}) {
   const emailId = useId()
   const passwordId = useId()
 
@@ -49,9 +49,9 @@ export default function Login({ onGoRegister } = {}) {
         // ignore
       }
 
-      if (data?.token) {
-        localStorage.setItem('auth_token', data.token)
-        if (data?.expiresAt) localStorage.setItem('auth_expiresAt', String(data.expiresAt))
+      if (data?.token && data?.expiresAt) {
+        // Le stockage durable est géré par App.jsx (token + expiration uniquement)
+        onLoginSuccess?.({ token: data.token, expiresAt: data.expiresAt })
         setTokenStored(true)
       }
 

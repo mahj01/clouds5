@@ -1,0 +1,141 @@
+.dash {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 0.85rem;
+  min-height: calc(100vh - 2.5rem);
+}
+
+.dash__side {
+  position: sticky;
+  top: 1rem;
+  align-self: start;
+  height: calc(100vh - 2rem);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.dash__brand {
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding: 0.25rem 0.5rem 1rem;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.dash__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.dash__navItem {
+  text-align: left;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+
+.dash__navItem:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.dash__navItem.is-active {
+  background: rgba(100, 108, 255, 0.12);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.dash__navItem:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.dash__meta {
+  margin-top: auto;
+  padding-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.dash__metaRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.dash__metaValue {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.dash__logout {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.dash__logout:hover {
+  background: rgba(255, 80, 80, 0.15);
+  color: rgba(255, 200, 200, 0.95);
+}
+
+.dash__main {
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 1.15rem;
+  min-width: 0;
+}
+
+.dash__mainInner {
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.dash__header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.dash__header p {
+  margin: 0.3rem 0 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.95rem;
+}
+
+.dash__content {
+  margin-top: 1.5rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.dash__content p {
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .dash {
+    grid-template-columns: 1fr;
+  }
+
+  .dash__side {
+    position: relative;
+    top: 0;
+    height: auto;
+  }
+}
