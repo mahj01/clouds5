@@ -1,10 +1,11 @@
 import { Controller, Get, Post, Body, Param, Put, Delete, ParseIntPipe, Headers } from '@nestjs/common';
-import { ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiResponse, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { UtilisateursService } from './utilisateurs.service';
 import { CreateUtilisateurDto } from './dto/create-utilisateur.dto';
 import { UpdateUtilisateurDto } from './dto/update-utilisateur.dto';
 
 @ApiTags('utilisateurs')
+@ApiBearerAuth()
 @Controller('utilisateurs')
 export class UtilisateursController {
   constructor(private readonly svc: UtilisateursService) {}

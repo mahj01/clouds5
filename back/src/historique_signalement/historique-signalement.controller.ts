@@ -1,10 +1,11 @@
 import { Controller, Get, Post, Body, Param, Put, Delete, ParseIntPipe } from '@nestjs/common';
-import { ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiResponse, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { HistoriqueSignalementService } from './historique-signalement.service';
 import { CreateHistoriqueSignalementDto } from './dto/create-historique-signalement.dto';
 import { UpdateHistoriqueSignalementDto } from './dto/update-historique-signalement.dto';
 
 @ApiTags('historique-signalement')
+@ApiBearerAuth()
 @Controller('historique-signalement')
 export class HistoriqueSignalementController {
   constructor(private readonly svc: HistoriqueSignalementService) {}

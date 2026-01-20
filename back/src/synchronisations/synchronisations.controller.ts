@@ -1,10 +1,11 @@
 import { Controller, Get, Post, Body, Param, Put, Delete, ParseIntPipe } from '@nestjs/common';
-import { ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiResponse, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { SynchronisationsService } from './synchronisations.service';
 import { CreateSynchronisationDto } from './dto/create-synchronisation.dto';
 import { UpdateSynchronisationDto } from './dto/update-synchronisation.dto';
 
 @ApiTags('synchronisations')
+@ApiBearerAuth()
 @Controller('synchronisations')
 export class SynchronisationsController {
   constructor(private readonly svc: SynchronisationsService) {}

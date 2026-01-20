@@ -1,10 +1,11 @@
 import { Controller, Get, Post, Body, Param, Put, Delete, ParseIntPipe } from '@nestjs/common';
-import { ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiResponse, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { TentativeConnexionService } from './tentative-connexion.service';
 import { CreateTentativeConnexionDto } from './dto/create-tentative-connexion.dto';
 import { UpdateTentativeConnexionDto } from './dto/update-tentative-connexion.dto';
 
 @ApiTags('tentatives-connexion')
+@ApiBearerAuth()
 @Controller('tentatives-connexion')
 export class TentativeConnexionController {
   constructor(private readonly svc: TentativeConnexionService) {}
