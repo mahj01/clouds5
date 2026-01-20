@@ -6,11 +6,11 @@ import { LoginDto } from './dto/login.dto';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly svc: AuthService) {}
+  constructor(private readonly auth: AuthService) {}
 
   @Post('login')
   @ApiOperation({ summary: 'Login (optional credentials). Empty body returns visiteur.' })
   login(@Body() body: LoginDto) {
-    return this.svc.login(body?.email, body?.motDePasse);
+    return this.auth.login(body?.email, body?.motDePasse);
   }
 }
