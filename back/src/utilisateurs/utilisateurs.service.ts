@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 import { Utilisateur } from './utilisateur.entity';
 import { CreateUtilisateurDto } from './dto/create-utilisateur.dto';
 import { UpdateUtilisateurDto } from './dto/update-utilisateur.dto';
@@ -29,6 +30,7 @@ export class UtilisateursService {
     }
     return this.repo.save(entity);
   }
+
   findAll() {
     return this.repo.find({ relations: ['role'] });
   }
@@ -40,10 +42,7 @@ export class UtilisateursService {
   }
 
   async findOneByEmail(email: string) {
-    const user = await this.repo.findOne({
-      where: { email },
-      relations: ['role'],
-    });
+    const user = await this.repo.findOne({ where: { email }, relations: ['role'] });
     if (!user) throw new NotFoundException('Utilisateur not found');
     return user;
   }
@@ -69,6 +68,28 @@ export class UtilisateursService {
     await this.repo.remove(item);
   }
 
+  // --- Nouvelle méthode d'inscription
+  async register(dto: CreateUtilisateurDto) {
+    // Vérifier si l'email existe déjà
+    try {
+      await this.findOneByEmail(dto.email);
+      throw new ConflictException('Email déjà utilisé');
+    } catch (err) {
+      if (!(err instanceof NotFoundException)) throw err;
+      // si NotFoundException => email libre, on continue
+    }
 
+    // Hasher le mot de passe
+    const hashedPassword = await bcrypt.hash(dto.motDePasse, 10);
+
+    // Créer DTO pour créer l'utilisateur
+    const newUserDto: CreateUtilisateurDto = {
+      ...dto,
+      motDePasse: hashedPassword,
+      nbTentatives: 0,
+      dateBlocage: undefined, // corrigé ici
+    };
+
+    return this.create(newUserDto);
+  }
 }
-

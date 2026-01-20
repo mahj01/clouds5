@@ -3,14 +3,14 @@ import { ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
 import { UtilisateursService } from './utilisateurs.service';
 import { CreateUtilisateurDto } from './dto/create-utilisateur.dto';
 import { UpdateUtilisateurDto } from './dto/update-utilisateur.dto';
-import { UseGuards, Req } from '@nestjs/common';
-import { ApiBearerAuth } from '@nestjs/swagger';
-
 
 @ApiTags('utilisateurs')
 @Controller('utilisateurs')
 export class UtilisateursController {
-  constructor(private readonly svc: UtilisateursService) {}
+  // Injection des deux services dans le même constructeur
+  constructor(
+    private readonly svc: UtilisateursService
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'List utilisateurs' })
@@ -19,7 +19,7 @@ export class UtilisateursController {
     return this.svc.findAll();
   }
 
-  @Get(':id')
+  @Get('id/:id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.svc.findOne(id);
   }
@@ -28,11 +28,13 @@ export class UtilisateursController {
   create(@Body() dto: CreateUtilisateurDto) {
     return this.svc.create(dto);
   }
-  @Put(':id')
+
+  @Put('id/:id')
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUtilisateurDto) {
     return this.svc.update(id, dto);
   }
-  @Delete(':id')
+
+  @Delete('id/:id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.svc.remove(id);
   }
@@ -42,4 +44,11 @@ export class UtilisateursController {
     return this.svc.findOneByEmail(email);
   }
 
+  @Post('register')
+  @ApiOperation({ summary: 'Inscrire un nouvel utilisateur' })
+  @ApiResponse({ status: 201, description: 'Utilisateur créé avec succès' })
+  @ApiResponse({ status: 409, description: 'Email déjà utilisé' })
+  async register(@Body() dto: CreateUtilisateurDto) {
+    return this.svc.register(dto);
+  }
 }
