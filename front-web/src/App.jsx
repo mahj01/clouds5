@@ -2,9 +2,24 @@ import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
+import Inscription from './pages/Inscription.jsx'
 
 function App() {
   const [count, setCount] = useState(0)
+  const [page, setPage] = useState('home')
+
+  if (page === 'inscription') {
+    return (
+      <>
+        <div className="nav">
+          <button className="nav__btn" type="button" onClick={() => setPage('home')}>
+            Retour
+          </button>
+        </div>
+        <Inscription />
+      </>
+    )
+  }
 
   return (
     <>
@@ -21,6 +36,11 @@ function App() {
         <button onClick={() => setCount((count) => count + 1)}>
           count is {count}
         </button>
+        <div className="card__actions">
+          <button type="button" onClick={() => setPage('inscription')}>
+            Aller à l’inscription
+          </button>
+        </div>
         <p>
           Edit <code>src/App.jsx</code> and save to test HMR
         </p>

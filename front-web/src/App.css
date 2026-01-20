@@ -37,6 +37,20 @@
   padding: 2em;
 }
 
+.card__actions {
+  margin-top: 1rem;
+}
+
+.nav {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 1rem;
+}
+
+.nav__btn {
+  padding: 0.6rem 0.9rem;
+}
+
 .read-the-docs {
   color: #888;
 }
