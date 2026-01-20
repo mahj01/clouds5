@@ -9,6 +9,7 @@ CREATE table statut_compte(
     statut VARCHAR(20)
 );
 
+
 -- =============================================
 -- TABLE : UTILISATEUR
 -- =============================================

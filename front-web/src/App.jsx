@@ -59,11 +59,21 @@ function App() {
           Edit <code>src/App.jsx</code> and save to test HMR
         </p>
       </div>
+
+      {/* Bouton vers la carte */}
+      <div className="card" style={{ marginTop: '20px' }}>
+        <Link to="/map">
+          <button style={{ padding: '10px 20px', cursor: 'pointer' }}>
+            Voir la carte
+          </button>
+        </Link>
+      </div>
+
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
     </>
-  )
+  );
 }
 
-export default App
+export default App;

@@ -8,7 +8,10 @@ import { UpdateUtilisateurDto } from './dto/update-utilisateur.dto';
 @ApiBearerAuth()
 @Controller('utilisateurs')
 export class UtilisateursController {
-  constructor(private readonly svc: UtilisateursService) {}
+  // Injection des deux services dans le même constructeur
+  constructor(
+    private readonly svc: UtilisateursService
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'List utilisateurs' })
@@ -17,20 +20,36 @@ export class UtilisateursController {
     return this.svc.findAll();
   }
 
-  @Get(':id')
+  @Get('id/:id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.svc.findOne(id);
   }
+
   @Post()
   create(@Body() dto: CreateUtilisateurDto, @Headers('x-manager-email') managerEmail?: string, @Headers('x-manager-password') managerPassword?: string) {
     return this.svc.create(dto, managerEmail, managerPassword);
   }
-  @Put(':id')
+
+  @Put('id/:id')
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUtilisateurDto) {
     return this.svc.update(id, dto);
   }
-  @Delete(':id')
+
+  @Delete('id/:id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.svc.remove(id);
+  }
+
+  @Get('email/:me')
+  findByEmail(@Param('me') email: string) {
+    return this.svc.findOneByEmail(email);
+  }
+
+  @Post('register')
+  @ApiOperation({ summary: 'Inscrire un nouvel utilisateur' })
+  @ApiResponse({ status: 201, description: 'Utilisateur créé avec succès' })
+  @ApiResponse({ status: 409, description: 'Email déjà utilisé' })
+  async register(@Body() dto: CreateUtilisateurDto) {
+    return this.svc.register(dto);
   }
 }
