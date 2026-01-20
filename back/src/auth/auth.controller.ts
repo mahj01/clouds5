@@ -1,10 +1,11 @@
 
 import { Controller, Post, Body } from '@nestjs/common';
-import { ApiTags, ApiOperation,ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
-
 import { RegisterDto } from './dto/register.dto';
+import { FirebaseLoginDto } from './dto/firebase-login.dto';
+import { FirebaseRegisterDto } from './dto/firebase-register.dto';
 
 
 @ApiTags('auth')
@@ -23,5 +24,17 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'User registered' })
   register(@Body() dto: RegisterDto) {
     return this.auth.register(dto);
+  }
+
+  @Post('firebase-login')
+  @ApiOperation({ summary: 'Login with Firebase ID token' })
+  firebaseLogin(@Body() dto: FirebaseLoginDto) {
+    return this.auth.firebaseLogin(dto);
+  }
+
+  @Post('firebase-register')
+  @ApiOperation({ summary: 'Register via Firebase ID token' })
+  firebaseRegister(@Body() dto: FirebaseRegisterDto) {
+    return this.auth.firebaseRegister(dto);
   }
 }
