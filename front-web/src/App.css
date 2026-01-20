@@ -1,58 +1,153 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  padding: 1rem;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.container {
+  width: 100%;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* ===== Top Nav ===== */
+.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(10, 10, 20, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.card__actions {
-  margin-top: 1rem;
-}
-
-.nav {
+.topnav__inner {
   display: flex;
-  justify-content: flex-start;
-  margin-bottom: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
 }
 
-.nav__btn {
-  padding: 0.6rem 0.9rem;
+.topnav__brand {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
 }
 
-.read-the-docs {
-  color: #888;
+.topnav__links {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.topnav__link {
+  padding: 0.55rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.topnav__link:hover {
+  border-color: rgba(100, 108, 255, 0.8);
+}
+
+.topnav__link.is-active {
+  border-color: rgba(100, 108, 255, 0.9);
+  background: rgba(100, 108, 255, 0.15);
+}
+
+/* ===== Index Page ===== */
+.index {
+  display: flex;
+  justify-content: center;
+  padding: 1.25rem 0 2rem;
+}
+
+.index__hero {
+  width: 100%;
+  max-width: 760px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  padding: 1.5rem;
+}
+
+.index__kicker {
+  margin: 0 0 0.25rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.85rem;
+}
+
+.index__title {
+  margin: 0;
+  font-size: 2.2rem;
+}
+
+.index__subtitle {
+  margin: 0.6rem 0 1.25rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+}
+
+.index__actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.index__primary,
+.index__secondary {
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.index__primary {
+  background: linear-gradient(135deg, #646cff 0%, #535bf2 100%);
+  color: #fff;
+  border-color: transparent;
+}
+
+.index__secondary {
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+}
+
+.index__note {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.16);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.index__note p {
+  margin: 0;
+}
+
+.index__mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
+
+@media (max-width: 520px) {
+  #root {
+    padding: 0.9rem;
+  }
+
+  .topnav__inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 /* Leaflet CSS obligatoire */
