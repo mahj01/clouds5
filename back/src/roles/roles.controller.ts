@@ -5,7 +5,6 @@ import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 
 @ApiTags('roles')
-@ApiBearerAuth()
 @Controller('roles')
 export class RolesController {
   constructor(private readonly svc: RolesService) {}
