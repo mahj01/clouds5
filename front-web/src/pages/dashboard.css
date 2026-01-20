@@ -228,6 +228,11 @@
   color: rgba(255, 255, 255, 0.65);
 }
 
+.dash__subnav { display:flex; gap:8px; margin:12px 0 18px }
+.dash__subItem { padding:6px 10px; border-radius:8px; border:none; background:transparent; color:rgba(255,255,255,0.75); cursor:pointer }
+.dash__subItem.is-active, .dash__subItem:hover { background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.95) }
+.dash__subItem:disabled { opacity:0.5; cursor:not-allowed }
+
 /* ===== Responsive ===== */
 @media (max-width: 900px) {
   .dash__cards {

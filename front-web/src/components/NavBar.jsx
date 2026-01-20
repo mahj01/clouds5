@@ -38,7 +38,8 @@ export default function NavBar({ page, onNavigate }) {
             className="topnav__link"
             onClick={async () => {
               try {
-                const res = await fetch('http://localhost:3001/firestore/sync', { method: 'POST' });
+                const token = localStorage.getItem('auth_token')
+                const res = await fetch('http://localhost:3001/firestore/sync', { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {} });
                 if (!res.ok) throw new Error('Sync failed');
                 alert('Sync started / completed');
               } catch (e) {

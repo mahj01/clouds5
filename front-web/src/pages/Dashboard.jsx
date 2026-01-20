@@ -1,5 +1,8 @@
 import { useMemo, useState } from 'react'
 import './dashboard.css'
+import EntreprisesList from './EntreprisesList.jsx'
+import EntrepriseCreate from './EntrepriseCreate.jsx'
+import EntrepriseEdit from './EntrepriseEdit.jsx'
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: '📊' },
@@ -13,6 +16,8 @@ const NAV_ITEMS = [
 export default function Dashboard({ onLogout }) {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [entrepriseView, setEntrepriseView] = useState('liste') // 'liste' | 'create' | 'edit'
+  const [selectedEntrepriseId, setSelectedEntrepriseId] = useState(null)
 
   const expiresAt = useMemo(() => localStorage.getItem('auth_expiresAt'), [])
   const expiresText = useMemo(() => {
@@ -55,17 +60,47 @@ export default function Dashboard({ onLogout }) {
         <div className="dash__brand">Clouds5</div>
 
         <nav className="dash__nav" aria-label="Navigation latérale">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={`dash__navItem ${activeTab === item.id ? 'is-active' : ''}`}
-              onClick={() => handleNavClick(item.id)}
-            >
-              <span className="dash__navIcon">{item.icon}</span>
-              {item.label}
-            </button>
-          ))}
+          {NAV_ITEMS.map((item) => {
+            if (item.id === 'entreprises') {
+              return (
+                <div key={item.id}>
+                  <button
+                    type="button"
+                    className={`dash__navItem ${activeTab === item.id ? 'is-active' : ''}`}
+                    onClick={() => handleNavClick(item.id)}
+                  >
+                    <span className="dash__navIcon">{item.icon}</span>
+                    {item.label}
+                  </button>
+
+                  {activeTab === 'entreprises' && (
+                    <div className="dash__subnav">
+                      <button type="button" className={`dash__subItem ${entrepriseView === 'liste' ? 'is-active' : ''}`} onClick={() => { setEntrepriseView('liste'); setSelectedEntrepriseId(null) }}>
+                        Liste
+                      </button>
+                      <button type="button" className={`dash__subItem ${entrepriseView === 'create' ? 'is-active' : ''}`} onClick={() => setEntrepriseView('create')}>
+                        Création
+                      </button>
+                      <button type="button" className={`dash__subItem ${entrepriseView === 'edit' ? 'is-active' : ''}`} onClick={() => setEntrepriseView('edit')} disabled={!selectedEntrepriseId}>
+                        Modification
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            }
+            return (
+              <button
+                key={item.id}
+                type="button"
+                className={`dash__navItem ${activeTab === item.id ? 'is-active' : ''}`}
+                onClick={() => handleNavClick(item.id)}
+              >
+                <span className="dash__navIcon">{item.icon}</span>
+                {item.label}
+              </button>
+            )
+          })}
         </nav>
 
         <div className="dash__meta">
@@ -115,7 +150,19 @@ export default function Dashboard({ onLogout }) {
           {activeTab === 'entreprises' && (
             <section className="dash__page">
               <h2>🏢 Gestion des Entreprises</h2>
-              <p>Consultez et gérez les entreprises enregistrées.</p>
+              <div>
+                {entrepriseView === 'liste' && (
+                  <EntreprisesList onEdit={(id) => { setSelectedEntrepriseId(id); setEntrepriseView('edit') }} />
+                )}
+
+                {entrepriseView === 'create' && (
+                  <EntrepriseCreate onCreated={() => { setEntrepriseView('liste') }} />
+                )}
+
+                {entrepriseView === 'edit' && (
+                  <EntrepriseEdit id={selectedEntrepriseId} onSaved={() => { setEntrepriseView('liste'); setSelectedEntrepriseId(null) }} />
+                )}
+              </div>
             </section>
           )}
 
