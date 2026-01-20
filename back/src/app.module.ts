@@ -13,6 +13,7 @@ import { SignalementsModule } from './signalements/signalements.module';
 import { HistoriqueSignalementModule } from './historique_signalement/historique-signalement.module';
 import { SynchronisationsModule } from './synchronisations/synchronisations.module';
 import { HistoriqueStatusUtilisateurModule } from './historique_status_utilisateur/historique-status-utilisateur.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { HistoriqueStatusUtilisateurModule } from './historique_status_utilisate
     HistoriqueSignalementModule,
     SynchronisationsModule,
     HistoriqueStatusUtilisateurModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
