@@ -3,6 +3,9 @@ import './dashboard.css'
 import EntreprisesList from './EntreprisesList.jsx'
 import EntrepriseCreate from './EntrepriseCreate.jsx'
 import EntrepriseEdit from './EntrepriseEdit.jsx'
+import SignalementsList from './SignalementsList.jsx'
+import SignalementCreate from './SignalementCreate.jsx'
+import SignalementEdit from './SignalementEdit.jsx'
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: '📊' },
@@ -18,6 +21,8 @@ export default function Dashboard({ onLogout }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [entrepriseView, setEntrepriseView] = useState('liste') // 'liste' | 'create' | 'edit'
   const [selectedEntrepriseId, setSelectedEntrepriseId] = useState(null)
+  const [signalementView, setSignalementView] = useState('liste') // 'liste' | 'create' | 'edit'
+  const [selectedSignalementId, setSelectedSignalementId] = useState(null)
 
   const expiresAt = useMemo(() => localStorage.getItem('auth_expiresAt'), [])
   const expiresText = useMemo(() => {
@@ -61,7 +66,7 @@ export default function Dashboard({ onLogout }) {
 
         <nav className="dash__nav" aria-label="Navigation latérale">
           {NAV_ITEMS.map((item) => {
-            if (item.id === 'entreprises') {
+            if (item.id === 'entreprises' || item.id === 'signalements') {
               return (
                 <div key={item.id}>
                   <button
@@ -73,15 +78,17 @@ export default function Dashboard({ onLogout }) {
                     {item.label}
                   </button>
 
-                  {activeTab === 'entreprises' && (
+                  {activeTab === item.id && (
                     <div className="dash__subnav">
-                      <button type="button" className={`dash__subItem ${entrepriseView === 'liste' ? 'is-active' : ''}`} onClick={() => { setEntrepriseView('liste'); setSelectedEntrepriseId(null) }}>
+                      <button type="button" className={`dash__subItem ${(item.id === 'entreprises' ? entrepriseView : signalementView) === 'liste' ? 'is-active' : ''}`} onClick={() => {
+                        if (item.id === 'entreprises') { setEntrepriseView('liste'); setSelectedEntrepriseId(null) } else { setSignalementView('liste'); setSelectedSignalementId(null) }
+                      }}>
                         Liste
                       </button>
-                      <button type="button" className={`dash__subItem ${entrepriseView === 'create' ? 'is-active' : ''}`} onClick={() => setEntrepriseView('create')}>
+                      <button type="button" className={`dash__subItem ${(item.id === 'entreprises' ? entrepriseView : signalementView) === 'create' ? 'is-active' : ''}`} onClick={() => { if (item.id === 'entreprises') setEntrepriseView('create'); else setSignalementView('create') }}>
                         Création
                       </button>
-                      <button type="button" className={`dash__subItem ${entrepriseView === 'edit' ? 'is-active' : ''}`} onClick={() => setEntrepriseView('edit')} disabled={!selectedEntrepriseId}>
+                      <button type="button" className={`dash__subItem ${(item.id === 'entreprises' ? entrepriseView : signalementView) === 'edit' ? 'is-active' : ''}`} onClick={() => { if (item.id === 'entreprises') setEntrepriseView('edit'); else setSignalementView('edit') }} disabled={item.id === 'entreprises' ? !selectedEntrepriseId : !selectedSignalementId}>
                         Modification
                       </button>
                     </div>
@@ -169,7 +176,19 @@ export default function Dashboard({ onLogout }) {
           {activeTab === 'signalements' && (
             <section className="dash__page">
               <h2>⚠️ Signalements</h2>
-              <p>Visualisez et traitez les signalements.</p>
+              <div>
+                {signalementView === 'liste' && (
+                  <SignalementsList onEdit={(id) => { setSelectedSignalementId(id); setSignalementView('edit') }} />
+                )}
+
+                {signalementView === 'create' && (
+                  <SignalementCreate onCreated={() => { setSignalementView('liste') }} />
+                )}
+
+                {signalementView === 'edit' && (
+                  <SignalementEdit id={selectedSignalementId} onSaved={() => { setSignalementView('liste'); setSelectedSignalementId(null) }} />
+                )}
+              </div>
             </section>
           )}
 

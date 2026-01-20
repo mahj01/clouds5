@@ -1,0 +1,9 @@
+.sig { padding: 16px }
+.sig__header { margin-bottom: 12px }
+.sig__hint { color: #666; margin: 4px 0 12px }
+.sig__table { width: 100%; border-collapse: collapse }
+.sig__table th, .sig__table td { padding: 8px 10px; border-bottom: 1px solid #eee; text-align: left }
+.sig__btn { background: #2b6cb0; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer }
+.sig__form { display: grid; gap: 10px; max-width: 680px }
+.sig__form label { display:flex; flex-direction: column; font-size:14px }
+.sig__form input { padding:8px; border:1px solid #ddd; border-radius:4px }
