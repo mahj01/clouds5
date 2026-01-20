@@ -1,3 +1,14 @@
+
+CREATE table role(
+    id_role SERIAL PRIMARY key,
+    nom VARCHAR(50)
+);
+
+CREATE table statut_compte(
+    id_statut_compte SERIAL PRIMARY key,
+    statut VARCHAR(20)
+);
+
 -- =============================================
 -- TABLE : UTILISATEUR
 -- =============================================
@@ -7,14 +18,21 @@ CREATE TABLE utilisateur (
     mot_de_passe TEXT NOT NULL,
     nom VARCHAR(50),
     prenom VARCHAR(50),
-    role VARCHAR(20) CHECK (role IN ('VISITEUR', 'UTILISATEUR', 'MANAGER')) NOT NULL,
-    statut_compte VARCHAR(20) CHECK (statut_compte IN ('actif', 'bloque')) DEFAULT 'actif',
+    id_role INTEGER,
     nb_tentatives INTEGER DEFAULT 0,
     date_blocage TIMESTAMP,
-    source_auth VARCHAR(20) CHECK (source_auth IN ('firebase', 'postgres')) NOT NULL,
-    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_id_role FOREIGN KEY (id_role) REFERENCES role(id_role)
 );
 
+CREATE table historique_status_utilisateur(
+    id_historique_status_utilisateur SERIAL PRIMARY key,
+    id_utilisateur INTEGER,
+    id_statut_compte INTEGER,
+    CONSTRAINT fk_id_utilisateur FOREIGN KEY (id_utilisateur) REFERENCES utilisateur(id_utilisateur),
+    CONSTRAINT fk_id_statut_compte FOREIGN KEY (id_statut_compte) REFERENCES statut_compte(id_statut_compte)
+
+);
 
 -- =============================================
 -- TABLE : SESSION
@@ -29,7 +47,7 @@ CREATE TABLE session (
     CONSTRAINT fk_session_user
         FOREIGN KEY (id_utilisateur)
         REFERENCES utilisateur(id_utilisateur)
-        ON DELETE CASCADE
+        
 );
 
 -- =============================================
@@ -44,7 +62,7 @@ CREATE TABLE tentative_connexion (
     CONSTRAINT fk_tentative_user
         FOREIGN KEY (id_utilisateur)
         REFERENCES utilisateur(id_utilisateur)
-        ON DELETE CASCADE
+        
 );
 
 -- =============================================
@@ -75,18 +93,17 @@ CREATE TABLE signalement (
     CONSTRAINT fk_signalement_user
         FOREIGN KEY (id_utilisateur)
         REFERENCES utilisateur(id_utilisateur)
-        ON DELETE CASCADE,
+        ,
     CONSTRAINT fk_signalement_entreprise
         FOREIGN KEY (id_entreprise)
         REFERENCES entreprise(id_entreprise)
-        ON DELETE SET NULL
 );
 
 
 -- =============================================
 -- TABLE : HISTORIQUE_STATUT
 -- =============================================
-CREATE TABLE historique_statut (
+CREATE TABLE historique_signalement (
     id_historique SERIAL PRIMARY KEY,
     ancien_statut VARCHAR(20),
     nouveau_statut VARCHAR(20),
@@ -96,11 +113,11 @@ CREATE TABLE historique_statut (
     CONSTRAINT fk_hist_signalement
         FOREIGN KEY (id_signalement)
         REFERENCES signalement(id_signalement)
-        ON DELETE CASCADE,
+        ,
     CONSTRAINT fk_hist_manager
         FOREIGN KEY (id_manager)
         REFERENCES utilisateur(id_utilisateur)
-        ON DELETE RESTRICT
+
 );
 
 -- =============================================
@@ -115,7 +132,7 @@ CREATE TABLE synchronisation (
     CONSTRAINT fk_sync_manager
         FOREIGN KEY (id_manager)
         REFERENCES utilisateur(id_utilisateur)
-        ON DELETE RESTRICT
+
 );
 
 
