@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
 import './login.css'
 
-export default function Login() {
+export default function Login({ onGoRegister } = {}) {
   const emailId = useId()
   const passwordId = useId()
 
@@ -80,6 +80,14 @@ export default function Login() {
 
         <button className="login__submit" type="submit">
           {loading ? 'Connexion…' : 'Se connecter'}
+        </button>
+
+        <button
+          className="login__switch"
+          type="button"
+          onClick={() => onGoRegister?.()}
+        >
+          Pas de compte ? S’inscrire
         </button>
 
         {error && <p className="login__error">{error}</p>}
