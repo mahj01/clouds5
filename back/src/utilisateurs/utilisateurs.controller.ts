@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, ParseIntPipe, Headers } from '@nestjs/common';
 import { ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
 import { UtilisateursService } from './utilisateurs.service';
 import { CreateUtilisateurDto } from './dto/create-utilisateur.dto';
@@ -21,8 +21,8 @@ export class UtilisateursController {
     return this.svc.findOne(id);
   }
   @Post()
-  create(@Body() dto: CreateUtilisateurDto) {
-    return this.svc.create(dto);
+  create(@Body() dto: CreateUtilisateurDto, @Headers('x-manager-email') managerEmail?: string, @Headers('x-manager-password') managerPassword?: string) {
+    return this.svc.create(dto, managerEmail, managerPassword);
   }
   @Put(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUtilisateurDto) {
