@@ -19,8 +19,6 @@ async function bootstrap() {
       .setTitle('JS Project API')
       .setDescription('API REST documentation')
       .setVersion('1.0')
-      .addTag('products')
-      .addTag('categories')
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
