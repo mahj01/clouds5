@@ -32,10 +32,13 @@ async function bootstrap() {
       .setTitle('JS Project API')
       .setDescription('API REST documentation')
       .setVersion('1.0')
+      .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api', app, document); // accessible à /api
+    SwaggerModule.setup('api', app, document, {
+      swaggerOptions: { persistAuthorization: true },
+    }); // accessible à /api
   }
 
   // Seed default roles and accounts
@@ -75,3 +78,4 @@ async function bootstrap() {
   await app.listen(3001);
 }
 bootstrap();
+

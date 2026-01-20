@@ -20,6 +20,13 @@ export class AuthController {
     return this.auth.firebaseLogin(body);
   }
 
+  @Post('visiteur')
+  @ApiOperation({ summary: 'Create a visitor session token' })
+  @ApiResponse({ status: 200, description: 'Returns token, expiry and visitor user.' })
+  visiteur() {
+    return this.auth.visiteur();
+  }
+
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User registered' })

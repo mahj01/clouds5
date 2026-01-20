@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
 import './login.css'
 
-export default function Login({ onGoRegister } = {}) {
+export default function Login({ onGoRegister, onLoginSuccess } = {}) {
   const emailId = useId()
   const passwordId = useId()
 
@@ -9,13 +9,16 @@ export default function Login({ onGoRegister } = {}) {
   const [motDePasse, setMotDePasse] = useState('')
 
   const [loading, setLoading] = useState(false)
+  const [visitorLoading, setVisitorLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [tokenStored, setTokenStored] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
     setSuccess(false)
+    setTokenStored(false)
     setLoading(true)
 
     try {
@@ -40,11 +43,66 @@ export default function Login({ onGoRegister } = {}) {
         throw new Error(message)
       }
 
+      let data = null
+      try {
+        data = await res.json()
+      } catch {
+        // ignore
+      }
+
+      if (data?.token && data?.expiresAt) {
+        // Le stockage durable est géré par App.jsx (token + expiration uniquement)
+        onLoginSuccess?.({ token: data.token, expiresAt: data.expiresAt })
+        setTokenStored(true)
+      }
+
       setSuccess(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleVisitor() {
+    setError('')
+    setSuccess(false)
+    setTokenStored(false)
+    setVisitorLoading(true)
+
+    try {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+
+      const res = await fetch(`${apiBase}/auth/visiteur`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (!res.ok) {
+        let message = `Erreur ${res.status}`
+        try {
+          const data = await res.json()
+          if (data?.message) {
+            message = Array.isArray(data.message) ? data.message.join(', ') : String(data.message)
+          }
+        } catch {
+          // ignore
+        }
+        throw new Error(message)
+      }
+
+      const data = await res.json()
+      if (data?.token && data?.expiresAt) {
+        onLoginSuccess?.({ token: data.token, expiresAt: data.expiresAt })
+        setTokenStored(true)
+        setSuccess(true)
+      } else {
+        throw new Error('Réponse invalide du serveur')
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur inconnue')
+    } finally {
+      setVisitorLoading(false)
     }
   }
 
@@ -83,15 +141,29 @@ export default function Login({ onGoRegister } = {}) {
         </button>
 
         <button
+          className="login__visitor"
+          type="button"
+          onClick={handleVisitor}
+          disabled={loading || visitorLoading}
+        >
+          {visitorLoading ? 'Connexion visiteur…' : 'Continuer en visiteur'}
+        </button>
+
+        <button
           className="login__switch"
           type="button"
           onClick={() => onGoRegister?.()}
+          disabled={loading || visitorLoading}
         >
           Pas de compte ? S’inscrire
         </button>
 
         {error && <p className="login__error">{error}</p>}
-        {success && <p className="login__ok">Connexion réussie.</p>}
+        {success && (
+          <p className="login__ok">
+            Connexion réussie{tokenStored ? ' (token enregistré).' : '.'}
+          </p>
+        )}
       </form>
     </div>
   )

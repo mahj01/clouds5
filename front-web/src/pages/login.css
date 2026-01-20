@@ -1,7 +1,13 @@
 .login {
   max-width: 460px;
-  margin: 2rem auto;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 1rem;
   text-align: left;
+  min-height: calc(100vh - 4rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .login h1 {
@@ -46,6 +52,27 @@
   width: 100%;
 }
 
+.login__visitor {
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.login__visitor:hover:enabled {
+  border-color: rgba(100, 108, 255, 0.8);
+}
+
+.login__visitor:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .login__switch {
   width: 100%;
   margin-top: 0.75rem;
@@ -75,4 +102,26 @@
   font-size: 0.95rem;
   color: rgba(255, 80, 80, 0.95);
   text-align: center;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 520px) {
+  .login {
+    max-width: 100%;
+    margin: 1rem 0;
+  }
+
+  .login h1 {
+    font-size: 1.5rem;
+  }
+
+  .login__form {
+    padding: 1rem;
+    border-radius: 10px;
+  }
+
+  .login__field input {
+    padding: 0.7rem;
+    font-size: 1rem;
+  }
 }
