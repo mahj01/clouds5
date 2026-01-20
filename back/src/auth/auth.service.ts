@@ -18,7 +18,8 @@ export class AuthService {
     if (email && motDePasse) {
       const user = await this.users.findOne({ where: { email }, relations: ['role'] });
       if (!user) throw new NotFoundException('Utilisateur not found');
-      if (user.motDePasse !== motDePasse) throw new NotFoundException('Invalid credentials');
+      const isValid = await bcrypt.compare(motDePasse, user.motDePasse);
+      if (!isValid) throw new NotFoundException('Invalid credentials');
       return user;
     }
 
