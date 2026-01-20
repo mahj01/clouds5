@@ -8,3 +8,4 @@
 # Common Firebase service account files
 serviceAccount*.json
 firebase-service-account*.json
+
