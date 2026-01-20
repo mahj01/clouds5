@@ -2,10 +2,10 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.dto';
 import { FirebaseLoginDto } from './dto/firebase-login.dto';
 import { FirebaseRegisterDto } from './dto/firebase-register.dto';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 
 
 @ApiTags('auth')
@@ -17,7 +17,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Login and get session token (optional credentials). Empty body returns visiteur.' })
   @ApiResponse({ status: 200, description: 'Returns token, expiry and user on credential login.' })
   login(@Body() body: LoginDto) {
-    return this.auth.login(body?.email, body?.motDePasse);
+    return this.auth.firebaseLogin(body);
   }
 
   @Post('register')
@@ -28,14 +28,14 @@ export class AuthController {
   }
 
   @Post('firebase-login')
-  @ApiOperation({ summary: 'Login with Firebase ID token' })
-  firebaseLogin(@Body() dto: FirebaseLoginDto) {
-    return this.auth.firebaseLogin(dto);
+  @ApiOperation({ summary: 'Login with Firebase ID token or email/password (same as /auth/login)' })
+  firebaseLogin(@Body() body: FirebaseLoginDto) {
+    return this.auth.firebaseLogin(body);
   }
 
   @Post('firebase-register')
-  @ApiOperation({ summary: 'Register via Firebase ID token' })
-  firebaseRegister(@Body() dto: FirebaseRegisterDto) {
+  @ApiOperation({ summary: 'Register via Firebase ID token or email/password (same as /auth/register)' })
+  firebaseRegister(@Body() dto: RegisterDto) {
     return this.auth.firebaseRegister(dto);
   }
 }

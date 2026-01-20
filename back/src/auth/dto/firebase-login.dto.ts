@@ -1,8 +1,13 @@
-import { IsString } from 'class-validator';
+import { IsEmail, IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class FirebaseLoginDto {
-  @ApiProperty({ description: 'Firebase ID token' })
+  @ApiProperty({ example: 'user@example.com' })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({ example: 'password123' })
   @IsString()
-  idToken: string;
+  motDePasse: string;
+
 }

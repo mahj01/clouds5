@@ -9,7 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { RegisterDto } from './dto/register.dto';
 import { FirebaseLoginDto } from './dto/firebase-login.dto';
 import { FirebaseRegisterDto } from './dto/firebase-register.dto';
-import { firebaseConfig } from '../firebase';
+import { firebaseConfig, firebaseSignInWithPassword, firebaseSignUpWithPassword } from '../firebase';
 import * as bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
 @Injectable()
@@ -56,7 +56,7 @@ export class AuthService {
           if (res.ok) {
             const data = await res.json();
             // Use firebase token flow to find/create local user
-            return this.firebaseLogin({ idToken: data.idToken });
+            return this.firebaseLogin({ email, motDePasse });
           }
         }
       } catch (e) {
@@ -133,9 +133,18 @@ export class AuthService {
     }
   }
 
-  async firebaseLogin(dto: FirebaseLoginDto) {
-    const info = await this.verifyIdToken(dto.idToken);
-    const email = info.email;
+  async firebaseLogin(dto: FirebaseLoginDto | { email?: string; motDePasse?: string }) {
+    // Accept email+motDePasse and sign in via firebase helper to obtain the email
+    if (!(dto as any).email || !(dto as any).motDePasse) {
+      throw new BadRequestException('email and motDePasse required');
+    }
+    let firebaseResp: any;
+    try {
+      firebaseResp = await firebaseSignInWithPassword((dto as any).email, (dto as any).motDePasse);
+    } catch (e) {
+      throw new BadRequestException('Firebase sign-in failed');
+    }
+    const email = firebaseResp.email || (dto as any).email;
     let user = await this.users.findOne({ where: { email }, relations: ['role'] });
     if (!user) {
       // create a visiteur account for Firebase users that don't exist yet
@@ -146,20 +155,29 @@ export class AuthService {
     return user;
   }
 
-  async firebaseRegister(dto: FirebaseRegisterDto) {
-    const info = await this.verifyIdToken(dto.idToken);
-    const email = info.email;
-    const existing = await this.users.findOne({ where: { email } });
+  async firebaseRegister(dto: FirebaseRegisterDto | RegisterDto) {
+    // Expect RegisterDto with email & motDePasse
+    const reg = dto as RegisterDto;
+    const existing = await this.users.findOne({ where: { email: reg.email } });
     if (existing) throw new ConflictException('Email already registered');
 
-    // Prefer creating as 'client' if that role exists, otherwise no role
-    const clientRole = await this.role.findOne({ where: { nom: 'client' } });
+    // Create Firebase account first (best-effort)
+    try {
+      await firebaseSignUpWithPassword(reg.email, reg.motDePasse);
+    } catch (e: any) {
+      const msg = String(e?.message || e);
+      if (!msg.includes('EMAIL_EXISTS')) {
+        throw new BadRequestException('Firebase registration failed');
+      }
+      // if EMAIL_EXISTS, continue and create local user
+    }
+
+    const hash = await bcrypt.hash(reg.motDePasse, 10);
     const user = this.users.create({
-      email,
-      motDePasse: '',
-      nom: dto.nom,
-      prenom: dto.prenom,
-      role: clientRole ?? undefined,
+      email: reg.email,
+      motDePasse: hash,
+      nom: reg.nom,
+      prenom: reg.prenom,
     });
     return this.users.save(user);
   }
