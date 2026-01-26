@@ -55,7 +55,7 @@ function App() {
           }}
         />
       )}
-      {view === 'inscription' && <Inscription />}
+      {view === 'inscription' && <Inscription onGoLogin={() => setView('login')} />}
     </div>
   )
 }

@@ -62,7 +62,7 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
 
   return (
     <div className="mx-auto w-full max-w-lg rounded-2xl border border-white/10 bg-white/5 p-8 shadow-xl shadow-black/30">
-      <h1 className="text-2xl font-semibold text-white">Connexion</h1>
+      <h1 className="text-2xl font-semibold text-white"><i className="fa fa-sign-in mr-2" aria-hidden="true"/>Connexion</h1>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-2">
@@ -101,6 +101,7 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
           type="submit"
           disabled={loading}
         >
+          <i className="fa fa-sign-in mr-2" aria-hidden="true" />
           {loading ? 'Connexion…' : 'Se connecter'}
         </button>
 
@@ -110,6 +111,7 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
           onClick={handleVisitor}
           disabled={loading || visitorLoading}
         >
+          <i className="fa fa-user mr-2" aria-hidden="true" />
           {visitorLoading ? 'Connexion visiteur…' : 'Continuer en visiteur'}
         </button>
 
@@ -119,6 +121,7 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
           onClick={() => onGoRegister?.()}
           disabled={loading || visitorLoading}
         >
+          <i className="fa fa-user-plus mr-2" aria-hidden="true" />
           Pas de compte ? S’inscrire
         </button>
 

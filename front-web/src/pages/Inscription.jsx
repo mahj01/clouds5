@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from 'react'
 import { getRoles, registerUser } from '../api/client.js'
 
-export default function Inscription() {
+export default function Inscription({ onGoLogin } = {}) {
   const emailId = useId()
   const passwordId = useId()
   const nomId = useId()
@@ -89,7 +89,7 @@ export default function Inscription() {
 
   return (
     <div className="mx-auto w-full max-w-xl rounded-2xl border border-white/10 bg-white/5 p-8 shadow-xl shadow-black/30">
-      <h1 className="text-2xl font-semibold text-white">Inscription</h1>
+      <h1 className="text-2xl font-semibold text-white"><i className="fa fa-user-plus mr-2" aria-hidden="true"/>Inscription</h1>
       <p className="mt-1 text-sm text-slate-300">Créez votre compte Clouds5.</p>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
@@ -184,12 +184,19 @@ export default function Inscription() {
           type="submit"
           disabled={loading || rolesLoading}
         >
+          <i className="fa fa-user-plus mr-2" aria-hidden="true" />
           {loading ? 'Création…' : 'Créer mon compte'}
         </button>
 
         {rolesError && <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">{rolesError}</p>}
         {error && <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</p>}
         {success && <p className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">Compte créé avec succès.</p>}
+
+        <div className="mt-4 text-center">
+          <button type="button" className="text-sm text-indigo-200 hover:text-indigo-100" onClick={() => onGoLogin?.()}>
+            <i className="fa fa-sign-in mr-2" aria-hidden="true"/>Déjà inscrit ? Se connecter
+          </button>
+        </div>
       </form>
     </div>
   )
