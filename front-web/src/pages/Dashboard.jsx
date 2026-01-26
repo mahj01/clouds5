@@ -1,5 +1,11 @@
 import { useMemo, useState } from 'react'
 import './dashboard.css'
+import EntreprisesList from './EntreprisesList.jsx'
+import EntrepriseCreate from './EntrepriseCreate.jsx'
+import EntrepriseEdit from './EntrepriseEdit.jsx'
+import SignalementsList from './SignalementsList.jsx'
+import SignalementCreate from './SignalementCreate.jsx'
+import SignalementEdit from './SignalementEdit.jsx'
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: '📊' },
@@ -13,6 +19,10 @@ const NAV_ITEMS = [
 export default function Dashboard({ onLogout }) {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [entrepriseView, setEntrepriseView] = useState('liste') // 'liste' | 'create' | 'edit'
+  const [selectedEntrepriseId, setSelectedEntrepriseId] = useState(null)
+  const [signalementView, setSignalementView] = useState('liste') // 'liste' | 'create' | 'edit'
+  const [selectedSignalementId, setSelectedSignalementId] = useState(null)
 
   const expiresAt = useMemo(() => localStorage.getItem('auth_expiresAt'), [])
   const expiresText = useMemo(() => {
@@ -55,17 +65,49 @@ export default function Dashboard({ onLogout }) {
         <div className="dash__brand">Clouds5</div>
 
         <nav className="dash__nav" aria-label="Navigation latérale">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={`dash__navItem ${activeTab === item.id ? 'is-active' : ''}`}
-              onClick={() => handleNavClick(item.id)}
-            >
-              <span className="dash__navIcon">{item.icon}</span>
-              {item.label}
-            </button>
-          ))}
+          {NAV_ITEMS.map((item) => {
+            if (item.id === 'entreprises' || item.id === 'signalements') {
+              return (
+                <div key={item.id}>
+                  <button
+                    type="button"
+                    className={`dash__navItem ${activeTab === item.id ? 'is-active' : ''}`}
+                    onClick={() => handleNavClick(item.id)}
+                  >
+                    <span className="dash__navIcon">{item.icon}</span>
+                    {item.label}
+                  </button>
+
+                  {activeTab === item.id && (
+                    <div className="dash__subnav">
+                      <button type="button" className={`dash__subItem ${(item.id === 'entreprises' ? entrepriseView : signalementView) === 'liste' ? 'is-active' : ''}`} onClick={() => {
+                        if (item.id === 'entreprises') { setEntrepriseView('liste'); setSelectedEntrepriseId(null) } else { setSignalementView('liste'); setSelectedSignalementId(null) }
+                      }}>
+                        Liste
+                      </button>
+                      <button type="button" className={`dash__subItem ${(item.id === 'entreprises' ? entrepriseView : signalementView) === 'create' ? 'is-active' : ''}`} onClick={() => { if (item.id === 'entreprises') setEntrepriseView('create'); else setSignalementView('create') }}>
+                        Création
+                      </button>
+                      <button type="button" className={`dash__subItem ${(item.id === 'entreprises' ? entrepriseView : signalementView) === 'edit' ? 'is-active' : ''}`} onClick={() => { if (item.id === 'entreprises') setEntrepriseView('edit'); else setSignalementView('edit') }} disabled={item.id === 'entreprises' ? !selectedEntrepriseId : !selectedSignalementId}>
+                        Modification
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            }
+            return (
+              <button
+                key={item.id}
+                type="button"
+                className={`dash__navItem ${activeTab === item.id ? 'is-active' : ''}`}
+                onClick={() => handleNavClick(item.id)}
+              >
+                <span className="dash__navIcon">{item.icon}</span>
+                {item.label}
+              </button>
+            )
+          })}
         </nav>
 
         <div className="dash__meta">
@@ -115,14 +157,38 @@ export default function Dashboard({ onLogout }) {
           {activeTab === 'entreprises' && (
             <section className="dash__page">
               <h2>🏢 Gestion des Entreprises</h2>
-              <p>Consultez et gérez les entreprises enregistrées.</p>
+              <div>
+                {entrepriseView === 'liste' && (
+                  <EntreprisesList onEdit={(id) => { setSelectedEntrepriseId(id); setEntrepriseView('edit') }} />
+                )}
+
+                {entrepriseView === 'create' && (
+                  <EntrepriseCreate onCreated={() => { setEntrepriseView('liste') }} />
+                )}
+
+                {entrepriseView === 'edit' && (
+                  <EntrepriseEdit id={selectedEntrepriseId} onSaved={() => { setEntrepriseView('liste'); setSelectedEntrepriseId(null) }} />
+                )}
+              </div>
             </section>
           )}
 
           {activeTab === 'signalements' && (
             <section className="dash__page">
               <h2>⚠️ Signalements</h2>
-              <p>Visualisez et traitez les signalements.</p>
+              <div>
+                {signalementView === 'liste' && (
+                  <SignalementsList onEdit={(id) => { setSelectedSignalementId(id); setSignalementView('edit') }} />
+                )}
+
+                {signalementView === 'create' && (
+                  <SignalementCreate onCreated={() => { setSignalementView('liste') }} />
+                )}
+
+                {signalementView === 'edit' && (
+                  <SignalementEdit id={selectedSignalementId} onSaved={() => { setSignalementView('liste'); setSelectedSignalementId(null) }} />
+                )}
+              </div>
             </section>
           )}
 
