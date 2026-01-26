@@ -28,7 +28,7 @@ import { FirestoreModule } from './firestore/firestore.module';
         port: parseInt(config.get('DB_PORT', '5432'), 10),
         username: config.get('DB_USER', 'postgres'),
         password: config.get('DB_PASS', ''),
-        database: config.get('DB_NAME', 'jsproject'),
+        database: config.get('DB_NAME', 'cloud'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true, // désactiver en production
       }),
