@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import './App.css'
 import Login from './pages/Login.jsx'
 import Inscription from './pages/Inscription.jsx'
 import Dashboard from './pages/Dashboard.jsx'
@@ -38,14 +37,14 @@ function App() {
 
   if (auth) {
     return (
-      <div className="container">
+      <div className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100">
         <Dashboard onLogout={handleLogout} />
       </div>
     )
   }
 
   return (
-    <div className="container">
+    <div className="min-h-screen bg-slate-950 px-4 py-10 text-slate-100">
       {view === 'login' && (
         <Login
           onGoRegister={() => setView('inscription')}

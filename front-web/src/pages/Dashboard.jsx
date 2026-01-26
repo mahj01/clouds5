@@ -1,28 +1,17 @@
 import { useMemo, useState } from 'react'
-import './dashboard.css'
-import EntreprisesList from './EntreprisesList.jsx'
-import EntrepriseCreate from './EntrepriseCreate.jsx'
-import EntrepriseEdit from './EntrepriseEdit.jsx'
-import SignalementsList from './SignalementsList.jsx'
-import SignalementCreate from './SignalementCreate.jsx'
-import SignalementEdit from './SignalementEdit.jsx'
 
 const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-  { id: 'utilisateurs', label: 'Utilisateurs', icon: '👥' },
-  { id: 'entreprises', label: 'Entreprises', icon: '🏢' },
-  { id: 'signalements', label: 'Signalements', icon: '⚠️' },
-  { id: 'statistiques', label: 'Statistiques', icon: '📈' },
-  { id: 'parametres', label: 'Paramètres', icon: '⚙️' },
+  { id: 'dashboard', label: 'Dashboard', icon: 'fa fa-bar-chart' },
+  { id: 'utilisateurs', label: 'Utilisateurs', icon: 'fa fa-users' },
+  { id: 'entreprises', label: 'Entreprises', icon: 'fa fa-building' },
+  { id: 'signalements', label: 'Signalements', icon: 'fa fa-exclamation-triangle' },
+  { id: 'statistiques', label: 'Statistiques', icon: 'fa fa-line-chart' },
+  { id: 'parametres', label: 'Paramètres', icon: 'fa fa-cog' },
 ]
 
 export default function Dashboard({ onLogout }) {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [entrepriseView, setEntrepriseView] = useState('liste') // 'liste' | 'create' | 'edit'
-  const [selectedEntrepriseId, setSelectedEntrepriseId] = useState(null)
-  const [signalementView, setSignalementView] = useState('liste') // 'liste' | 'create' | 'edit'
-  const [selectedSignalementId, setSelectedSignalementId] = useState(null)
 
   const expiresAt = useMemo(() => localStorage.getItem('auth_expiresAt'), [])
   const expiresText = useMemo(() => {
@@ -38,109 +27,83 @@ export default function Dashboard({ onLogout }) {
   }
 
   return (
-    <div className="dash">
-      {/* Mobile header */}
-      <header className="dash__mobileHeader">
+    <div className="relative flex min-h-screen bg-slate-950 text-slate-100">
+      <header className="fixed left-0 right-0 top-0 z-40 flex items-center justify-between border-b border-white/10 bg-slate-950/90 px-4 py-3 backdrop-blur md:hidden">
         <button
           type="button"
-          className="dash__menuBtn"
+          className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm"
           onClick={() => setSidebarOpen(!sidebarOpen)}
           aria-label="Menu"
         >
           ☰
         </button>
-        <span className="dash__mobileBrand">Clouds5</span>
+        <span className="text-sm font-semibold text-white">Clouds5</span>
       </header>
 
-      {/* Overlay for mobile */}
       {sidebarOpen && (
         <div
-          className="dash__overlay"
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
           onClick={() => setSidebarOpen(false)}
           aria-hidden="true"
         />
       )}
 
-      <aside className={`dash__side ${sidebarOpen ? 'is-open' : ''}`}>
-        <div className="dash__brand">Clouds5</div>
+      <aside
+        className={`fixed left-0 top-0 z-40 h-full w-72 border-r border-white/10 bg-slate-950/95 px-5 py-6 transition-transform md:static md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      >
+        <div className="text-lg font-semibold text-white">Clouds5</div>
 
-        <nav className="dash__nav" aria-label="Navigation latérale">
-          {NAV_ITEMS.map((item) => {
-            if (item.id === 'entreprises' || item.id === 'signalements') {
-              return (
-                <div key={item.id}>
-                  <button
-                    type="button"
-                    className={`dash__navItem ${activeTab === item.id ? 'is-active' : ''}`}
-                    onClick={() => handleNavClick(item.id)}
-                  >
-                    <span className="dash__navIcon">{item.icon}</span>
-                    {item.label}
-                  </button>
-
-                  {activeTab === item.id && (
-                    <div className="dash__subnav">
-                      <button type="button" className={`dash__subItem ${(item.id === 'entreprises' ? entrepriseView : signalementView) === 'liste' ? 'is-active' : ''}`} onClick={() => {
-                        if (item.id === 'entreprises') { setEntrepriseView('liste'); setSelectedEntrepriseId(null) } else { setSignalementView('liste'); setSelectedSignalementId(null) }
-                      }}>
-                        Liste
-                      </button>
-                      <button type="button" className={`dash__subItem ${(item.id === 'entreprises' ? entrepriseView : signalementView) === 'create' ? 'is-active' : ''}`} onClick={() => { if (item.id === 'entreprises') setEntrepriseView('create'); else setSignalementView('create') }}>
-                        Création
-                      </button>
-                      <button type="button" className={`dash__subItem ${(item.id === 'entreprises' ? entrepriseView : signalementView) === 'edit' ? 'is-active' : ''}`} onClick={() => { if (item.id === 'entreprises') setEntrepriseView('edit'); else setSignalementView('edit') }} disabled={item.id === 'entreprises' ? !selectedEntrepriseId : !selectedSignalementId}>
-                        Modification
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )
-            }
-            return (
-              <button
-                key={item.id}
-                type="button"
-                className={`dash__navItem ${activeTab === item.id ? 'is-active' : ''}`}
-                onClick={() => handleNavClick(item.id)}
-              >
-                <span className="dash__navIcon">{item.icon}</span>
-                {item.label}
-              </button>
-            )
-          })}
+        <nav className="mt-6 space-y-2" aria-label="Navigation latérale">
+          {NAV_ITEMS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition ${activeTab === item.id ? 'bg-indigo-500/20 text-indigo-100' : 'text-slate-300 hover:bg-white/5'}`}
+              onClick={() => handleNavClick(item.id)}
+            >
+              <i className={`${item.icon} text-lg`} aria-hidden="true" />
+              {item.label}
+            </button>
+          ))}
         </nav>
 
-        <div className="dash__meta">
-          <div className="dash__metaRow">
+        <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-4 text-xs text-slate-300">
+          <div className="flex items-center justify-between">
             <span>Expiration</span>
-            <span className="dash__metaValue">{expiresText}</span>
+            <span className="font-medium text-slate-100">{expiresText}</span>
           </div>
-          <button type="button" className="dash__logout" onClick={onLogout}>
+          <button
+            type="button"
+            className="mt-4 w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm font-semibold text-white hover:bg-white/20"
+            onClick={onLogout}
+          >
             Se déconnecter
           </button>
         </div>
       </aside>
 
-      <main className="dash__main">
-        <div className="dash__mainInner">
+      <main className="flex-1 px-4 pb-10 pt-20 md:pt-10">
+        <div className="mx-auto w-full max-w-5xl">
           {activeTab === 'dashboard' && (
             <>
-              <header className="dash__header">
-                <h1>Dashboard</h1>
-                <p>Bienvenue dans votre espace. Votre session est active.</p>
+              <header className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
+                <p className="mt-2 text-sm text-slate-300">
+                  Bienvenue dans votre espace. Votre session est active.
+                </p>
               </header>
 
-              <section className="dash__cards">
+              <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {NAV_ITEMS.filter((i) => i.id !== 'dashboard').map((item) => (
                   <button
                     key={item.id}
                     type="button"
-                    className="dash__card"
+                    className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-left text-sm font-semibold text-white transition hover:bg-white/10"
                     onClick={() => setActiveTab(item.id)}
                   >
-                    <span className="dash__cardIcon">{item.icon}</span>
-                    <span className="dash__cardLabel">{item.label}</span>
-                    <span className="dash__cardArrow">→</span>
+                      <i className={`${item.icon} text-lg`} aria-hidden="true" />
+                    <span className="flex-1 px-3">{item.label}</span>
+                    <i className="fa fa-angle-right text-base" aria-hidden="true" />
                   </button>
                 ))}
               </section>
@@ -148,61 +111,41 @@ export default function Dashboard({ onLogout }) {
           )}
 
           {activeTab === 'utilisateurs' && (
-            <section className="dash__page">
-              <h2>👥 Gestion des Utilisateurs</h2>
-              <p>Gérez les comptes utilisateurs, rôles et permissions.</p>
+            <section className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6">
+              <h2 className="text-xl font-semibold text-white"><i className="fa fa-users mr-2"/>Gestion des Utilisateurs</h2>
+              <p className="mt-2 text-sm text-slate-300">Gérez les comptes utilisateurs, rôles et permissions.</p>
             </section>
           )}
 
           {activeTab === 'entreprises' && (
-            <section className="dash__page">
-              <h2>🏢 Gestion des Entreprises</h2>
-              <div>
-                {entrepriseView === 'liste' && (
-                  <EntreprisesList onEdit={(id) => { setSelectedEntrepriseId(id); setEntrepriseView('edit') }} />
-                )}
-
-                {entrepriseView === 'create' && (
-                  <EntrepriseCreate onCreated={() => { setEntrepriseView('liste') }} />
-                )}
-
-                {entrepriseView === 'edit' && (
-                  <EntrepriseEdit id={selectedEntrepriseId} onSaved={() => { setEntrepriseView('liste'); setSelectedEntrepriseId(null) }} />
-                )}
-              </div>
+            <section className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6">
+              <h2 className="text-xl font-semibold text-white"><i className="fa fa-building mr-2"/>Gestion des Entreprises</h2>
+              <p className="mt-2 text-sm text-slate-300">
+                Cette section est en préparation. Ajoutez les composants Entreprises pour activer la gestion.
+              </p>
             </section>
           )}
 
           {activeTab === 'signalements' && (
-            <section className="dash__page">
-              <h2>⚠️ Signalements</h2>
-              <div>
-                {signalementView === 'liste' && (
-                  <SignalementsList onEdit={(id) => { setSelectedSignalementId(id); setSignalementView('edit') }} />
-                )}
-
-                {signalementView === 'create' && (
-                  <SignalementCreate onCreated={() => { setSignalementView('liste') }} />
-                )}
-
-                {signalementView === 'edit' && (
-                  <SignalementEdit id={selectedSignalementId} onSaved={() => { setSignalementView('liste'); setSelectedSignalementId(null) }} />
-                )}
-              </div>
+            <section className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6">
+              <h2 className="text-xl font-semibold text-white"><i className="fa fa-exclamation-triangle mr-2"/>Signalements</h2>
+              <p className="mt-2 text-sm text-slate-300">
+                Cette section est en préparation. Ajoutez les composants Signalements pour activer la gestion.
+              </p>
             </section>
           )}
 
           {activeTab === 'statistiques' && (
-            <section className="dash__page">
-              <h2>📈 Statistiques</h2>
-              <p>Analysez les données et performances.</p>
+            <section className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6">
+              <h2 className="text-xl font-semibold text-white"><i className="fa fa-line-chart mr-2"/>Statistiques</h2>
+              <p className="mt-2 text-sm text-slate-300">Analysez les données et performances.</p>
             </section>
           )}
 
           {activeTab === 'parametres' && (
-            <section className="dash__page">
-              <h2>⚙️ Paramètres</h2>
-              <p>Configurez les options de votre compte.</p>
+            <section className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6">
+              <h2 className="text-xl font-semibold text-white"><i className="fa fa-cog mr-2"/>Paramètres</h2>
+              <p className="mt-2 text-sm text-slate-300">Configurez les options de votre compte.</p>
             </section>
           )}
         </div>
