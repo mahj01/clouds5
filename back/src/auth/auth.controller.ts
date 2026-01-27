@@ -17,7 +17,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Login and get session token (optional credentials). Empty body returns visiteur.' })
   @ApiResponse({ status: 200, description: 'Returns token, expiry and user on credential login.' })
   login(@Body() body: LoginDto) {
-    return this.auth.firebaseLogin(body);
+    return this.auth.login(body?.email, body?.motDePasse);
   }
 
   @Post('visiteur')

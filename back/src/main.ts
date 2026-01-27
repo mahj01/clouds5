@@ -8,13 +8,18 @@ import { Utilisateur } from './utilisateurs/utilisateur.entity';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const isProd = process.env.NODE_ENV === 'production';
   app.enableCors({
-    origin: [
-      'http://localhost:5173',
-      'http://127.0.0.1:5173',
-      'http://localhost:3000',
-      'http://127.0.0.1:3000',
-    ],
+    // In dev, reflect the request origin to avoid CORS issues when accessing
+    // the app via LAN IP / different hostnames.
+    origin: isProd
+      ? [
+          'http://localhost:5173',
+          'http://127.0.0.1:5173',
+          'http://localhost:3000',
+          'http://127.0.0.1:3000',
+        ]
+      : true,
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type, Authorization',

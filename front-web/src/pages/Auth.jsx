@@ -34,8 +34,10 @@ export default function Auth() {
     setLoginLoading(true)
 
     try {
-      await loginUser({ email: loginEmail, motDePasse: loginPassword })
-
+      const data = await loginUser({ email: loginEmail, motDePasse: loginPassword })
+      if (!data?.token || !data?.expiresAt) {
+        throw new Error('Connexion échouée (réponse invalide du serveur).')
+      }
       setLoginSuccess(true)
     } catch (err) {
       setLoginError(err instanceof Error ? err.message : 'Erreur inconnue')
