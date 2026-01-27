@@ -50,15 +50,5 @@ services:
     depends_on:
       - back
 
-  tileserver:
-    image: maptiler/tileserver-gl:latest
-    working_dir: /data
-    command: ["--file", "antananarivo.mbtiles"]
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./front-web/public/tiles:/data
-    restart: unless-stopped
-
 volumes:
   db_data:
