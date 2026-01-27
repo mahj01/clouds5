@@ -14,6 +14,7 @@ import { HistoriqueSignalementModule } from './historique_signalement/historique
 import { SynchronisationsModule } from './synchronisations/synchronisations.module';
 import { HistoriqueStatusUtilisateurModule } from './historique_status_utilisateur/historique-status-utilisateur.module';
 import { AuthModule } from './auth/auth.module';
+import { FirestoreModule } from './firestore/firestore.module';
 
 @Module({
   imports: [
@@ -27,7 +28,7 @@ import { AuthModule } from './auth/auth.module';
         port: parseInt(config.get('DB_PORT', '5432'), 10),
         username: config.get('DB_USER', 'postgres'),
         password: config.get('DB_PASS', ''),
-        database: config.get('DB_NAME', 'jsproject'),
+        database: config.get('DB_NAME', 'cloud'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true, // désactiver en production
       }),
@@ -43,6 +44,8 @@ import { AuthModule } from './auth/auth.module';
     SynchronisationsModule,
     HistoriqueStatusUtilisateurModule,
     AuthModule,
+    // Firestore sync module (syncs selected entities to Firestore at startup)
+    FirestoreModule,
   ],
   controllers: [AppController],
   providers: [AppService],

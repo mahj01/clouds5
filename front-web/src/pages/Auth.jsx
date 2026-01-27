@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import './auth.css'
+import { loginUser, registerUser } from '../api/client.js'
 
 export default function Auth() {
   // Login state
@@ -34,23 +34,7 @@ export default function Auth() {
     setLoginLoading(true)
 
     try {
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-      const res = await fetch(`${apiBase}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: loginEmail, motDePasse: loginPassword }),
-      })
-
-      if (!res.ok) {
-        let message = `Erreur ${res.status}`
-        try {
-          const data = await res.json()
-          if (data?.message) {
-            message = Array.isArray(data.message) ? data.message.join(', ') : String(data.message)
-          }
-        } catch { /* ignore */ }
-        throw new Error(message)
-      }
+      await loginUser({ email: loginEmail, motDePasse: loginPassword })
 
       setLoginSuccess(true)
     } catch (err) {
@@ -67,28 +51,12 @@ export default function Auth() {
     setRegisterLoading(true)
 
     try {
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-      const res = await fetch(`${apiBase}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: registerEmail,
-          motDePasse: registerPassword,
-          nom: registerNom || undefined,
-          prenom: registerPrenom || undefined,
-        }),
+      await registerUser({
+        email: registerEmail,
+        motDePasse: registerPassword,
+        nom: registerNom || undefined,
+        prenom: registerPrenom || undefined,
       })
-
-      if (!res.ok) {
-        let message = `Erreur ${res.status}`
-        try {
-          const data = await res.json()
-          if (data?.message) {
-            message = Array.isArray(data.message) ? data.message.join(', ') : String(data.message)
-          }
-        } catch { /* ignore */ }
-        throw new Error(message)
-      }
 
       setRegisterSuccess(true)
     } catch (err) {
@@ -99,133 +67,150 @@ export default function Auth() {
   }
 
   return (
-    <div className={`auth ${activePanel === 'register' ? 'auth--register-active' : ''}`}>
-      {/* Formulaires */}
-      <div className="auth__forms">
-        {/* Login Form */}
-        <div className="auth__form-container auth__form-container--login">
-          <form className="auth__form" onSubmit={handleLogin}>
-            <h1>Connexion</h1>
-            <p className="auth__subtitle">Connectez-vous à votre compte</p>
-
-            <div className="auth__field">
-              <label htmlFor={loginEmailId}>Email</label>
-              <input
-                id={loginEmailId}
-                type="email"
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                placeholder="votre@email.com"
-                autoComplete="email"
-                required
-              />
-            </div>
-
-            <div className="auth__field">
-              <label htmlFor={loginPasswordId}>Mot de passe</label>
-              <input
-                id={loginPasswordId}
-                type="password"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                autoComplete="current-password"
-                required
-              />
-            </div>
-
-            <button className="auth__submit" type="submit" disabled={loginLoading}>
-              {loginLoading ? 'Connexion…' : 'Se connecter'}
-            </button>
-
-            {loginError && <p className="auth__message auth__message--error">{loginError}</p>}
-            {loginSuccess && <p className="auth__message auth__message--success">Connexion réussie !</p>}
-          </form>
+    <div className="mx-auto grid w-full max-w-5xl gap-6 rounded-2xl border border-white/10 bg-white/5 p-8 shadow-xl shadow-black/30 lg:grid-cols-2">
+      <div className="space-y-5">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-200">Clouds5</p>
+          <h1 className="mt-2 text-2xl font-semibold text-white">Connexion</h1>
+          <p className="mt-1 text-sm text-slate-300">Accédez à votre espace en toute sécurité.</p>
         </div>
 
-        {/* Register Form */}
-        <div className="auth__form-container auth__form-container--register">
-          <form className="auth__form" onSubmit={handleRegister}>
-            <h1>Inscription</h1>
-            <p className="auth__subtitle">Créez votre compte</p>
+        <form className="space-y-4" onSubmit={handleLogin}>
+          <div className="space-y-2">
+            <label htmlFor={loginEmailId} className="text-sm font-medium text-slate-200">
+              Email
+            </label>
+            <input
+              id={loginEmailId}
+              type="email"
+              value={loginEmail}
+              onChange={(e) => setLoginEmail(e.target.value)}
+              placeholder="votre@email.com"
+              autoComplete="email"
+              required
+              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400"
+            />
+          </div>
 
-            <div className="auth__field">
-              <label htmlFor={registerEmailId}>Email</label>
-              <input
-                id={registerEmailId}
-                type="email"
-                value={registerEmail}
-                onChange={(e) => setRegisterEmail(e.target.value)}
-                placeholder="votre@email.com"
-                autoComplete="email"
-                required
-              />
-            </div>
+          <div className="space-y-2">
+            <label htmlFor={loginPasswordId} className="text-sm font-medium text-slate-200">
+              Mot de passe
+            </label>
+            <input
+              id={loginPasswordId}
+              type="password"
+              value={loginPassword}
+              onChange={(e) => setLoginPassword(e.target.value)}
+              autoComplete="current-password"
+              required
+              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400"
+            />
+          </div>
 
-            <div className="auth__field">
-              <label htmlFor={registerPasswordId}>Mot de passe</label>
-              <input
-                id={registerPasswordId}
-                type="password"
-                value={registerPassword}
-                onChange={(e) => setRegisterPassword(e.target.value)}
-                autoComplete="new-password"
-                minLength={8}
-                required
-              />
-            </div>
+          <button
+            className="w-full rounded-xl bg-indigo-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-400"
+            type="submit"
+            disabled={loginLoading}
+          >
+            {loginLoading ? 'Connexion…' : 'Se connecter'}
+          </button>
 
-            <div className="auth__row">
-              <div className="auth__field">
-                <label htmlFor={registerNomId}>Nom</label>
-                <input
-                  id={registerNomId}
-                  type="text"
-                  value={registerNom}
-                  onChange={(e) => setRegisterNom(e.target.value)}
-                  placeholder="Nom"
-                />
-              </div>
-
-              <div className="auth__field">
-                <label htmlFor={registerPrenomId}>Prénom</label>
-                <input
-                  id={registerPrenomId}
-                  type="text"
-                  value={registerPrenom}
-                  onChange={(e) => setRegisterPrenom(e.target.value)}
-                  placeholder="Prénom"
-                />
-              </div>
-            </div>
-
-            <button className="auth__submit" type="submit" disabled={registerLoading}>
-              {registerLoading ? 'Création…' : 'Créer mon compte'}
-            </button>
-
-            {registerError && <p className="auth__message auth__message--error">{registerError}</p>}
-            {registerSuccess && <p className="auth__message auth__message--success">Compte créé avec succès !</p>}
-          </form>
-        </div>
+          {loginError && <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{loginError}</p>}
+          {loginSuccess && <p className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">Connexion réussie !</p>}
+        </form>
       </div>
 
-      {/* Overlay panels */}
-      <div className="auth__overlay">
-        <div className="auth__overlay-panel auth__overlay-panel--left">
-          <h2>Déjà inscrit ?</h2>
-          <p>Connectez-vous avec vos identifiants pour accéder à votre espace</p>
+      <div className="space-y-5">
+        <div>
+          <h2 className="text-2xl font-semibold text-white">Inscription</h2>
+          <p className="mt-1 text-sm text-slate-300">Créez un compte en quelques clics.</p>
+        </div>
+
+        <form className="space-y-4" onSubmit={handleRegister}>
+          <div className="space-y-2">
+            <label htmlFor={registerEmailId} className="text-sm font-medium text-slate-200">
+              Email
+            </label>
+            <input
+              id={registerEmailId}
+              type="email"
+              value={registerEmail}
+              onChange={(e) => setRegisterEmail(e.target.value)}
+              placeholder="votre@email.com"
+              autoComplete="email"
+              required
+              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor={registerPasswordId} className="text-sm font-medium text-slate-200">
+              Mot de passe
+            </label>
+            <input
+              id={registerPasswordId}
+              type="password"
+              value={registerPassword}
+              onChange={(e) => setRegisterPassword(e.target.value)}
+              autoComplete="new-password"
+              minLength={8}
+              required
+              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400"
+            />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <label htmlFor={registerNomId} className="text-sm font-medium text-slate-200">
+                Nom
+              </label>
+              <input
+                id={registerNomId}
+                type="text"
+                value={registerNom}
+                onChange={(e) => setRegisterNom(e.target.value)}
+                placeholder="Nom"
+                className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor={registerPrenomId} className="text-sm font-medium text-slate-200">
+                Prénom
+              </label>
+              <input
+                id={registerPrenomId}
+                type="text"
+                value={registerPrenom}
+                onChange={(e) => setRegisterPrenom(e.target.value)}
+                placeholder="Prénom"
+                className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400"
+              />
+            </div>
+          </div>
+
           <button
-            className="auth__ghost-btn"
+            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+            type="submit"
+            disabled={registerLoading}
+          >
+            {registerLoading ? 'Création…' : 'Créer mon compte'}
+          </button>
+
+          {registerError && <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{registerError}</p>}
+          {registerSuccess && <p className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">Compte créé avec succès !</p>}
+        </form>
+
+        <div className="flex gap-3">
+          <button
+            className={`rounded-xl px-4 py-2 text-sm font-semibold ${activePanel === 'login' ? 'bg-indigo-500 text-white' : 'bg-white/10 text-slate-200'}`}
             type="button"
             onClick={() => setActivePanel('login')}
           >
             Se connecter
           </button>
-        </div>
-        <div className="auth__overlay-panel auth__overlay-panel--right">
-          <h2>Pas encore de compte ?</h2>
-          <p>Inscrivez-vous pour rejoindre notre communauté</p>
           <button
-            className="auth__ghost-btn"
+            className={`rounded-xl px-4 py-2 text-sm font-semibold ${activePanel === 'register' ? 'bg-indigo-500 text-white' : 'bg-white/10 text-slate-200'}`}
             type="button"
             onClick={() => setActivePanel('register')}
           >

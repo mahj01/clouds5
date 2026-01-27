@@ -1,0 +1,20 @@
+{
+  "version": 8,
+  "sources": {
+    "antananarivo": {
+      "type": "vector",
+      "tiles": ["tiles/{z}/{x}/{y}.pbf"],
+      "minzoom": 0,
+      "maxzoom": 14
+    }
+  },
+  "layers": [
+    {
+      "id": "roads",
+      "type": "line",
+      "source": "antananarivo",
+      "source-layer": "roads",
+      "paint": { "line-color": "#888", "line-width": 1 }
+    }
+  ]
+}

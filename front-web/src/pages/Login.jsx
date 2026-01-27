@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import './login.css'
+import { loginUser, loginVisitor } from '../api/client.js'
 
 export default function Login({ onGoRegister, onLoginSuccess } = {}) {
   const emailId = useId()
@@ -22,33 +22,7 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
     setLoading(true)
 
     try {
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-
-      const res = await fetch(`${apiBase}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, motDePasse }),
-      })
-
-      if (!res.ok) {
-        let message = `Erreur ${res.status}`
-        try {
-          const data = await res.json()
-          if (data?.message) {
-            message = Array.isArray(data.message) ? data.message.join(', ') : String(data.message)
-          }
-        } catch {
-          // ignore JSON parsing error
-        }
-        throw new Error(message)
-      }
-
-      let data = null
-      try {
-        data = await res.json()
-      } catch {
-        // ignore
-      }
+      const data = await loginUser({ email, motDePasse })
 
       if (data?.token && data?.expiresAt) {
         // Le stockage durable est géré par App.jsx (token + expiration uniquement)
@@ -71,27 +45,7 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
     setVisitorLoading(true)
 
     try {
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-
-      const res = await fetch(`${apiBase}/auth/visiteur`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      })
-
-      if (!res.ok) {
-        let message = `Erreur ${res.status}`
-        try {
-          const data = await res.json()
-          if (data?.message) {
-            message = Array.isArray(data.message) ? data.message.join(', ') : String(data.message)
-          }
-        } catch {
-          // ignore
-        }
-        throw new Error(message)
-      }
-
-      const data = await res.json()
+      const data = await loginVisitor()
       if (data?.token && data?.expiresAt) {
         onLoginSuccess?.({ token: data.token, expiresAt: data.expiresAt })
         setTokenStored(true)
@@ -107,12 +61,14 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
   }
 
   return (
-    <div className="login">
-      <h1>Login</h1>
+    <div className="mx-auto w-full max-w-lg rounded-2xl border border-white/10 bg-white/5 p-8 shadow-xl shadow-black/30">
+      <h1 className="text-2xl font-semibold text-white"><i className="fa fa-sign-in mr-2" aria-hidden="true"/>Connexion</h1>
 
-      <form className="login__form" onSubmit={handleSubmit}>
-        <div className="login__field">
-          <label htmlFor={emailId}>Email</label>
+      <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+        <div className="space-y-2">
+          <label htmlFor={emailId} className="text-sm font-medium text-slate-200">
+            Email
+          </label>
           <input
             id={emailId}
             type="email"
@@ -121,11 +77,14 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
             placeholder="ex: user@mail.com"
             autoComplete="email"
             required
+            className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400"
           />
         </div>
 
-        <div className="login__field">
-          <label htmlFor={passwordId}>Mot de passe</label>
+        <div className="space-y-2">
+          <label htmlFor={passwordId} className="text-sm font-medium text-slate-200">
+            Mot de passe
+          </label>
           <input
             id={passwordId}
             type="password"
@@ -133,34 +92,42 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
             onChange={(e) => setMotDePasse(e.target.value)}
             autoComplete="current-password"
             required
+            className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400"
           />
         </div>
 
-        <button className="login__submit" type="submit">
+        <button
+          className="w-full rounded-xl bg-indigo-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-400"
+          type="submit"
+          disabled={loading}
+        >
+          <i className="fa fa-sign-in mr-2" aria-hidden="true" />
           {loading ? 'Connexion…' : 'Se connecter'}
         </button>
 
         <button
-          className="login__visitor"
+          className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
           type="button"
           onClick={handleVisitor}
           disabled={loading || visitorLoading}
         >
+          <i className="fa fa-user mr-2" aria-hidden="true" />
           {visitorLoading ? 'Connexion visiteur…' : 'Continuer en visiteur'}
         </button>
 
         <button
-          className="login__switch"
+          className="w-full text-sm text-indigo-200 transition hover:text-indigo-100"
           type="button"
           onClick={() => onGoRegister?.()}
           disabled={loading || visitorLoading}
         >
+          <i className="fa fa-user-plus mr-2" aria-hidden="true" />
           Pas de compte ? S’inscrire
         </button>
 
-        {error && <p className="login__error">{error}</p>}
+        {error && <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</p>}
         {success && (
-          <p className="login__ok">
+          <p className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
             Connexion réussie{tokenStored ? ' (token enregistré).' : '.'}
           </p>
         )}

@@ -1,0 +1,54 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cloud
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cloud"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  back:
+    build: ./back
+    working_dir: /app
+    command: sh -c "npm install && npm run start:dev"
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./back:/app
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: postgres
+      DB_PASS: postgres
+      DB_NAME: cloud
+      GOOGLE_APPLICATION_CREDENTIALS: /app/src/serviceAccountKey.json
+    depends_on:
+      db:
+        condition: service_healthy
+
+  front:
+    build: ./front-web
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./front-web:/app
+      - /app/node_modules
+    depends_on:
+      - back
+
+volumes:
+  db_data:
