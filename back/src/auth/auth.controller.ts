@@ -1,9 +1,10 @@
 
 import { Controller, Post, Body } from '@nestjs/common';
-import { ApiTags, ApiOperation,ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
+import { FirebaseLoginDto } from './dto/firebase-login.dto';
+import { FirebaseRegisterDto } from './dto/firebase-register.dto';
 import { LoginDto } from './dto/login.dto';
-
 import { RegisterDto } from './dto/register.dto';
 
 
@@ -19,10 +20,29 @@ export class AuthController {
     return this.auth.login(body?.email, body?.motDePasse);
   }
 
+  @Post('visiteur')
+  @ApiOperation({ summary: 'Create a visitor session token' })
+  @ApiResponse({ status: 200, description: 'Returns token, expiry and visitor user.' })
+  visiteur() {
+    return this.auth.visiteur();
+  }
+
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User registered' })
   register(@Body() dto: RegisterDto) {
     return this.auth.register(dto);
+  }
+
+  @Post('firebase-login')
+  @ApiOperation({ summary: 'Login with Firebase ID token or email/password (same as /auth/login)' })
+  firebaseLogin(@Body() body: FirebaseLoginDto) {
+    return this.auth.firebaseLogin(body);
+  }
+
+  @Post('firebase-register')
+  @ApiOperation({ summary: 'Register via Firebase ID token or email/password (same as /auth/register)' })
+  firebaseRegister(@Body() dto: RegisterDto) {
+    return this.auth.firebaseRegister(dto);
   }
 }

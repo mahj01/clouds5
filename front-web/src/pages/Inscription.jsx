@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from 'react'
-import './inscription.css'
+import { getRoles, registerUser } from '../api/client.js'
 
-export default function Inscription() {
+export default function Inscription({ onGoLogin } = {}) {
   const emailId = useId()
   const passwordId = useId()
   const nomId = useId()
@@ -30,10 +30,7 @@ export default function Inscription() {
       setRolesLoading(true)
 
       try {
-        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-        const res = await fetch(`${apiBase}/roles`)
-        if (!res.ok) throw new Error(`Erreur ${res.status}`)
-        const data = await res.json()
+        const data = await getRoles()
         const list = Array.isArray(data) ? data : []
         if (!cancelled) {
           setRoles(list)
@@ -65,37 +62,18 @@ export default function Inscription() {
     setLoading(true)
 
     try {
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-
       const idRole = Number(selectedRoleId)
       if (!selectedRoleId || Number.isNaN(idRole)) {
         throw new Error('Veuillez sélectionner un rôle')
       }
 
-      const res = await fetch(`${apiBase}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          motDePasse,
-          nom: nom || undefined,
-          prenom: prenom || undefined,
-          idRole,
-        }),
+      await registerUser({
+        email,
+        motDePasse,
+        nom: nom || undefined,
+        prenom: prenom || undefined,
+        idRole,
       })
-
-      if (!res.ok) {
-        let message = `Erreur ${res.status}`
-        try {
-          const data = await res.json()
-          if (data?.message) {
-            message = Array.isArray(data.message) ? data.message.join(', ') : String(data.message)
-          }
-        } catch {
-          // ignore JSON parsing error
-        }
-        throw new Error(message)
-      }
 
       setSuccess(true)
       setEmail('')
@@ -110,12 +88,15 @@ export default function Inscription() {
   }
 
   return (
-    <div className="inscription">
-      <h1>Inscription</h1>
+    <div className="mx-auto w-full max-w-xl rounded-2xl border border-white/10 bg-white/5 p-8 shadow-xl shadow-black/30">
+      <h1 className="text-2xl font-semibold text-white"><i className="fa fa-user-plus mr-2" aria-hidden="true"/>Inscription</h1>
+      <p className="mt-1 text-sm text-slate-300">Créez votre compte Clouds5.</p>
 
-      <form className="inscription__form" onSubmit={handleSubmit}>
-        <div className="inscription__field">
-          <label htmlFor={emailId}>Email</label>
+      <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+        <div className="space-y-2">
+          <label htmlFor={emailId} className="text-sm font-medium text-slate-200">
+            Email
+          </label>
           <input
             id={emailId}
             type="email"
@@ -124,11 +105,14 @@ export default function Inscription() {
             placeholder="ex: user@mail.com"
             autoComplete="email"
             required
+            className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400"
           />
         </div>
 
-        <div className="inscription__field">
-          <label htmlFor={passwordId}>Mot de passe</label>
+        <div className="space-y-2">
+          <label htmlFor={passwordId} className="text-sm font-medium text-slate-200">
+            Mot de passe
+          </label>
           <input
             id={passwordId}
             type="password"
@@ -137,39 +121,51 @@ export default function Inscription() {
             autoComplete="new-password"
             minLength={8}
             required
+            className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400"
           />
         </div>
 
-        <div className="inscription__field">
-          <label htmlFor={nomId}>Nom</label>
-          <input
-            id={nomId}
-            type="text"
-            value={nom}
-            onChange={(e) => setNom(e.target.value)}
-            placeholder="Votre nom"
-          />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <label htmlFor={nomId} className="text-sm font-medium text-slate-200">
+              Nom
+            </label>
+            <input
+              id={nomId}
+              type="text"
+              value={nom}
+              onChange={(e) => setNom(e.target.value)}
+              placeholder="Votre nom"
+              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor={prenomId} className="text-sm font-medium text-slate-200">
+              Prénom
+            </label>
+            <input
+              id={prenomId}
+              type="text"
+              value={prenom}
+              onChange={(e) => setPrenom(e.target.value)}
+              placeholder="Votre prénom"
+              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400"
+            />
+          </div>
         </div>
 
-        <div className="inscription__field">
-          <label htmlFor={prenomId}>Prénom</label>
-          <input
-            id={prenomId}
-            type="text"
-            value={prenom}
-            onChange={(e) => setPrenom(e.target.value)}
-            placeholder="Votre prénom"
-          />
-        </div>
-
-        <div className="inscription__field">
-          <label htmlFor={roleId}>Rôle</label>
+        <div className="space-y-2">
+          <label htmlFor={roleId} className="text-sm font-medium text-slate-200">
+            Rôle
+          </label>
           <select
             id={roleId}
             value={selectedRoleId}
             onChange={(e) => setSelectedRoleId(e.target.value)}
             disabled={rolesLoading || roles.length === 0}
             required
+            className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-sm text-white focus:border-indigo-400"
           >
             {roles.length === 0 ? (
               <option value="">{rolesLoading ? 'Chargement…' : 'Aucun rôle disponible'}</option>
@@ -183,13 +179,24 @@ export default function Inscription() {
           </select>
         </div>
 
-        <button className="inscription__submit" type="submit" disabled={loading || rolesLoading}>
+        <button
+          className="w-full rounded-xl bg-indigo-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-400"
+          type="submit"
+          disabled={loading || rolesLoading}
+        >
+          <i className="fa fa-user-plus mr-2" aria-hidden="true" />
           {loading ? 'Création…' : 'Créer mon compte'}
         </button>
 
-        {rolesError && <p className="inscription__error">{rolesError}</p>}
-        {error && <p className="inscription__error">{error}</p>}
-        {success && <p className="inscription__ok">Compte créé avec succès.</p>}
+        {rolesError && <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">{rolesError}</p>}
+        {error && <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</p>}
+        {success && <p className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">Compte créé avec succès.</p>}
+
+        <div className="mt-4 text-center">
+          <button type="button" className="text-sm text-indigo-200 hover:text-indigo-100" onClick={() => onGoLogin?.()}>
+            <i className="fa fa-sign-in mr-2" aria-hidden="true"/>Déjà inscrit ? Se connecter
+          </button>
+        </div>
       </form>
     </div>
   )

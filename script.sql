@@ -136,7 +136,6 @@ CREATE TABLE synchronisation (
 
 );
 
-
 CREATE INDEX idx_user_email ON utilisateur(email);
 CREATE INDEX idx_signalement_statut ON signalement(statut);
 CREATE INDEX idx_signalement_position ON signalement(latitude, longitude);
