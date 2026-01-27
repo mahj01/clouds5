@@ -1,0 +1,68 @@
+{
+  "version": 8,
+  "name": "Madagascar Vector (fallback)",
+  "sources": {
+    "madagascar": {
+      "type": "vector",
+      "tiles": ["http://localhost:8080/data/v3/{z}/{x}/{y}.pbf"],
+      "minzoom": 0,
+      "maxzoom": 14
+    }
+  },
+  "layers": [
+    {
+      "id": "landcover-fill",
+      "type": "fill",
+      "source": "madagascar",
+      "source-layer": "landcover",
+      "paint": { "fill-color": "#e6f4ea" }
+    },
+    {
+      "id": "landuse-fill",
+      "type": "fill",
+      "source": "madagascar",
+      "source-layer": "landuse",
+      "paint": { "fill-color": "#edf7e9" }
+    },
+    {
+      "id": "water-fill",
+      "type": "fill",
+      "source": "madagascar",
+      "source-layer": "water",
+      "paint": { "fill-color": "#b3e5ff" }
+    },
+    {
+      "id": "waterway-line",
+      "type": "line",
+      "source": "madagascar",
+      "source-layer": "waterway",
+      "paint": { "line-color": "#7fc7ff", "line-width": 1 }
+    },
+    {
+      "id": "transportation-line",
+      "type": "line",
+      "source": "madagascar",
+      "source-layer": "transportation",
+      "paint": { "line-color": "#d8a86a", "line-width": ["interpolate", ["linear"], ["zoom"], 5, 0.5, 14, 2] }
+    },
+    {
+      "id": "building-fill",
+      "type": "fill",
+      "source": "madagascar",
+      "source-layer": "building",
+      "paint": { "fill-color": "#e6e6e6" }
+    },
+    {
+      "id": "poi-label",
+      "type": "symbol",
+      "source": "madagascar",
+      "source-layer": "poi",
+      "layout": {
+        "text-field": ["coalesce", ["get", "name"], ["get", "name_en"]],
+        "text-size": 11,
+        "text-offset": [0, 0.6]
+      },
+      "paint": { "text-color": "#333" }
+    }
+  ]
+}
