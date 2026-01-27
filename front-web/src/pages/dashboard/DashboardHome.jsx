@@ -1,7 +1,23 @@
 import { Link } from 'react-router-dom'
 import { DASHBOARD_NAV_ITEMS } from '../../constants/dashboardNav.js'
 
+function getStoredRoleName() {
+  try {
+    return localStorage.getItem('auth_role')
+  } catch {
+    return null
+  }
+}
+
 export default function DashboardHome() {
+  const roleName = String(getStoredRoleName() || '').toLowerCase()
+  const navItems = (Array.isArray(DASHBOARD_NAV_ITEMS) ? DASHBOARD_NAV_ITEMS : [])
+    .filter((i) => i.id !== 'dashboard')
+    .filter((i) => {
+      if (roleName === 'manager') return true
+      return i.id !== 'deblocage' && i.id !== 'signalements'
+    })
+
   return (
     <>
       <header className="rounded-2xl border border-white/10 bg-white/5 p-6">
@@ -10,7 +26,7 @@ export default function DashboardHome() {
       </header>
 
       <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {DASHBOARD_NAV_ITEMS.filter((i) => i.id !== 'dashboard').map((item) => (
+        {navItems.map((item) => (
           <Link
             key={item.id}
             to={item.path}

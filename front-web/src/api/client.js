@@ -68,9 +68,76 @@ export function getAuthToken() {
   }
 }
 
-export function getSignalements() {
+function authHeaders() {
   const token = getAuthToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+export function getSignalements() {
   return apiFetch('/signalements', {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: authHeaders(),
+  })
+}
+
+export function getEntreprises() {
+  return apiFetch('/entreprises', {
+    headers: authHeaders(),
+  })
+}
+
+export function getUtilisateurs() {
+  return apiFetch('/utilisateurs', {
+    headers: authHeaders(),
+  })
+}
+
+export function updateUtilisateur(id, payload) {
+  return apiFetch(`/utilisateurs/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  })
+}
+
+export function getStatutsCompte() {
+  return apiFetch('/statuts-compte', {
+    headers: authHeaders(),
+  })
+}
+
+export function getHistoriqueStatusUtilisateur() {
+  return apiFetch('/historique-status-utilisateur', {
+    headers: authHeaders(),
+  })
+}
+
+export function createHistoriqueStatusUtilisateur(payload) {
+  return apiFetch('/historique-status-utilisateur', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateSignalement(id, payload) {
+  return apiFetch(`/signalements/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  })
+}
+// --------------------------
+
+export function getAllUtilisateurs() {
+  return apiFetch('/utilisateurs', {
+    headers: authHeaders(),
+  })
+}
+
+
+export function supprimerUtilisateur(id) {
+  return apiFetch(`/utilisateurs/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
   })
 }

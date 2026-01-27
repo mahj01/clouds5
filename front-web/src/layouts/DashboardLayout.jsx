@@ -2,8 +2,23 @@ import { useMemo, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { DASHBOARD_NAV_ITEMS } from '../constants/dashboardNav.js'
 
+function getStoredRoleName() {
+  try {
+    return localStorage.getItem('auth_role')
+  } catch {
+    return null
+  }
+}
+
 export default function DashboardLayout({ onLogout }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  const roleName = useMemo(() => String(getStoredRoleName() || '').toLowerCase(), [])
+  const navItems = useMemo(() => {
+    const items = Array.isArray(DASHBOARD_NAV_ITEMS) ? DASHBOARD_NAV_ITEMS : []
+    if (roleName === 'manager') return items
+    return items.filter((i) => i.id !== 'deblocage' && i.id !== 'signalements')
+  }, [roleName])
 
   const expiresAt = useMemo(() => localStorage.getItem('auth_expiresAt'), [])
   const expiresText = useMemo(() => {
@@ -41,7 +56,7 @@ export default function DashboardLayout({ onLogout }) {
         <div className="text-lg font-semibold text-white">Clouds5</div>
 
         <nav className="mt-6 space-y-2" aria-label="Navigation latérale">
-          {DASHBOARD_NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <NavLink
               key={item.id}
               to={item.path}
