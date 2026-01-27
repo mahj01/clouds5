@@ -28,7 +28,7 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
         throw new Error('Connexion échouée (réponse invalide du serveur).')
       }
 
-      // Le stockage durable est géré par App.jsx (token + expiration uniquement)
+      // Le stockage durable est géré par AppRoutes.jsx (token + expiration uniquement)
       onLoginSuccess?.({ token: data.token, expiresAt: data.expiresAt })
       setTokenStored(true)
       setSuccess(true)
