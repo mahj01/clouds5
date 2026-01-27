@@ -80,7 +80,7 @@ export class AuthService {
     if (!visiteurRole) throw new NotFoundException('Visiteur role not found');
     const visiteur = await this.users.findOne({ where: { role: { id: visiteurRole.id } }, relations: ['role'] });
     if (!visiteur) throw new NotFoundException('Visiteur account not found');
-    return visiteur;
+    return this.createSessionForUser(visiteur);
   }
 
   async visiteur() {
@@ -166,7 +166,9 @@ export class AuthService {
       user = this.users.create({ email, motDePasse: '', role: visiteurRole ?? undefined });
       user = await this.users.save(user);
     }
-    return user;
+
+    // Always create a local session token for API calls
+    return this.createSessionForUser(user);
   }
 
   async firebaseRegister(dto: FirebaseRegisterDto | RegisterDto) {

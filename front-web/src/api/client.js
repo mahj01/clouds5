@@ -14,10 +14,16 @@ async function parseError(res) {
 }
 
 export async function apiFetch(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-    ...options,
-  })
+  let res
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+      ...options,
+    })
+  } catch (e) {
+    // Network / offline / DNS / CORS errors
+    throw new Error('Impossible de contacter le serveur (hors ligne ?).')
+  }
 
   if (!res.ok) {
     await parseError(res)

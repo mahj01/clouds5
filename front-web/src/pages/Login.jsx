@@ -24,12 +24,13 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
     try {
       const data = await loginUser({ email, motDePasse })
 
-      if (data?.token && data?.expiresAt) {
-        // Le stockage durable est géré par App.jsx (token + expiration uniquement)
-        onLoginSuccess?.({ token: data.token, expiresAt: data.expiresAt })
-        setTokenStored(true)
+      if (!data?.token || !data?.expiresAt) {
+        throw new Error('Connexion échouée (réponse invalide du serveur).')
       }
 
+      // Le stockage durable est géré par App.jsx (token + expiration uniquement)
+      onLoginSuccess?.({ token: data.token, expiresAt: data.expiresAt })
+      setTokenStored(true)
       setSuccess(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue')
