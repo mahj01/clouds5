@@ -53,7 +53,7 @@ services:
   tileserver:
     image: maptiler/tileserver-gl:latest
     working_dir: /data
-    command: ["--file", "antananarivo.mbtiles"]
+    command: ["--file", "antananarivo.mbtiles","--verbose"]
     ports:
       - "8080:8080"
     volumes:
