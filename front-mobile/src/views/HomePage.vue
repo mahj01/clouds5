@@ -1,34 +1,35 @@
-<template>
-  <ion-page>
-    <ion-header :translucent="true">
-      <ion-toolbar>
-        <ion-title>Blank</ion-title>
-        <ion-buttons slot="end">
-          <ion-button @click="$router.push('/map')">Map</ion-button>
-        </ion-buttons>
-      </ion-toolbar>
-    </ion-header>
 
-    <ion-content :fullscreen="true">
-      <ion-header collapse="condense">
-        <ion-toolbar>
-          <ion-title size="large">Blank</ion-title>
-        </ion-toolbar>
-      </ion-header>
+<template>
+  <IonPage>
+    <IonHeader :translucent="true">
+      <IonToolbar>
+        <IonTitle>Blank</IonTitle>
+        <IonButtons slot="end">
+          <IonButton @click="$router.push('/map')">Map</IonButton>
+        </IonButtons>
+      </IonToolbar>
+    </IonHeader>
+
+    <IonContent :fullscreen="true">
+      <IonHeader collapse="condense">
+        <IonToolbar>
+          <IonTitle size="large">Blank</IonTitle>
+        </IonToolbar>
+      </IonHeader>
 
       <div id="container">
         <strong>Ready to create an app?</strong>
         <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
         <div style="margin-top: 18px">
-          <ion-button expand="block" @click="$router.push('/map')">Open Map</ion-button>
+          <IonButton expand="block" @click="$router.push('/map')">Open Map</IonButton>
         </div>
       </div>
-    </ion-content>
-  </ion-page>
+    </IonContent>
+  </IonPage>
 </template>
 
 <script setup lang="ts">
-
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent } from '@ionic/vue';
 </script>
 
 <style scoped>
