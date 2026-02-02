@@ -5,6 +5,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { DataSource } from 'typeorm';
 import { Role } from './roles/role.entity';
 import { Utilisateur } from './utilisateurs/utilisateur.entity';
+import * as bcrypt from 'bcryptjs';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -64,15 +65,25 @@ async function bootstrap() {
     const adminEmail = 'admin';
     let admin = await userRepo.findOne({ where: { email: adminEmail }, relations: ['role'] });
     if (!admin) {
-      admin = userRepo.create({ email: adminEmail, motDePasse: 'admin', role: roles['manager'] });
+      const hash = await bcrypt.hash('admin', 10);
+      admin = userRepo.create({ email: adminEmail, motDePasse: hash, role: roles['manager'], nbTentatives: 3, dateBlocage: null });
       await userRepo.save(admin);
+    } else {
+      // If legacy seed stored plaintext, upgrade to bcrypt so /auth/login works.
+      const pwd = String(admin.motDePasse || '');
+      if (!pwd.startsWith('$2')) {
+        admin.motDePasse = await bcrypt.hash('admin', 10);
+        admin.nbTentatives = 3;
+        admin.dateBlocage = null;
+        await userRepo.save(admin);
+      }
     }
 
     // default visiteur (no credentials required to use public login)
     const visiteurEmail = 'visiteur@default';
     let visiteur = await userRepo.findOne({ where: { email: visiteurEmail }, relations: ['role'] });
     if (!visiteur) {
-      visiteur = userRepo.create({ email: visiteurEmail, motDePasse: '', role: roles['visiteur'] });
+      visiteur = userRepo.create({ email: visiteurEmail, motDePasse: '', role: roles['visiteur'], nbTentatives: 3, dateBlocage: null });
       await userRepo.save(visiteur);
     }
   } catch (e) {

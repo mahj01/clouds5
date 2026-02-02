@@ -5,11 +5,12 @@ import { AuthController } from './auth.controller';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { Role } from 'src/roles/role.entity';
 import { Session } from '../sessions/session.entity';
+import { TentativeConnexion } from '../tentative_connexion/tentative-connexion.entity';
 import { SessionAuthGuard } from './session-auth.guard';
 import { APP_GUARD } from '@nestjs/core';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Utilisateur, Role, Session])],
+  imports: [TypeOrmModule.forFeature([Utilisateur, Role, Session, TentativeConnexion])],
   providers: [
     AuthService,
     { provide: APP_GUARD, useClass: SessionAuthGuard },

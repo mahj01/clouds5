@@ -1,11 +1,26 @@
-import { Injectable, NotFoundException, UnauthorizedException, ConflictException} from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Utilisateur } from './utilisateur.entity';
 import { CreateUtilisateurDto } from './dto/create-utilisateur.dto';
 import { UpdateUtilisateurDto } from './dto/update-utilisateur.dto';
 import { Role } from '../roles/role.entity';
+
+const MAX_LOGIN_ATTEMPTS = 3;
+
+function toSafeUser(u: Utilisateur) {
+  return {
+    id: u.id,
+    email: u.email,
+    nom: u.nom,
+    prenom: u.prenom,
+    role: u.role,
+    nbTentatives: u.dateBlocage ? 0 : u.nbTentatives,
+    dateBlocage: u.dateBlocage,
+    dateCreation: u.dateCreation,
+  };
+}
 
 @Injectable()
 export class UtilisateursService {
@@ -34,7 +49,7 @@ export class UtilisateursService {
       motDePasse: dto.motDePasse,
       nom: dto.nom,
       prenom: dto.prenom,
-      nbTentatives: dto.nbTentatives ?? 0,
+      nbTentatives: dto.nbTentatives ?? MAX_LOGIN_ATTEMPTS,
       dateBlocage: dto.dateBlocage,
     });
     if (dto.roleId) {
@@ -82,6 +97,37 @@ export class UtilisateursService {
     await this.repo.remove(item);
   }
 
+  async unlockUser(targetUserId: number, actorUserId?: number) {
+    if (!actorUserId) throw new UnauthorizedException('Missing session user');
+    const actor = await this.repo.findOne({ where: { id: actorUserId }, relations: ['role'] });
+    if (!actor) throw new UnauthorizedException('Invalid session user');
+    if (!actor.role || actor.role.nom !== 'manager') {
+      throw new ForbiddenException('Only manager can unlock accounts');
+    }
+
+    const target = await this.findOne(targetUserId);
+    target.dateBlocage = null;
+    target.nbTentatives = MAX_LOGIN_ATTEMPTS;
+    const saved = await this.repo.save(target);
+    return toSafeUser(saved);
+  }
+
+  async listLockedUsers(actorUserId?: number) {
+    if (!actorUserId) throw new UnauthorizedException('Missing session user');
+    const actor = await this.repo.findOne({ where: { id: actorUserId }, relations: ['role'] });
+    if (!actor) throw new UnauthorizedException('Invalid session user');
+    if (!actor.role || actor.role.nom !== 'manager') {
+      throw new ForbiddenException('Only manager can list locked accounts');
+    }
+
+    const users = await this.repo.find({
+      where: { dateBlocage: Not(IsNull()) },
+      relations: ['role'],
+      order: { dateBlocage: 'DESC' },
+    });
+    return users.map(toSafeUser);
+  }
+
   // --- Nouvelle méthode d'inscription
   async register(dto: CreateUtilisateurDto) {
     // Vérifier si l'email existe déjà
@@ -100,7 +146,7 @@ export class UtilisateursService {
     const newUserDto: CreateUtilisateurDto = {
       ...dto,
       motDePasse: hashedPassword,
-      nbTentatives: 0,
+      nbTentatives: MAX_LOGIN_ATTEMPTS,
       dateBlocage: undefined, // corrigé ici
     };
 

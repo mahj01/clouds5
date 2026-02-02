@@ -2,22 +2,43 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
 async function parseError(res) {
   let message = `Erreur ${res.status}`
+  let remainingAttempts
+  let isLocked
   try {
     const data = await res.json()
     if (data?.message) {
       message = Array.isArray(data.message) ? data.message.join(', ') : String(data.message)
     }
+    if (typeof data?.remainingAttempts === 'number') remainingAttempts = data.remainingAttempts
+    if (typeof data?.isLocked === 'boolean') isLocked = data.isLocked
   } catch {
     // ignore JSON parse errors
+  }
+
+  if (typeof remainingAttempts === 'number') {
+    if (isLocked) {
+      // message already set by API, keep it (but ensure clarity)
+      if (!String(message).toLowerCase().includes('bloqu')) {
+        message = `${message} Compte bloqué. Contactez un administrateur.`
+      }
+    } else {
+      const plural = remainingAttempts > 1 ? 's' : ''
+      message = `${message} Il vous reste ${remainingAttempts} tentative${plural}.`
+    }
   }
   throw new Error(message)
 }
 
 export async function apiFetch(path, options = {}) {
   let res
+  const storedToken = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null
+  const extraHeaders = { ...(options.headers || {}) }
+  if (storedToken && !extraHeaders.Authorization && !extraHeaders.authorization) {
+    extraHeaders.Authorization = `Bearer ${storedToken}`
+  }
   try {
     res = await fetch(`${API_BASE}${path}`, {
-      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+      headers: { 'Content-Type': 'application/json', ...extraHeaders },
       ...options,
     })
   } catch {
@@ -58,4 +79,12 @@ export function loginUser(payload) {
 
 export function loginVisitor() {
   return apiFetch('/auth/visiteur', { method: 'POST' })
+}
+
+export function listLockedUsers() {
+  return apiFetch('/utilisateurs/locked')
+}
+
+export function unlockUser(id) {
+  return apiFetch(`/utilisateurs/unlock/${id}`, { method: 'POST' })
 }

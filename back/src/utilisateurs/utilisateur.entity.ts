@@ -22,11 +22,12 @@ export class Utilisateur {
   @JoinColumn({ name: 'id_role' })
   role?: Role;
 
-  @Column({ name: 'nb_tentatives', type: 'int', default: 0 })
+  // Nombre de tentatives restantes avant blocage (3 au départ)
+  @Column({ name: 'nb_tentatives', type: 'int', default: 3 })
   nbTentatives: number;
 
   @Column({ name: 'date_blocage', type: 'timestamp', nullable: true })
-  dateBlocage?: Date;
+  dateBlocage?: Date | null;
 
   @Column({ name: 'date_creation', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   dateCreation: Date;

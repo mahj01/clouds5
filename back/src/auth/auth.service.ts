@@ -1,10 +1,11 @@
 
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { Role } from '../roles/role.entity';
 import { Session } from '../sessions/session.entity';
+import { TentativeConnexion } from '../tentative_connexion/tentative-connexion.entity';
 import { ConfigService } from '@nestjs/config';
 import { RegisterDto } from './dto/register.dto';
 import { FirebaseLoginDto } from './dto/firebase-login.dto';
@@ -12,14 +13,53 @@ import { FirebaseRegisterDto } from './dto/firebase-register.dto';
 import { firebaseConfig, firebaseSignInWithPassword, firebaseSignUpWithPassword } from '../firebase';
 import * as bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
+
+const MAX_LOGIN_ATTEMPTS = 3;
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(Utilisateur) private users: Repository<Utilisateur>,
     @InjectRepository(Role) private role: Repository<Role>,
     @InjectRepository(Session) private sessions: Repository<Session>,
+    @InjectRepository(TentativeConnexion) private attempts: Repository<TentativeConnexion>,
     private readonly config: ConfigService,
   ) {}
+
+  private getRemainingAttempts(user: Utilisateur) {
+    const raw = Number(user.nbTentatives);
+    // Compat: legacy rows may have 0 => treat as full attempts until first failure.
+    if (!Number.isFinite(raw) || raw <= 0) return MAX_LOGIN_ATTEMPTS;
+    return raw;
+  }
+
+  private async recordAttempt(user: Utilisateur, succes: boolean) {
+    try {
+      const entity = this.attempts.create({ succes, utilisateur: user });
+      await this.attempts.save(entity);
+    } catch {
+      // best-effort logging
+    }
+  }
+
+  private throwInvalidCredentials(remainingAttempts: number) {
+    throw new NotFoundException({
+      statusCode: 404,
+      message: 'Invalid credentials',
+      error: 'Not Found',
+      remainingAttempts,
+      isLocked: false,
+    });
+  }
+
+  private throwLocked() {
+    throw new ForbiddenException({
+      statusCode: 403,
+      message: 'Compte bloqué. Contactez un administrateur.',
+      error: 'Forbidden',
+      remainingAttempts: 0,
+      isLocked: true,
+    });
+  }
 
   private async createSessionForUser(user: Utilisateur) {
     const ttlMinutes = parseInt(this.config.get('AUTH_SESSION_TTL_MINUTES', '120'), 10);
@@ -45,8 +85,35 @@ export class AuthService {
       const user = await this.users.findOne({ where: { email }, relations: ['role'] });
 
       if (!user) throw new NotFoundException('Utilisateur not found');
-      const isValid = await bcrypt.compare(motDePasse, user.motDePasse);
-      if (!isValid) throw new NotFoundException('Invalid credentials');
+
+      if (user.dateBlocage) {
+        await this.recordAttempt(user, false);
+        this.throwLocked();
+      }
+
+      const remainingBefore = this.getRemainingAttempts(user);
+      let isValid = false;
+      try {
+        isValid = await bcrypt.compare(motDePasse, user.motDePasse);
+      } catch {
+        isValid = false;
+      }
+
+      if (!isValid) {
+        const remainingAfter = Math.max(0, remainingBefore - 1);
+        user.nbTentatives = remainingAfter;
+        if (remainingAfter <= 0) user.dateBlocage = new Date();
+        await this.users.save(user);
+        await this.recordAttempt(user, false);
+        if (remainingAfter <= 0) this.throwLocked();
+        this.throwInvalidCredentials(remainingAfter);
+      }
+
+      // reset attempts after successful login
+      user.nbTentatives = MAX_LOGIN_ATTEMPTS;
+      user.dateBlocage = null;
+      await this.users.save(user);
+      await this.recordAttempt(user, true);
       
       
 
@@ -163,9 +230,19 @@ export class AuthService {
     if (!user) {
       // create a visiteur account for Firebase users that don't exist yet
       const visiteurRole = await this.role.findOne({ where: { nom: 'visiteur' } });
-      user = this.users.create({ email, motDePasse: '', role: visiteurRole ?? undefined });
+      user = this.users.create({ email, motDePasse: '', role: visiteurRole ?? undefined, nbTentatives: MAX_LOGIN_ATTEMPTS });
       user = await this.users.save(user);
     }
+
+    if (user.dateBlocage) {
+      await this.recordAttempt(user, false);
+      this.throwLocked();
+    }
+
+    user.nbTentatives = MAX_LOGIN_ATTEMPTS;
+    user.dateBlocage = null;
+    await this.users.save(user);
+    await this.recordAttempt(user, true);
 
     // Always create a local session token for API calls
     return this.createSessionForUser(user);
