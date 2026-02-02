@@ -5,6 +5,11 @@ import { DASHBOARD_NAV_ITEMS } from '../constants/dashboardNav.js'
 export default function DashboardLayout({ onLogout }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
+  const role = useMemo(() => localStorage.getItem('auth_role') || '', [])
+  const navItems = useMemo(() => {
+    return DASHBOARD_NAV_ITEMS.filter((item) => !item.requiresRole || item.requiresRole === role)
+  }, [role])
+
   const expiresAt = useMemo(() => localStorage.getItem('auth_expiresAt'), [])
   const expiresText = useMemo(() => {
     if (!expiresAt) return '—'
@@ -41,7 +46,7 @@ export default function DashboardLayout({ onLogout }) {
         <div className="text-lg font-semibold text-white">Clouds5</div>
 
         <nav className="mt-6 space-y-2" aria-label="Navigation latérale">
-          {DASHBOARD_NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <NavLink
               key={item.id}
               to={item.path}

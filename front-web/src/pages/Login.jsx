@@ -29,7 +29,7 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
       }
 
       // Le stockage durable est géré par AppRoutes.jsx (token + expiration uniquement)
-      onLoginSuccess?.({ token: data.token, expiresAt: data.expiresAt })
+      onLoginSuccess?.({ token: data.token, expiresAt: data.expiresAt, user: data.user })
       setTokenStored(true)
       setSuccess(true)
     } catch (err) {
@@ -48,7 +48,7 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
     try {
       const data = await loginVisitor()
       if (data?.token && data?.expiresAt) {
-        onLoginSuccess?.({ token: data.token, expiresAt: data.expiresAt })
+        onLoginSuccess?.({ token: data.token, expiresAt: data.expiresAt, user: data.user })
         setTokenStored(true)
         setSuccess(true)
       } else {

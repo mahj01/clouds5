@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, ParseIntPipe, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, ParseIntPipe, Headers, Req } from '@nestjs/common';
 import { ApiTags, ApiResponse, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { UtilisateursService } from './utilisateurs.service';
 import { CreateUtilisateurDto } from './dto/create-utilisateur.dto';
@@ -20,9 +20,21 @@ export class UtilisateursController {
     return this.svc.findAll();
   }
 
+  @Get('locked')
+  @ApiOperation({ summary: 'Lister les comptes bloqués (manager uniquement)' })
+  listLocked(@Req() req: any) {
+    return this.svc.listLockedUsers(req?.user?.id);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.svc.findOne(id);
+  }
+
+  @Post('unlock/:id')
+  @ApiOperation({ summary: 'Débloquer un compte utilisateur (manager uniquement)' })
+  unlock(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    return this.svc.unlockUser(id, req?.user?.id);
   }
 
   @Post()
