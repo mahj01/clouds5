@@ -22,6 +22,9 @@
         <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
         <div style="margin-top: 18px">
           <IonButton expand="block" @click="$router.push('/map')">Open Map</IonButton>
+          <IonButton expand="block" fill="outline" style="margin-top: 10px" @click="$router.push('/signalements')">
+            Signalements (debug)
+          </IonButton>
         </div>
       </div>
     </IonContent>

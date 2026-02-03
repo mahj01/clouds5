@@ -22,6 +22,7 @@
           </div>
 
           <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+          <div v-if="backendMessage" class="backend-message">{{ backendMessage }}</div>
 
           <IonButton expand="block" type="submit" class="login-btn">Login</IonButton>
         </form>
@@ -33,7 +34,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { IonPage, IonContent, IonItem, IonInput, IonButton, IonCheckbox } from '@ionic/vue';
+import { IonPage, IonContent, IonItem, IonInput, IonButton } from '@ionic/vue';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth'
 import { auth } from '@/firebase'
 
@@ -42,11 +43,48 @@ const router = useRouter();
 const email = ref('');
 const password = ref('');
 const errorMessage = ref('');
+const backendMessage = ref('');
+
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) || 'http://localhost:3001'
+
+async function createBackendSession() {
+  // Create a session token usable for protected API routes.
+  // Backend supports /auth/firebase-login which returns { token, expiresAt, user: { id, role } }
+  try {
+    const res = await fetch(`${API_BASE}/auth/firebase-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.value, motDePasse: password.value }),
+    })
+    if (!res.ok) {
+      backendMessage.value = `Backend indisponible (HTTP ${res.status}). Le signalement peut être bloqué.`
+      return
+    }
+    const data = await res.json().catch(() => null)
+    if (data?.token && data?.expiresAt) {
+      localStorage.setItem('auth_token', data.token)
+      localStorage.setItem('auth_expiresAt', data.expiresAt)
+      if (data?.user?.id != null) {
+        localStorage.setItem('auth_user_id', String(data.user.id))
+        backendMessage.value = ''
+      } else {
+        backendMessage.value = "Session API créée, mais id_utilisateur manquant. Le signalement est bloqué."
+      }
+    } else {
+      backendMessage.value = 'Réponse API invalide (token manquant). Le signalement peut être bloqué.'
+    }
+  } catch {
+    // If backend is offline, still allow Firebase login UI flow.
+    backendMessage.value = 'Impossible de contacter le backend. Le signalement est bloqué.'
+  }
+}
 
 async function onLogin() {
   errorMessage.value = '';
+  backendMessage.value = '';
   try {
     await signInWithEmailAndPassword(auth, email.value, password.value)
+    await createBackendSession()
     // redirect after successful sign-in
     router.replace('/home')
   } catch (err) {
@@ -179,4 +217,15 @@ onAuthStateChanged(auth, (user) => {
    text-align: center;
    font-size: 15px;
  }
+
+.backend-message {
+  color: #8a6d3b;
+  background: #fff8e1;
+  border: 1px solid #d7b77a;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  text-align: center;
+  font-size: 14px;
+}
 </style>
