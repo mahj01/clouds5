@@ -1,5 +1,14 @@
 import { Controller, Get, Post, Body, Param, Put, Delete, ParseIntPipe, Headers, Req } from '@nestjs/common';
-import { ApiTags, ApiResponse, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { UtilisateursService } from './utilisateurs.service';
 import { CreateUtilisateurDto } from './dto/create-utilisateur.dto';
 import { UpdateUtilisateurDto } from './dto/update-utilisateur.dto';
@@ -21,7 +30,11 @@ export class UtilisateursController {
   }
 
   @Get('locked')
+  @ApiTags('deblocage')
   @ApiOperation({ summary: 'Lister les comptes bloqués (manager uniquement)' })
+  @ApiOkResponse({ description: 'Liste des comptes bloqués.' })
+  @ApiUnauthorizedResponse({ description: 'Token de session manquant ou invalide.' })
+  @ApiForbiddenResponse({ description: 'Accès refusé (réservé au rôle manager).' })
   listLocked(@Req() req: any) {
     return this.svc.listLockedUsers(req?.user?.id);
   }
@@ -32,9 +45,25 @@ export class UtilisateursController {
   }
 
   @Post('unlock/:id')
+  @ApiTags('deblocage')
   @ApiOperation({ summary: 'Débloquer un compte utilisateur (manager uniquement)' })
+  @ApiParam({ name: 'id', description: 'ID utilisateur à débloquer', type: Number })
+  @ApiOkResponse({ description: 'Compte débloqué, tentatives réinitialisées.' })
+  @ApiUnauthorizedResponse({ description: 'Token de session manquant ou invalide.' })
+  @ApiForbiddenResponse({ description: 'Accès refusé (réservé au rôle manager).' })
   unlock(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
     return this.svc.unlockUser(id, req?.user?.id);
+  }
+
+  @Post('lock/:id')
+  @ApiTags('blocage')
+  @ApiOperation({ summary: 'Bloquer un compte utilisateur (manager uniquement)' })
+  @ApiParam({ name: 'id', description: 'ID utilisateur à bloquer', type: Number })
+  @ApiOkResponse({ description: 'Compte bloqué.' })
+  @ApiUnauthorizedResponse({ description: 'Token de session manquant ou invalide.' })
+  @ApiForbiddenResponse({ description: 'Accès refusé (réservé au rôle manager).' })
+  lock(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    return this.svc.lockUser(id, req?.user?.id);
   }
 
   @Post()

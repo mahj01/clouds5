@@ -140,3 +140,5 @@ CREATE INDEX idx_user_email ON utilisateur(email);
 CREATE INDEX idx_signalement_statut ON signalement(statut);
 CREATE INDEX idx_signalement_position ON signalement(latitude, longitude);
 CREATE INDEX idx_session_token ON session(token);
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto;

@@ -24,13 +24,6 @@ export default function Index({ onGoLogin, onGoRegister }) {
             Créer un compte
           </button>
         </div>
-
-        <div className="mt-6 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-slate-300">
-          <p>
-            Astuce: le token est stocké dans <span className="font-mono text-indigo-200">localStorage</span>{' '}
-            après connexion.
-          </p>
-        </div>
       </section>
     </main>
   )

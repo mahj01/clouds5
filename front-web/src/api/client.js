@@ -1,4 +1,18 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+function getApiBase() {
+  const fromEnv = import.meta?.env?.VITE_API_URL
+  if (fromEnv) return String(fromEnv).replace(/\/+$/, '')
+
+  // Default: same host as the frontend, backend on port 3001.
+  // This fixes cases where the app is opened via LAN IP (not localhost).
+  if (typeof window !== 'undefined' && window?.location) {
+    const { protocol, hostname } = window.location
+    if (protocol && hostname) return `${protocol}//${hostname}:3001`
+  }
+
+  return 'http://localhost:3001'
+}
+
+const API_BASE = getApiBase()
 
 async function parseError(res) {
   let message = `Erreur ${res.status}`
@@ -19,7 +33,7 @@ async function parseError(res) {
     if (isLocked) {
       // message already set by API, keep it (but ensure clarity)
       if (!String(message).toLowerCase().includes('bloqu')) {
-        message = `${message} Compte bloqué. Contactez un administrateur.`
+          message = `${message} Compte bloqué. Contactez un manager.`
       }
     } else {
       const plural = remainingAttempts > 1 ? 's' : ''
@@ -41,7 +55,7 @@ export async function apiFetch(path, options = {}) {
       headers: { 'Content-Type': 'application/json', ...extraHeaders },
       ...options,
     })
-  } catch {
+  } catch (e) {
     // Network / offline / DNS / CORS errors
     throw new Error('Impossible de contacter le serveur (hors ligne ?).')
   }
@@ -87,4 +101,106 @@ export function listLockedUsers() {
 
 export function unlockUser(id) {
   return apiFetch(`/utilisateurs/unlock/${id}`, { method: 'POST' })
+}
+
+export function lockUser(id) {
+  return apiFetch(`/utilisateurs/lock/${id}`, { method: 'POST' })
+}
+
+export function createUtilisateur(payload) {
+  return apiFetch('/utilisateurs', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  })
+}
+
+export function getAuthToken() {
+  try {
+    return localStorage.getItem('auth_token')
+  } catch {
+    return null
+  }
+}
+
+function authHeaders() {
+  const token = getAuthToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+export function getSignalements() {
+  return apiFetch('/signalements', {
+    headers: authHeaders(),
+  })
+}
+
+export function createSignalement(payload) {
+  return apiFetch('/signalements', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  })
+}
+
+export function getEntreprises() {
+  return apiFetch('/entreprises', {
+    headers: authHeaders(),
+  })
+}
+
+export function getUtilisateurs() {
+  return apiFetch('/utilisateurs', {
+    headers: authHeaders(),
+  })
+}
+
+export function updateUtilisateur(id, payload) {
+  return apiFetch(`/utilisateurs/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  })
+}
+
+export function getStatutsCompte() {
+  return apiFetch('/statuts-compte', {
+    headers: authHeaders(),
+  })
+}
+
+export function getHistoriqueStatusUtilisateur() {
+  return apiFetch('/historique-status-utilisateur', {
+    headers: authHeaders(),
+  })
+}
+
+export function createHistoriqueStatusUtilisateur(payload) {
+  return apiFetch('/historique-status-utilisateur', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateSignalement(id, payload) {
+  return apiFetch(`/signalements/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  })
+}
+// --------------------------
+
+export function getAllUtilisateurs() {
+  return apiFetch('/utilisateurs', {
+    headers: authHeaders(),
+  })
+}
+
+
+export function supprimerUtilisateur(id) {
+  return apiFetch(`/utilisateurs/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
 }

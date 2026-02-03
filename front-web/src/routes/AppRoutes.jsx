@@ -5,24 +5,45 @@ import Login from '../pages/Login.jsx'
 import Inscription from '../pages/Inscription.jsx'
 import Index from '../pages/Index.jsx'
 import DashboardLayout from '../layouts/DashboardLayout.jsx'
+import FrontOfficeLayout from '../layouts/FrontOfficeLayout.jsx'
 import DashboardHome from '../pages/dashboard/DashboardHome.jsx'
 import Utilisateurs from '../pages/dashboard/Utilisateurs.jsx'
-import DeblocageComptes from '../pages/dashboard/DeblocageComptes.jsx'
+import DeblocageComptes from '../pages/dashboard/UtilisateursDeblocage.jsx'
+import UtilisateursDeblocage from '../pages/dashboard/UtilisateursDeblocage.jsx'
 import Entreprises from '../pages/dashboard/Entreprises.jsx'
 import Signalements from '../pages/dashboard/Signalements.jsx'
 import Statistiques from '../pages/dashboard/Statistiques.jsx'
 import Parametres from '../pages/dashboard/Parametres.jsx'
+import ProblemesRoutiers from '../pages/dashboard/ProblemesRoutiers.jsx'
+import CarteProblemesFrontOffice from '../pages/frontoffice/CarteProblemesFrontOffice.jsx'
+import SignalerProblemeFrontOffice from '../pages/frontoffice/SignalerProblemeFrontOffice.jsx'
+
+function getStoredRoleName() {
+  try {
+    return localStorage.getItem('auth_role')
+  } catch {
+    return null
+  }
+}
+
+function ManagerOnly({ children }) {
+  const role = String(getStoredRoleName() || '').toLowerCase()
+  if (role !== 'manager') {
+    return <Navigate to="/dashboard" replace />
+  }
+  return children
+}
 
 function LoginRoute() {
   const navigate = useNavigate()
   return (
     <Login
       onGoRegister={() => navigate('/inscription')}
-      onLoginSuccess={({ token, expiresAt, user }) => {
+      onLoginSuccess={({ token, expiresAt, roleName, userId }) => {
         localStorage.setItem('auth_token', token)
         localStorage.setItem('auth_expiresAt', String(expiresAt))
-        const roleName = user?.role?.nom
         if (roleName) localStorage.setItem('auth_role', String(roleName))
+        if (userId) localStorage.setItem('auth_userId', String(userId))
         navigate('/dashboard')
       }}
     />
@@ -45,6 +66,7 @@ function DashboardLayoutRoute() {
     localStorage.removeItem('auth_token')
     localStorage.removeItem('auth_expiresAt')
     localStorage.removeItem('auth_role')
+    localStorage.removeItem('auth_userId')
     navigate('/login')
   }
   return <DashboardLayout onLogout={handleLogout} />
@@ -63,25 +85,47 @@ export default function AppRoutes() {
       <Route path="/login" element={<LoginRoute />} />
       <Route path="/inscription" element={<InscriptionRoute />} />
 
+      {/* Front-office - Pages publiques des problèmes routiers */}
+      <Route element={<FrontOfficeLayout />}>
+        <Route path="/carte-problemes" element={<CarteProblemesFrontOffice />} />
+        <Route path="/signaler-probleme" element={<SignalerProblemeFrontOffice />} />
+      </Route>
+
+      {/* Back-office - Dashboard admin */}
       <Route element={<DashboardLayoutRoute />}>
         <Route path="/dashboard" element={<DashboardHome />} />
-        <Route path="/utilisateurs" element={<Utilisateurs />} />
+        <Route path="/utilisateurs"
+           element={(
+            <ManagerOnly>
+              <Utilisateurs />
+            </ManagerOnly>
+          )} />
         <Route
           path="/deblocage"
-          element={
-            <ManagerOnlyRoute>
-              <DeblocageComptes />
-            </ManagerOnlyRoute>
-          }
+          element={(
+            <ManagerOnly>
+              <UtilisateursDeblocage />
+            </ManagerOnly>
+          )}
         />
+        
         <Route path="/entreprises" element={<Entreprises />} />
+        <Route
+          path="/signalements"
+          element={(
+            <ManagerOnly>
+              <Signalements />
+            </ManagerOnly>
+          )}
+        />
         <Route path="/signalements" element={<Signalements />} />
+        <Route path="/problemes-routiers" element={<ProblemesRoutiers />} />
         <Route path="/statistiques" element={<Statistiques />} />
         <Route path="/parametres" element={<Parametres />} />
+        <Route path="/maplibre" element={<MapPage />} />
       </Route>
 
       <Route path="/map" element={<MapLeaflet />} />
-      <Route path="/maplibre" element={<MapPage />} />
     </Routes>
   )
 }

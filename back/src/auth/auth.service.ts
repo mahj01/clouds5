@@ -11,10 +11,10 @@ import { RegisterDto } from './dto/register.dto';
 import { FirebaseLoginDto } from './dto/firebase-login.dto';
 import { FirebaseRegisterDto } from './dto/firebase-register.dto';
 import { firebaseConfig, firebaseSignInWithPassword, firebaseSignUpWithPassword } from '../firebase';
-import * as bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 
-const MAX_LOGIN_ATTEMPTS = 3;
+import { DEFAULT_AUTH_SESSION_TTL_MINUTES, MAX_LOGIN_ATTEMPTS } from './auth.constants';
 @Injectable()
 export class AuthService {
   constructor(
@@ -62,7 +62,10 @@ export class AuthService {
   }
 
   private async createSessionForUser(user: Utilisateur) {
-    const ttlMinutes = parseInt(this.config.get('AUTH_SESSION_TTL_MINUTES', '120'), 10);
+    const ttlMinutes = parseInt(
+      this.config.get('AUTH_SESSION_TTL_MINUTES', String(DEFAULT_AUTH_SESSION_TTL_MINUTES)),
+      10,
+    );
     const expires = new Date(Date.now() + ttlMinutes * 60 * 1000);
     const token = randomBytes(48).toString('hex');
     const session = this.sessions.create({
