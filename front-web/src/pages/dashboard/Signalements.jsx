@@ -110,15 +110,15 @@ export default function Signalements() {
   }
 
   return (
-    <section className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6">
+    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-white"><i className="fa fa-exclamation-triangle mr-2"/>Signalements</h2>
-          <p className="mt-2 text-sm text-slate-300">Modifier statut, surface (m²), budget et entreprise concernée.</p>
+          <h2 className="text-xl font-semibold text-slate-800"><i className="fa fa-exclamation-triangle mr-2 text-indigo-500"/>Signalements</h2>
+          <p className="mt-2 text-sm text-slate-500">Modifier statut, surface (m²), budget et entreprise concernée.</p>
         </div>
         <button
           type="button"
-          className="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20"
+          className="rounded-xl border border-slate-200 bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-600 shadow-sm"
           onClick={refresh}
           disabled={loading}
         >
@@ -127,12 +127,12 @@ export default function Signalements() {
       </div>
 
       {error && (
-        <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+        <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
       {success && (
-        <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+        <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
           {success}
         </div>
       )}
@@ -140,7 +140,7 @@ export default function Signalements() {
       <div className="mt-6 overflow-x-auto">
         <table className="min-w-full border-separate border-spacing-y-2">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wider text-slate-400">
+            <tr className="text-left text-xs uppercase tracking-wider text-slate-500">
               <th className="px-3 py-2">Titre</th>
               <th className="px-3 py-2">Statut</th>
               <th className="px-3 py-2">Surface</th>
@@ -153,25 +153,25 @@ export default function Signalements() {
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-3 py-3 text-sm text-slate-300" colSpan={7}>Chargement…</td>
+                <td className="px-3 py-3 text-sm text-slate-500" colSpan={7}>Chargement…</td>
               </tr>
             ) : (Array.isArray(signalements) ? signalements : []).length === 0 ? (
               <tr>
-                <td className="px-3 py-3 text-sm text-slate-300" colSpan={7}>Aucun signalement.</td>
+                <td className="px-3 py-3 text-sm text-slate-500" colSpan={7}>Aucun signalement.</td>
               </tr>
             ) : (
               (Array.isArray(signalements) ? signalements : []).map((s) => (
-                <tr key={s.id} className="rounded-2xl bg-white/5">
-                  <td className="px-3 py-3 text-sm text-white">{s.titre || '—'}</td>
-                  <td className="px-3 py-3 text-sm text-slate-200">{s.statut || '—'}</td>
-                  <td className="px-3 py-3 text-sm text-slate-200">{formatNumber(s.surfaceM2)} m²</td>
-                  <td className="px-3 py-3 text-sm text-slate-200">{formatMoney(s.budget)}</td>
-                  <td className="px-3 py-3 text-sm text-slate-200">{s.entreprise?.nom || '—'}</td>
-                  <td className="px-3 py-3 text-sm text-slate-200">{s.utilisateur?.email || '—'}</td>
+                <tr key={s.id} className="rounded-2xl bg-slate-50 hover:bg-slate-100">
+                  <td className="px-3 py-3 text-sm text-slate-800">{s.titre || '—'}</td>
+                  <td className="px-3 py-3 text-sm text-slate-600">{s.statut || '—'}</td>
+                  <td className="px-3 py-3 text-sm text-slate-600">{formatNumber(s.surfaceM2)} m²</td>
+                  <td className="px-3 py-3 text-sm text-slate-600">{formatMoney(s.budget)}</td>
+                  <td className="px-3 py-3 text-sm text-slate-600">{s.entreprise?.nom || '—'}</td>
+                  <td className="px-3 py-3 text-sm text-slate-600">{s.utilisateur?.email || '—'}</td>
                   <td className="px-3 py-3">
                     <button
                       type="button"
-                      className="rounded-xl bg-indigo-500/70 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
+                      className="rounded-xl bg-indigo-500 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-600 shadow-sm"
                       onClick={() => openEdit(s)}
                     >
                       Modifier
@@ -185,16 +185,16 @@ export default function Signalements() {
       </div>
 
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-          <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-slate-950 p-5 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-lg font-semibold text-white">Modifier signalement</h3>
-                <p className="mt-1 text-xs text-slate-400">ID: {editing.id}</p>
+                <h3 className="text-lg font-semibold text-slate-800">Modifier signalement</h3>
+                <p className="mt-1 text-xs text-slate-500">ID: {editing.id}</p>
               </div>
               <button
                 type="button"
-                className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white hover:bg-white/10"
+                className="rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-700 hover:bg-slate-200"
                 onClick={closeEdit}
                 disabled={saving}
               >
@@ -204,18 +204,18 @@ export default function Signalements() {
 
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <label className="block">
-                <span className="text-xs text-slate-300">Titre</span>
+                <span className="text-xs text-slate-600">Titre</span>
                 <input
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                   value={form.titre}
                   onChange={(e) => setForm((f) => ({ ...f, titre: e.target.value }))}
                 />
               </label>
 
               <label className="block">
-                <span className="text-xs text-slate-300">Statut</span>
+                <span className="text-xs text-slate-600">Statut</span>
                 <select
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                   value={form.statut}
                   onChange={(e) => setForm((f) => ({ ...f, statut: e.target.value }))}
                 >
@@ -226,31 +226,31 @@ export default function Signalements() {
               </label>
 
               <label className="block">
-                <span className="text-xs text-slate-300">Surface (m²)</span>
+                <span className="text-xs text-slate-600">Surface (m²)</span>
                 <input
                   type="number"
                   step="0.01"
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                   value={form.surfaceM2}
                   onChange={(e) => setForm((f) => ({ ...f, surfaceM2: e.target.value }))}
                 />
               </label>
 
               <label className="block">
-                <span className="text-xs text-slate-300">Budget (€)</span>
+                <span className="text-xs text-slate-600">Budget (€)</span>
                 <input
                   type="number"
                   step="0.01"
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                   value={form.budget}
                   onChange={(e) => setForm((f) => ({ ...f, budget: e.target.value }))}
                 />
               </label>
 
               <label className="block sm:col-span-2">
-                <span className="text-xs text-slate-300">Entreprise concernée</span>
+                <span className="text-xs text-slate-600">Entreprise concernée</span>
                 <select
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                   value={form.entrepriseId}
                   onChange={(e) => setForm((f) => ({ ...f, entrepriseId: e.target.value }))}
                 >
@@ -264,10 +264,10 @@ export default function Signalements() {
               </label>
 
               <label className="block sm:col-span-2">
-                <span className="text-xs text-slate-300">Description</span>
+                <span className="text-xs text-slate-600">Description</span>
                 <textarea
                   rows={4}
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 />
@@ -277,7 +277,7 @@ export default function Signalements() {
             <div className="mt-5 flex items-center justify-end gap-3">
               <button
                 type="button"
-                className="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20"
+                className="rounded-xl border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200"
                 onClick={closeEdit}
                 disabled={saving}
               >
@@ -285,7 +285,7 @@ export default function Signalements() {
               </button>
               <button
                 type="button"
-                className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-60"
+                className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-600 disabled:opacity-60 shadow-sm"
                 onClick={saveEdit}
                 disabled={saving}
               >

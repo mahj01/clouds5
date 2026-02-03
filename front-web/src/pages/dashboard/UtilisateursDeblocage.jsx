@@ -158,18 +158,18 @@ export default function UtilisateursDeblocage() {
   }
 
   return (
-    <section className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6">
+    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-white"><i className="fa fa-unlock-alt mr-2"/>Déblocage utilisateurs</h2>
-          <p className="mt-2 text-sm text-slate-300">
+          <h2 className="text-xl font-semibold text-slate-800"><i className="fa fa-unlock-alt mr-2 text-indigo-500"/>Déblocage utilisateurs</h2>
+          <p className="mt-2 text-sm text-slate-500">
             Statut actuel = entrée la plus récente dans l’historique (id le plus grand).
           </p>
         </div>
 
         <button
           type="button"
-          className="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20"
+          className="rounded-xl border border-slate-200 bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-600 shadow-sm"
           onClick={refresh}
           disabled={loading}
         >
@@ -178,20 +178,20 @@ export default function UtilisateursDeblocage() {
       </div>
 
       {error && (
-        <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+        <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
       {success && (
-        <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+        <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
           {success}
         </div>
       )}
 
-      <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-        <label className="text-sm font-medium text-slate-200">Statut à appliquer après déblocage (optionnel)</label>
+      <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <label className="text-sm font-medium text-slate-700">Statut à appliquer après déblocage (optionnel)</label>
         <select
-          className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-sm text-white"
+          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800"
           value={selectedActiveStatutId}
           onChange={(e) => setSelectedActiveStatutId(e.target.value)}
         >
@@ -202,7 +202,7 @@ export default function UtilisateursDeblocage() {
             </option>
           ))}
         </select>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-500">
           Remarque: vos “statut_compte” doivent exister en base (ex: bloqué / activer / réactiver…).
         </p>
       </div>
@@ -210,7 +210,7 @@ export default function UtilisateursDeblocage() {
       <div className="mt-6 overflow-x-auto">
         <table className="min-w-full border-separate border-spacing-y-2">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wider text-slate-400">
+            <tr className="text-left text-xs uppercase tracking-wider text-slate-500">
               <th className="px-3 py-2">Utilisateur</th>
               <th className="px-3 py-2">Email</th>
               <th className="px-3 py-2">Statut actuel</th>
@@ -221,30 +221,30 @@ export default function UtilisateursDeblocage() {
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-3 py-3 text-sm text-slate-300" colSpan={5}>Chargement…</td>
+                <td className="px-3 py-3 text-sm text-slate-500" colSpan={5}>Chargement…</td>
               </tr>
             ) : blockedUsers.length === 0 ? (
               <tr>
-                <td className="px-3 py-3 text-sm text-slate-300" colSpan={5}>Aucun utilisateur bloqué détecté.</td>
+                <td className="px-3 py-3 text-sm text-slate-500" colSpan={5}>Aucun utilisateur bloqué détecté.</td>
               </tr>
             ) : (
               blockedUsers.map(({ user, latestStatus }) => {
                 const statutLabel = latestStatus?.statut?.statut || '—'
                 const busy = busyId === user.id
                 return (
-                  <tr key={user.id} className="rounded-2xl bg-white/5">
-                    <td className="px-3 py-3 text-sm text-white">
+                  <tr key={user.id} className="rounded-2xl bg-slate-50 hover:bg-slate-100">
+                    <td className="px-3 py-3 text-sm text-slate-800">
                       {(user.prenom || '') + ' ' + (user.nom || '')}
                     </td>
-                    <td className="px-3 py-3 text-sm text-slate-200">{user.email}</td>
-                    <td className="px-3 py-3 text-sm text-slate-200">{statutLabel}</td>
+                    <td className="px-3 py-3 text-sm text-slate-600">{user.email}</td>
+                    <td className="px-3 py-3 text-sm text-slate-600">{statutLabel}</td>
                     <td className="px-3 py-3 text-sm text-slate-200">
                       {user.dateBlocage ? new Date(user.dateBlocage).toLocaleString() : '—'}
                     </td>
                     <td className="px-3 py-3">
                       <button
                         type="button"
-                        className="rounded-xl bg-indigo-500/70 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-60"
+                        className="rounded-xl bg-indigo-500 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-600 disabled:opacity-60 shadow-sm"
                         onClick={() => handleDebloquer(user.id)}
                         disabled={busy}
                       >

@@ -20,9 +20,9 @@ export default function DashboardHome() {
 
   return (
     <>
-      <header className="rounded-2xl border border-white/10 bg-white/5 p-6">
-        <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
-        <p className="mt-2 text-sm text-slate-300">Bienvenue dans votre espace. Votre session est active.</p>
+      <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h1 className="text-2xl font-semibold text-slate-800">Dashboard</h1>
+        <p className="mt-2 text-sm text-slate-500">Bienvenue dans votre espace. Votre session est active.</p>
       </header>
 
       <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -30,11 +30,11 @@ export default function DashboardHome() {
           <Link
             key={item.id}
             to={item.path}
-            className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-left text-sm font-semibold text-white transition hover:bg-white/10"
+            className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-4 text-left text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:shadow-md"
           >
-            <i className={`${item.icon} text-lg`} aria-hidden="true" />
+            <i className={`${item.icon} text-lg text-indigo-500`} aria-hidden="true" />
             <span className="flex-1 px-3">{item.label}</span>
-            <i className="fa fa-angle-right text-base" aria-hidden="true" />
+            <i className="fa fa-angle-right text-base text-slate-400" aria-hidden="true" />
           </Link>
         ))}
       </section>
