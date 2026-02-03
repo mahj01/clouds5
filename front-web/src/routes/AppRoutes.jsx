@@ -83,7 +83,7 @@ export default function AppRoutes() {
             </ManagerOnly>
           )} />
         <Route
-          path="/utilisateurs/deblocage"
+          path="/deblocage"
           element={(
             <ManagerOnly>
               <UtilisateursDeblocage />
@@ -102,7 +102,6 @@ export default function AppRoutes() {
         />
         <Route path="/statistiques" element={<Statistiques />} />
         <Route path="/parametres" element={<Parametres />} />
-
         <Route path="/maplibre" element={<MapPage />} />
       </Route>
 
