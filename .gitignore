@@ -88,3 +88,4 @@ front-web/public/tiles/antananarivo.mbtiles
 /front-mobile/public/tiles
 /front-mobile/public/assets
 *.pbf
+back/src/serviceAccountKey.json
