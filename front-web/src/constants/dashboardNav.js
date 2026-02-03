@@ -4,6 +4,7 @@ export const DASHBOARD_NAV_ITEMS = [
   { id: 'deblocage', label: 'Déblocage', icon: 'fa fa-unlock-alt', path: '/deblocage', requiresRole: 'manager' },
   { id: 'entreprises', label: 'Entreprises', icon: 'fa fa-building', path: '/entreprises' },
   { id: 'signalements', label: 'Signalements', icon: 'fa fa-exclamation-triangle', path: '/signalements' },
+  { id: 'problemes-routiers', label: 'Problèmes Routiers', icon: 'fa fa-road', path: '/problemes-routiers' },
   { id: 'statistiques', label: 'Statistiques', icon: 'fa fa-line-chart', path: '/statistiques' },
   { id: 'parametres', label: 'Paramètres', icon: 'fa fa-cog', path: '/parametres' },
 ]

@@ -5,6 +5,7 @@ import Login from '../pages/Login.jsx'
 import Inscription from '../pages/Inscription.jsx'
 import Index from '../pages/Index.jsx'
 import DashboardLayout from '../layouts/DashboardLayout.jsx'
+import FrontOfficeLayout from '../layouts/FrontOfficeLayout.jsx'
 import DashboardHome from '../pages/dashboard/DashboardHome.jsx'
 import Utilisateurs from '../pages/dashboard/Utilisateurs.jsx'
 import DeblocageComptes from '../pages/dashboard/DeblocageComptes.jsx'
@@ -12,6 +13,9 @@ import Entreprises from '../pages/dashboard/Entreprises.jsx'
 import Signalements from '../pages/dashboard/Signalements.jsx'
 import Statistiques from '../pages/dashboard/Statistiques.jsx'
 import Parametres from '../pages/dashboard/Parametres.jsx'
+import ProblemesRoutiers from '../pages/dashboard/ProblemesRoutiers.jsx'
+import CarteProblemesFrontOffice from '../pages/frontoffice/CarteProblemesFrontOffice.jsx'
+import SignalerProblemeFrontOffice from '../pages/frontoffice/SignalerProblemeFrontOffice.jsx'
 
 function LoginRoute() {
   const navigate = useNavigate()
@@ -63,6 +67,13 @@ export default function AppRoutes() {
       <Route path="/login" element={<LoginRoute />} />
       <Route path="/inscription" element={<InscriptionRoute />} />
 
+      {/* Front-office - Pages publiques des problèmes routiers */}
+      <Route element={<FrontOfficeLayout />}>
+        <Route path="/carte-problemes" element={<CarteProblemesFrontOffice />} />
+        <Route path="/signaler-probleme" element={<SignalerProblemeFrontOffice />} />
+      </Route>
+
+      {/* Back-office - Dashboard admin */}
       <Route element={<DashboardLayoutRoute />}>
         <Route path="/dashboard" element={<DashboardHome />} />
         <Route path="/utilisateurs" element={<Utilisateurs />} />
@@ -76,6 +87,7 @@ export default function AppRoutes() {
         />
         <Route path="/entreprises" element={<Entreprises />} />
         <Route path="/signalements" element={<Signalements />} />
+        <Route path="/problemes-routiers" element={<ProblemesRoutiers />} />
         <Route path="/statistiques" element={<Statistiques />} />
         <Route path="/parametres" element={<Parametres />} />
       </Route>
