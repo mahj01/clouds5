@@ -169,12 +169,20 @@ export default function Map() {
             maxWidth: '320px',
           });
 
-          map.on('mouseenter', 'signalements-circles', () => {
+          map.on('mouseenter', 'signalements-circles', (e) => {
             map.getCanvas().style.cursor = 'pointer';
+            // Changer la palette en noir au survol
+            map.setPaintProperty('osm-raster', 'raster-saturation', -1);
+            map.setPaintProperty('osm-raster', 'raster-brightness-max', 0.5);
+            map.setPaintProperty('osm-raster', 'raster-contrast', 0.3);
           });
           map.on('mouseleave', 'signalements-circles', () => {
             map.getCanvas().style.cursor = '';
             popup.remove();
+            // Rétablir la palette normale
+            map.setPaintProperty('osm-raster', 'raster-saturation', 0.1);
+            map.setPaintProperty('osm-raster', 'raster-brightness-max', 1);
+            map.setPaintProperty('osm-raster', 'raster-contrast', 0.1);
           });
 
           map.on('mousemove', 'signalements-circles', (e) => {
@@ -191,13 +199,13 @@ export default function Map() {
 
             const html = `
               <div class="p-2">
-                <div class="text-sm font-semibold text-slate-100">Problème routier</div>
-                <div class="mt-1 grid gap-1 text-xs text-slate-200">
-                  <div><span class="text-slate-400">Date:</span> ${dateText}</div>
-                  <div><span class="text-slate-400">Statut:</span> ${statusLabel(props.statut)}</div>
-                  <div><span class="text-slate-400">Surface:</span> ${surface}</div>
-                  <div><span class="text-slate-400">Budget:</span> ${budget}</div>
-                  <div><span class="text-slate-400">Entreprise:</span> ${entreprise}</div>
+                <div class="text-sm font-semibold text-slate-900">Problème routier</div>
+                <div class="mt-1 grid gap-1 text-xs text-slate-700">
+                  <div><span class="text-slate-500">Date:</span> ${dateText}</div>
+                  <div><span class="text-slate-500">Statut:</span> ${statusLabel(props.statut)}</div>
+                  <div><span class="text-slate-500">Surface:</span> ${surface}</div>
+                  <div><span class="text-slate-500">Budget:</span> ${budget}</div>
+                  <div><span class="text-slate-500">Entreprise:</span> ${entreprise}</div>
                 </div>
               </div>
             `;
@@ -335,7 +343,7 @@ export default function Map() {
       <style>{`
         .signalement-popup .maplibregl-popup-content {
           background: rgba(255, 255, 255, 0.95);
-          color: #1e293b;
+          color: #000000;
           border: 1px solid rgba(226, 232, 240, 0.8);
           border-radius: 12px;
           box-shadow: 0 10px 25px rgba(0,0,0,0.1);

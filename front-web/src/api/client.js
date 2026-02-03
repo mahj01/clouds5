@@ -33,7 +33,7 @@ async function parseError(res) {
     if (isLocked) {
       // message already set by API, keep it (but ensure clarity)
       if (!String(message).toLowerCase().includes('bloqu')) {
-        message = `${message} Compte bloqué. Contactez un administrateur.`
+          message = `${message} Compte bloqué. Contactez un manager.`
       }
     } else {
       const plural = remainingAttempts > 1 ? 's' : ''
@@ -102,6 +102,19 @@ export function listLockedUsers() {
 export function unlockUser(id) {
   return apiFetch(`/utilisateurs/unlock/${id}`, { method: 'POST' })
 }
+
+export function lockUser(id) {
+  return apiFetch(`/utilisateurs/lock/${id}`, { method: 'POST' })
+}
+
+export function createUtilisateur(payload) {
+  return apiFetch('/utilisateurs', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  })
+}
+
 export function getAuthToken() {
   try {
     return localStorage.getItem('auth_token')
@@ -118,6 +131,14 @@ function authHeaders() {
 export function getSignalements() {
   return apiFetch('/signalements', {
     headers: authHeaders(),
+  })
+}
+
+export function createSignalement(payload) {
+  return apiFetch('/signalements', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
   })
 }
 

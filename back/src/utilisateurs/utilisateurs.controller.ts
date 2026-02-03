@@ -55,6 +55,17 @@ export class UtilisateursController {
     return this.svc.unlockUser(id, req?.user?.id);
   }
 
+  @Post('lock/:id')
+  @ApiTags('blocage')
+  @ApiOperation({ summary: 'Bloquer un compte utilisateur (manager uniquement)' })
+  @ApiParam({ name: 'id', description: 'ID utilisateur à bloquer', type: Number })
+  @ApiOkResponse({ description: 'Compte bloqué.' })
+  @ApiUnauthorizedResponse({ description: 'Token de session manquant ou invalide.' })
+  @ApiForbiddenResponse({ description: 'Accès refusé (réservé au rôle manager).' })
+  lock(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    return this.svc.lockUser(id, req?.user?.id);
+  }
+
   @Post()
   create(@Body() dto: CreateUtilisateurDto, @Headers('x-manager-email') managerEmail?: string, @Headers('x-manager-password') managerPassword?: string) {
     return this.svc.create(dto, managerEmail, managerPassword);

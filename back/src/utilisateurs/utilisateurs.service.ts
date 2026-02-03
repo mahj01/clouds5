@@ -94,7 +94,39 @@ export class UtilisateursService {
 
   async remove(id: number) {
     const item = await this.findOne(id);
-    await this.repo.remove(item);
+    
+    // Vérifier si l'utilisateur a des signalements
+    const signalementCount = await this.repo.query(
+      'SELECT COUNT(*) as count FROM signalement WHERE id_utilisateur = $1',
+      [id]
+    );
+    if (signalementCount[0]?.count > 0) {
+      throw new ConflictException(
+        'Impossible de supprimer cet utilisateur car il a des signalements associés. ' +
+        'Veuillez d\'abord supprimer ou réassigner ses signalements.'
+      );
+    }
+    
+    // Supprimer les données liées (sessions, tentatives de connexion, etc.)
+    try {
+      // Supprimer les sessions de l'utilisateur
+      await this.repo.query('DELETE FROM session WHERE id_utilisateur = $1', [id]);
+      // Supprimer les tentatives de connexion
+      await this.repo.query('DELETE FROM tentative_connexion WHERE id_utilisateur = $1', [id]);
+      // Supprimer l'historique de statut utilisateur
+      await this.repo.query('DELETE FROM historique_status_utilisateur WHERE id_utilisateur = $1', [id]);
+      // Supprimer les synchronisations (en tant que manager)
+      await this.repo.query('DELETE FROM synchronisation WHERE id_manager = $1', [id]);
+      // Supprimer l'historique des signalements (en tant que manager)
+      await this.repo.query('DELETE FROM historique_signalement WHERE id_manager = $1', [id]);
+      
+      // Maintenant supprimer l'utilisateur
+      await this.repo.remove(item);
+    } catch (error) {
+      throw new ConflictException(
+        'Impossible de supprimer cet utilisateur car il est lié à des données existantes.'
+      );
+    }
   }
 
   async unlockUser(targetUserId: number, actorUserId?: number) {
@@ -126,6 +158,27 @@ export class UtilisateursService {
       order: { dateBlocage: 'DESC' },
     });
     return users.map(toSafeUser);
+  }
+
+  async lockUser(targetUserId: number, actorUserId?: number) {
+    if (!actorUserId) throw new UnauthorizedException('Missing session user');
+    const actor = await this.repo.findOne({ where: { id: actorUserId }, relations: ['role'] });
+    if (!actor) throw new UnauthorizedException('Invalid session user');
+    if (!actor.role || actor.role.nom !== 'manager') {
+      throw new ForbiddenException('Only manager can lock accounts');
+    }
+
+    const target = await this.findOne(targetUserId);
+    
+    // Ne pas permettre de bloquer un autre manager
+    if (target.role && target.role.nom === 'manager') {
+      throw new ForbiddenException('Cannot lock a manager account');
+    }
+    
+    target.dateBlocage = new Date();
+    target.nbTentatives = 0;
+    const saved = await this.repo.save(target);
+    return toSafeUser(saved);
   }
 
   // --- Nouvelle méthode d'inscription
