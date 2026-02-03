@@ -15,7 +15,7 @@ export default function DashboardHome() {
     .filter((i) => i.id !== 'dashboard')
     .filter((i) => {
       if (roleName === 'manager') return true
-      return i.id !== 'deblocage' && i.id !== 'signalements'
+      return !i?.adminOnly
     })
 
   return (

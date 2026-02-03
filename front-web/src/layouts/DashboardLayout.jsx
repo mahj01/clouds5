@@ -17,7 +17,7 @@ export default function DashboardLayout({ onLogout }) {
   const navItems = useMemo(() => {
     const items = Array.isArray(DASHBOARD_NAV_ITEMS) ? DASHBOARD_NAV_ITEMS : []
     if (roleName === 'manager') return items
-    return items.filter((i) => i.id !== 'deblocage' && i.id !== 'signalements')
+    return items.filter((i) => !i?.adminOnly)
   }, [roleName])
 
   const expiresAt = useMemo(() => localStorage.getItem('auth_expiresAt'), [])

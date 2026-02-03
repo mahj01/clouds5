@@ -76,7 +76,12 @@ export default function AppRoutes() {
 
       <Route element={<DashboardLayoutRoute />}>
         <Route path="/dashboard" element={<DashboardHome />} />
-        <Route path="/utilisateurs" element={<Utilisateurs />} />
+        <Route path="/utilisateurs"
+           element={(
+            <ManagerOnly>
+              <Utilisateurs />
+            </ManagerOnly>
+          )} />
         <Route
           path="/utilisateurs/deblocage"
           element={(
@@ -85,6 +90,7 @@ export default function AppRoutes() {
             </ManagerOnly>
           )}
         />
+        
         <Route path="/entreprises" element={<Entreprises />} />
         <Route
           path="/signalements"
@@ -96,10 +102,11 @@ export default function AppRoutes() {
         />
         <Route path="/statistiques" element={<Statistiques />} />
         <Route path="/parametres" element={<Parametres />} />
+
+        <Route path="/maplibre" element={<MapPage />} />
       </Route>
 
       <Route path="/map" element={<MapLeaflet />} />
-      <Route path="/maplibre" element={<MapPage />} />
     </Routes>
   )
 }
