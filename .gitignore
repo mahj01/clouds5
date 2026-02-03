@@ -86,3 +86,8 @@ dist-ssr
 /front-mobile/android
 front-web/public/tiles/antananarivo.mbtiles
 /front-mobile/public/tiles
+/front-mobile/public/assets
+*.pbf
+back/src/serviceAccountKey.json
+/front-web/public/tiles
+*.mbtiles

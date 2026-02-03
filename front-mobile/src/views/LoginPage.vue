@@ -10,21 +10,27 @@
           <div class="field">
             <label class="field-label">Email</label>
             <IonItem lines="none">
-              <IonInput v-model="email" placeholder="demo@email.com"/>
+              <IonInput v-model="email" inputmode="email" autocomplete="email" placeholder="demo@email.com" />
             </IonItem>
           </div>
 
           <div class="field">
             <label class="field-label">Password</label>
             <IonItem lines="none">
-              <IonInput v-model="password" type="password" placeholder="I enter your password"/>
+              <IonInput v-model="password" type="password" autocomplete="current-password" placeholder="Enter your password" />
             </IonItem>
           </div>
 
           <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-          <div v-if="backendMessage" class="backend-message">{{ backendMessage }}</div>
 
-          <IonButton expand="block" type="submit" class="login-btn">Login</IonButton>
+          <IonButton
+            expand="block"
+            type="submit"
+            class="login-btn"
+            :disabled="isLocked || isSubmitting || !email || !password"
+          >
+            {{ isSubmitting ? 'Logging in…' : isLocked ? 'Account locked' : 'Login' }}
+          </IonButton>
         </form>
       </div>
     </IonContent>
@@ -32,90 +38,60 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { IonPage, IonContent, IonItem, IonInput, IonButton } from '@ionic/vue';
-import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth'
-import { auth } from '@/firebase'
 
+import authService from '@/services/auth';
 
 const router = useRouter();
 const email = ref('');
 const password = ref('');
 const errorMessage = ref('');
-const backendMessage = ref('');
-
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) || 'http://localhost:3001'
-
-async function createBackendSession() {
-  // Create a session token usable for protected API routes.
-  // Backend supports /auth/firebase-login which returns { token, expiresAt, user: { id, role } }
-  try {
-    const res = await fetch(`${API_BASE}/auth/firebase-login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.value, motDePasse: password.value }),
-    })
-    if (!res.ok) {
-      backendMessage.value = `Backend indisponible (HTTP ${res.status}). Le signalement peut être bloqué.`
-      return
-    }
-    const data = await res.json().catch(() => null)
-    if (data?.token && data?.expiresAt) {
-      localStorage.setItem('auth_token', data.token)
-      localStorage.setItem('auth_expiresAt', data.expiresAt)
-      if (data?.user?.id != null) {
-        localStorage.setItem('auth_user_id', String(data.user.id))
-        backendMessage.value = ''
-      } else {
-        backendMessage.value = "Session API créée, mais id_utilisateur manquant. Le signalement est bloqué."
-      }
-    } else {
-      backendMessage.value = 'Réponse API invalide (token manquant). Le signalement peut être bloqué.'
-    }
-  } catch {
-    // If backend is offline, still allow Firebase login UI flow.
-    backendMessage.value = 'Impossible de contacter le backend. Le signalement est bloqué.'
-  }
-}
+const isSubmitting = ref(false);
+const isLocked = ref(false);
 
 async function onLogin() {
   errorMessage.value = '';
-  backendMessage.value = '';
+  isLocked.value = false;
+  isSubmitting.value = true;
   try {
-    await signInWithEmailAndPassword(auth, email.value, password.value)
-    await createBackendSession()
-    // redirect after successful sign-in
-    router.replace('/home')
-  } catch (err) {
-    console.error('Login failed', err)
-    // Show user-facing error message
-    const error = err as { code?: string };
-    if (error && error.code === 'auth/invalid-credential') {
-      errorMessage.value = 'Invalid email or password.';
-    } else {
-      errorMessage.value = 'Login failed. Please try again.';
+    const res = await authService.loginOnline(email.value, password.value);
+    if (!res.ok) {
+      if (res.error.code === 'ACCOUNT_LOCKED' || res.error.isLocked) {
+        isLocked.value = true;
+        errorMessage.value = res.error.message || 'Account locked. Contact an administrator.';
+        return;
+      }
+
+      const remaining = authService.getRemainingAttemptsFromError(res.error);
+      if (typeof remaining === 'number') {
+        errorMessage.value = `${res.error.message || 'Invalid email or password.'} (${remaining} attempt(s) remaining)`;
+      } else {
+        errorMessage.value = res.error.message || 'Invalid email or password.';
+      }
+      return;
     }
+
+    await router.replace('/home');
+  } finally {
+    isSubmitting.value = false;
   }
 }
 
-async function onLogout() {
-  await signOut(auth)
-}
-
-onAuthStateChanged(auth, (user) => {
+const unsubscribe = authService.onFirebaseAuthStateChange((user) => {
   if (user) {
-    // if user is logged in, ensure they are on the home page
     if (router.currentRoute.value.path !== '/home') {
-      router.replace('/home')
+      router.replace('/home');
     }
   } else {
-    // if user logged out and is on a protected page, send to login
     if (router.currentRoute.value.path !== '/login') {
-      router.replace('/login')
+      router.replace('/login');
     }
   }
-})
+});
+
+onBeforeUnmount(() => unsubscribe());
 </script>
 
 <style scoped>
@@ -217,15 +193,4 @@ onAuthStateChanged(auth, (user) => {
    text-align: center;
    font-size: 15px;
  }
-
-.backend-message {
-  color: #8a6d3b;
-  background: #fff8e1;
-  border: 1px solid #d7b77a;
-  border-radius: 8px;
-  padding: 8px 12px;
-  margin-bottom: 12px;
-  text-align: center;
-  font-size: 14px;
-}
 </style>
