@@ -118,7 +118,7 @@ export default function AppRoutes() {
             </ManagerOnly>
           )}
         />
-        {/* <Route path="/signalements" element={<Signalements />} /> */}
+        <Route path="/signalements" element={<Signalements />} />
         <Route path="/problemes-routiers" element={<ProblemesRoutiers />} />
         <Route path="/statistiques" element={<Statistiques />} />
         <Route path="/parametres" element={<Parametres />} />
