@@ -26,9 +26,6 @@ export default function DashboardHome() {
       </header>
 
       <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {DASHBOARD_NAV_ITEMS.filter((i) => i.id !== 'dashboard')
-          .filter((i) => !i.requiresRole || i.requiresRole === role)
-          .map((item) => (
         {navItems.map((item) => (
           <Link
             key={item.id}
