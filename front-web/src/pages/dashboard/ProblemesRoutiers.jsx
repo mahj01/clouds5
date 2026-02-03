@@ -28,17 +28,17 @@ export default function ProblemesRoutiers() {
   return (
     <section className="mt-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">
-          <i className="fa fa-road mr-3" />
+        <h1 className="text-2xl font-bold text-gray-900">
+          <i className="fa fa-road mr-3 text-indigo-600" />
           Problèmes Routiers
         </h1>
-        <p className="mt-1 text-sm text-slate-400">
+        <p className="mt-1 text-sm text-gray-500">
           Gestion et suivi des problèmes routiers signalés
         </p>
       </div>
 
       {/* Onglets */}
-      <div className="mb-6 flex gap-2 border-b border-white/10 pb-2">
+      <div className="mb-6 flex gap-2 border-b border-gray-200 pb-2">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -46,7 +46,7 @@ export default function ProblemesRoutiers() {
             className={`px-4 py-2 rounded-t-lg text-sm font-medium transition ${
               activeTab === tab.id
                 ? 'bg-indigo-600 text-white'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
             }`}
           >
             <i className={`fa ${tab.icon} mr-2`} />
@@ -56,7 +56,7 @@ export default function ProblemesRoutiers() {
       </div>
 
       {/* Contenu */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         {activeTab === 'carte' && (
           <CarteProblemes
             key={`carte-${refreshKey}`}

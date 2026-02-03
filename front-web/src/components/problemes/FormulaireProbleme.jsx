@@ -64,18 +64,18 @@ export default function FormulaireProbleme({ position, onSuccess, onCancel }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="rounded-lg bg-red-500/20 p-3 text-red-300 text-sm">
+        <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-red-600 text-sm">
           <i className="fa fa-exclamation-circle mr-2" />{error}
         </div>
       )}
 
       <div>
-        <label className="block text-sm text-slate-300 mb-1">Type de problème *</label>
+        <label className="block text-sm text-gray-700 mb-1">Type de problème *</label>
         <select
           required
           value={formData.typeProblemeId}
           onChange={(e) => setFormData({ ...formData, typeProblemeId: e.target.value })}
-          className="w-full rounded-lg bg-white/10 px-3 py-2 text-white border border-white/10 focus:border-indigo-500 focus:outline-none"
+          className="w-full rounded-lg bg-white px-3 py-2 text-gray-900 border border-gray-300 focus:border-indigo-500 focus:outline-none"
         >
           <option value="">Sélectionner un type</option>
           {types.map((t) => (
@@ -85,68 +85,68 @@ export default function FormulaireProbleme({ position, onSuccess, onCancel }) {
       </div>
 
       <div>
-        <label className="block text-sm text-slate-300 mb-1">Titre *</label>
+        <label className="block text-sm text-gray-700 mb-1">Titre *</label>
         <input
           type="text"
           required
           value={formData.titre}
           onChange={(e) => setFormData({ ...formData, titre: e.target.value })}
-          className="w-full rounded-lg bg-white/10 px-3 py-2 text-white border border-white/10 focus:border-indigo-500 focus:outline-none"
+          className="w-full rounded-lg bg-white px-3 py-2 text-gray-900 border border-gray-300 focus:border-indigo-500 focus:outline-none"
           placeholder="Ex: Nid de poule dangereux"
         />
       </div>
 
       <div>
-        <label className="block text-sm text-slate-300 mb-1">Description</label>
+        <label className="block text-sm text-gray-700 mb-1">Description</label>
         <textarea
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          className="w-full rounded-lg bg-white/10 px-3 py-2 text-white border border-white/10 focus:border-indigo-500 focus:outline-none"
+          className="w-full rounded-lg bg-white px-3 py-2 text-gray-900 border border-gray-300 focus:border-indigo-500 focus:outline-none"
           rows={3}
           placeholder="Décrivez le problème..."
         />
       </div>
 
       <div>
-        <label className="block text-sm text-slate-300 mb-1">Adresse</label>
+        <label className="block text-sm text-gray-700 mb-1">Adresse</label>
         <input
           type="text"
           value={formData.adresse}
           onChange={(e) => setFormData({ ...formData, adresse: e.target.value })}
-          className="w-full rounded-lg bg-white/10 px-3 py-2 text-white border border-white/10 focus:border-indigo-500 focus:outline-none"
+          className="w-full rounded-lg bg-white px-3 py-2 text-gray-900 border border-gray-300 focus:border-indigo-500 focus:outline-none"
           placeholder="Ex: Avenue de la Liberté, Antananarivo"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm text-slate-300 mb-1">Latitude</label>
+          <label className="block text-sm text-gray-700 mb-1">Latitude</label>
           <input
             type="number"
             step="any"
             value={formData.latitude}
             onChange={(e) => setFormData({ ...formData, latitude: parseFloat(e.target.value) })}
-            className="w-full rounded-lg bg-white/10 px-3 py-2 text-white border border-white/10 focus:border-indigo-500 focus:outline-none"
+            className="w-full rounded-lg bg-white px-3 py-2 text-gray-900 border border-gray-300 focus:border-indigo-500 focus:outline-none"
           />
         </div>
         <div>
-          <label className="block text-sm text-slate-300 mb-1">Longitude</label>
+          <label className="block text-sm text-gray-700 mb-1">Longitude</label>
           <input
             type="number"
             step="any"
             value={formData.longitude}
             onChange={(e) => setFormData({ ...formData, longitude: parseFloat(e.target.value) })}
-            className="w-full rounded-lg bg-white/10 px-3 py-2 text-white border border-white/10 focus:border-indigo-500 focus:outline-none"
+            className="w-full rounded-lg bg-white px-3 py-2 text-gray-900 border border-gray-300 focus:border-indigo-500 focus:outline-none"
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm text-slate-300 mb-1">Priorité</label>
+        <label className="block text-sm text-gray-700 mb-1">Priorité</label>
         <select
           value={formData.priorite}
           onChange={(e) => setFormData({ ...formData, priorite: parseInt(e.target.value) })}
-          className="w-full rounded-lg bg-white/10 px-3 py-2 text-white border border-white/10 focus:border-indigo-500 focus:outline-none"
+          className="w-full rounded-lg bg-white px-3 py-2 text-gray-900 border border-gray-300 focus:border-indigo-500 focus:outline-none"
         >
           <option value={1}>Normale</option>
           <option value={2}>Haute</option>
@@ -170,7 +170,7 @@ export default function FormulaireProbleme({ position, onSuccess, onCancel }) {
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20"
+            className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
           >
             Annuler
           </button>

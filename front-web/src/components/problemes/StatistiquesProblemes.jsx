@@ -24,7 +24,7 @@ export default function StatistiquesProblemes() {
 
   if (loading) {
     return (
-      <div className="text-center py-8 text-slate-400">
+      <div className="text-center py-8 text-gray-500">
         <i className="fa fa-spinner fa-spin mr-2" /> Chargement des statistiques...
       </div>
     )
@@ -32,7 +32,7 @@ export default function StatistiquesProblemes() {
 
   if (error) {
     return (
-      <div className="rounded-lg bg-red-500/20 p-3 text-red-300 text-sm">
+      <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-red-600 text-sm">
         <i className="fa fa-exclamation-circle mr-2" />{error}
       </div>
     )
@@ -46,33 +46,33 @@ export default function StatistiquesProblemes() {
     <div className="space-y-6">
       {/* Stats globales */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
-          <div className="text-3xl font-bold text-white">{total}</div>
-          <div className="text-sm text-slate-400">Total</div>
+        <div className="rounded-xl border border-gray-200 bg-white p-4 text-center shadow-sm">
+          <div className="text-3xl font-bold text-gray-900">{total}</div>
+          <div className="text-sm text-gray-500">Total</div>
         </div>
-        <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-center">
-          <div className="text-3xl font-bold text-red-400">{parStatut.actifs}</div>
-          <div className="text-sm text-slate-400">Actifs</div>
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-center shadow-sm">
+          <div className="text-3xl font-bold text-red-600">{parStatut.actifs}</div>
+          <div className="text-sm text-gray-500">Actifs</div>
         </div>
-        <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-center">
-          <div className="text-3xl font-bold text-yellow-400">{parStatut.enCours}</div>
-          <div className="text-sm text-slate-400">En cours</div>
+        <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-center shadow-sm">
+          <div className="text-3xl font-bold text-yellow-600">{parStatut.enCours}</div>
+          <div className="text-sm text-gray-500">En cours</div>
         </div>
-        <div className="rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-center">
-          <div className="text-3xl font-bold text-green-400">{parStatut.resolus}</div>
-          <div className="text-sm text-slate-400">Résolus</div>
+        <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-center shadow-sm">
+          <div className="text-3xl font-bold text-green-600">{parStatut.resolus}</div>
+          <div className="text-sm text-gray-500">Résolus</div>
         </div>
-        <div className="rounded-xl border border-gray-500/20 bg-gray-500/10 p-4 text-center">
-          <div className="text-3xl font-bold text-gray-400">{parStatut.rejetes}</div>
-          <div className="text-sm text-slate-400">Rejetés</div>
+        <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-center shadow-sm">
+          <div className="text-3xl font-bold text-gray-600">{parStatut.rejetes}</div>
+          <div className="text-sm text-gray-500">Rejetés</div>
         </div>
       </div>
 
       {/* Stats par type */}
       {parType && parType.length > 0 && (
-        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-          <h3 className="text-lg font-medium text-white mb-4">
-            <i className="fa fa-pie-chart mr-2" />
+        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            <i className="fa fa-pie-chart mr-2 text-indigo-600" />
             Répartition par type
           </h3>
           <div className="space-y-3">
@@ -86,10 +86,10 @@ export default function StatistiquesProblemes() {
                   />
                   <div className="flex-1">
                     <div className="flex justify-between text-sm">
-                      <span className="text-white">{item.type || 'Non défini'}</span>
-                      <span className="text-slate-400">{item.count} ({percent}%)</span>
+                      <span className="text-gray-900">{item.type || 'Non défini'}</span>
+                      <span className="text-gray-500">{item.count} ({percent}%)</span>
                     </div>
-                    <div className="mt-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div className="mt-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-500"
                         style={{
@@ -108,21 +108,21 @@ export default function StatistiquesProblemes() {
 
       {/* Taux de résolution */}
       {total > 0 && (
-        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-          <h3 className="text-lg font-medium text-white mb-4">
-            <i className="fa fa-check-circle mr-2" />
+        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            <i className="fa fa-check-circle mr-2 text-green-600" />
             Taux de résolution
           </h3>
           <div className="flex items-center gap-4">
             <div className="flex-1">
-              <div className="h-4 bg-white/10 rounded-full overflow-hidden">
+              <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-green-500 rounded-full transition-all duration-500"
                   style={{ width: `${Math.round((parStatut.resolus / total) * 100)}%` }}
                 />
               </div>
             </div>
-            <div className="text-2xl font-bold text-green-400">
+            <div className="text-2xl font-bold text-green-600">
               {Math.round((parStatut.resolus / total) * 100)}%
             </div>
           </div>

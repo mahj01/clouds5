@@ -1,10 +1,38 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { getProblemesGeoJSON, getTypesProblemeActifs } from '../../api/problemes.js'
-import FormulaireProbleme from './FormulaireProbleme.jsx'
+
+// Style de carte OSM raster (comme dans Map.jsx)
+function osmRasterStyle() {
+  return {
+    version: 8,
+    glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+    sources: {
+      osm: {
+        type: "raster",
+        tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+        tileSize: 256,
+        attribution: "© OpenStreetMap contributors",
+      },
+    },
+    layers: [
+      {
+        id: "osm-raster",
+        type: "raster",
+        source: "osm",
+        paint: {
+          "raster-saturation": 0.1,
+          "raster-contrast": 0.1,
+        },
+      },
+    ],
+  };
+}
 
 export default function CarteProblemes({ selectedProbleme, onProblemeCreated }) {
+  const navigate = useNavigate()
   const mapContainer = useRef(null)
   const mapRef = useRef(null)
   const markersRef = useRef([])
@@ -13,7 +41,6 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated }) 
   const [loading, setLoading] = useState(true)
   const [filtreStatut, setFiltreStatut] = useState(null)
   const [isAddMode, setIsAddMode] = useState(false)
-  const [newPosition, setNewPosition] = useState(null)
   const [mapError, setMapError] = useState(null)
 
   // Charger les données
@@ -21,57 +48,28 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated }) 
     loadData()
   }, [filtreStatut])
 
-  // Initialiser la carte MapLibre avec les tuiles offline
+  // Initialiser la carte MapLibre avec style OSM
   useEffect(() => {
     if (mapRef.current) return
 
     async function initMap() {
       try {
-        // Charger le style local offline
-        let style
-        try {
-          const localResp = await fetch('/styles/madagascar-style.json')
-          if (localResp.ok) {
-            style = await localResp.json()
-          }
-        } catch (e) {
-          console.warn('Style local non trouvé:', e)
-        }
-
-        // Fallback si pas de style local
-        if (!style) {
-          style = {
-            version: 8,
-            sources: {
-              'osm-raster': {
-                type: 'raster',
-                tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-                tileSize: 256,
-                attribution: '© OpenStreetMap'
-              }
-            },
-            layers: [{ id: 'osm-raster-layer', type: 'raster', source: 'osm-raster' }]
-          }
-        }
-
         mapRef.current = new maplibregl.Map({
           container: mapContainer.current,
-          style: style,
+          style: osmRasterStyle(),
           center: [47.5079, -18.8792], // Antananarivo
           zoom: 12,
+          attributionControl: false,
         })
 
         mapRef.current.addControl(new maplibregl.NavigationControl(), 'top-right')
-
-        // Gestion du clic pour ajouter un problème
-        mapRef.current.on('click', (e) => {
-          if (isAddMode) {
-            setNewPosition({ lat: e.lngLat.lat, lng: e.lngLat.lng })
-          }
-        })
+        mapRef.current.addControl(
+          new maplibregl.AttributionControl({ compact: true }),
+          'bottom-right'
+        )
 
         mapRef.current.on('load', () => {
-          console.log('Carte offline chargée')
+          console.log('Carte chargée')
           setLoading(false)
         })
 
@@ -94,11 +92,24 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated }) 
     }
   }, [])
 
-  // Mettre à jour le mode clic
+  // Mettre à jour le mode clic et gérer le clic sur la carte
   useEffect(() => {
     if (!mapRef.current) return
     mapRef.current.getCanvas().style.cursor = isAddMode ? 'crosshair' : ''
-  }, [isAddMode])
+
+    // Gestionnaire de clic pour rediriger vers la page de signalement
+    const handleMapClick = (e) => {
+      if (isAddMode) {
+        navigate(`/signaler-probleme?lat=${e.lngLat.lat}&lng=${e.lngLat.lng}`)
+      }
+    }
+
+    mapRef.current.on('click', handleMapClick)
+
+    return () => {
+      mapRef.current?.off('click', handleMapClick)
+    }
+  }, [isAddMode, navigate])
 
   // Centrer sur le problème sélectionné
   useEffect(() => {
@@ -186,20 +197,16 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated }) 
 
   function handleProblemeCreated() {
     setIsAddMode(false)
-    setNewPosition(null)
     loadData()
     onProblemeCreated?.()
   }
 
   return (
-    <div className="relative h-[600px] rounded-xl overflow-hidden border border-white/10">
+    <div className="relative h-[600px] rounded-xl overflow-hidden border border-gray-200 shadow-sm">
       {/* Contrôles de la carte */}
       <div className="absolute top-4 left-4 z-[10] flex flex-col gap-2">
         <button
-          onClick={() => {
-            setIsAddMode(!isAddMode)
-            setNewPosition(null)
-          }}
+          onClick={() => setIsAddMode(!isAddMode)}
           className={`px-4 py-2 rounded-lg text-sm font-medium shadow-lg ${
             isAddMode
               ? 'bg-red-600 text-white'
@@ -213,7 +220,7 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated }) 
         <select
           value={filtreStatut || ''}
           onChange={(e) => setFiltreStatut(e.target.value || null)}
-          className="px-3 py-2 rounded-lg bg-slate-800 text-white border border-white/10 text-sm shadow-lg"
+          className="px-3 py-2 rounded-lg bg-white text-gray-900 border border-gray-300 text-sm shadow-lg"
         >
           <option value="">Tous les statuts</option>
           <option value="actif">Actifs</option>
@@ -223,74 +230,53 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated }) 
 
         <button
           onClick={loadData}
-          className="px-3 py-2 rounded-lg bg-slate-800 text-white border border-white/10 text-sm shadow-lg hover:bg-slate-700"
+          className="px-3 py-2 rounded-lg bg-white text-gray-700 border border-gray-300 text-sm shadow-lg hover:bg-gray-50"
         >
           <i className="fa fa-refresh" />
         </button>
       </div>
 
       {/* Message mode ajout */}
-      {isAddMode && !newPosition && (
+      {isAddMode && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[10] bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm">
           <i className="fa fa-map-marker mr-2" />
-          Cliquez sur la carte pour placer le problème
+          Cliquez sur la carte pour signaler un problème à cet endroit
         </div>
       )}
 
       {/* Légende */}
-      <div className="absolute bottom-4 left-4 z-[10] bg-slate-900/90 rounded-lg p-3 text-xs text-white">
-        <div className="font-medium mb-2">Légende</div>
+      <div className="absolute bottom-4 left-4 z-[10] bg-white/95 rounded-lg p-3 text-xs text-gray-900 shadow-lg border border-gray-200">
+        <div className="font-medium mb-2 text-gray-700">Légende</div>
         <div className="space-y-1">
           {types.slice(0, 5).map((type) => (
             <div key={type.id} className="flex items-center gap-2">
               <div
-                className="w-3 h-3 rounded-full border border-white"
+                className="w-3 h-3 rounded-full border border-gray-300"
                 style={{ backgroundColor: type.couleur }}
               />
-              <span>{type.nom}</span>
+              <span className="text-gray-600">{type.nom}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Formulaire d'ajout */}
-      {newPosition && (
-        <div className="absolute top-4 right-4 z-[10] bg-slate-900 rounded-xl p-4 w-80 max-h-[500px] overflow-y-auto border border-white/10 shadow-xl">
-          <h3 className="text-white font-medium mb-3">
-            <i className="fa fa-plus-circle mr-2 text-indigo-400" />
-            Nouveau problème
-          </h3>
-          <FormulaireProbleme
-            position={newPosition}
-            onSuccess={handleProblemeCreated}
-            onCancel={() => {
-              setNewPosition(null)
-              setIsAddMode(false)
-            }}
-          />
-        </div>
-      )}
-
       {/* Stats */}
-      {!newPosition && (
-        <div className="absolute top-4 right-4 z-[10] bg-slate-900/90 rounded-lg p-3 text-xs text-white">
-          <div className="font-medium mb-1">Problèmes affichés</div>
-          <div className="text-2xl font-bold text-indigo-400">{problemes.length}</div>
-          <div className="text-slate-400 mt-1">Carte offline</div>
-        </div>
-      )}
+      <div className="absolute top-4 right-4 z-[10] bg-white/95 rounded-lg p-3 text-xs text-gray-900 shadow-lg border border-gray-200">
+        <div className="font-medium mb-1 text-gray-700">Problèmes affichés</div>
+        <div className="text-2xl font-bold text-indigo-600">{problemes.length}</div>
+      </div>
 
       {/* Conteneur de la carte MapLibre */}
       <div
         ref={mapContainer}
         className="w-full h-full"
-        style={{ background: '#0f172a' }}
+        style={{ background: '#f8fafc' }}
       />
 
       {/* Indicateur de chargement */}
       {loading && (
-        <div className="absolute inset-0 bg-slate-900/50 flex items-center justify-center z-[20]">
-          <div className="text-white">
+        <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-[20]">
+          <div className="text-gray-700">
             <i className="fa fa-spinner fa-spin mr-2" />Chargement...
           </div>
         </div>
@@ -298,10 +284,10 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated }) 
 
       {/* Erreur carte */}
       {mapError && (
-        <div className="absolute inset-0 bg-slate-900/90 flex items-center justify-center z-[20]">
-          <div className="text-center text-white p-4">
-            <i className="fa fa-exclamation-triangle text-4xl text-red-400 mb-4" />
-            <p className="text-red-300">{mapError}</p>
+        <div className="absolute inset-0 bg-white/90 flex items-center justify-center z-[20]">
+          <div className="text-center p-4">
+            <i className="fa fa-exclamation-triangle text-4xl text-red-500 mb-4" />
+            <p className="text-red-600">{mapError}</p>
           </div>
         </div>
       )}

@@ -107,10 +107,10 @@ export default function TypesProblemes() {
   }
 
   return (
-    <section className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6">
+    <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-white">
-          <i className="fa fa-tags mr-2" />
+        <h2 className="text-xl font-semibold text-gray-900">
+          <i className="fa fa-tags mr-2 text-indigo-600" />
           Types de Problèmes
         </h2>
         <button
@@ -123,31 +123,31 @@ export default function TypesProblemes() {
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg bg-red-500/20 p-3 text-red-300 text-sm">
+        <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-red-600 text-sm">
           <i className="fa fa-exclamation-circle mr-2" />{error}
         </div>
       )}
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="mb-6 rounded-xl bg-white/5 p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="mb-6 rounded-xl bg-gray-50 border border-gray-200 p-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-slate-300 mb-1">Nom *</label>
+              <label className="block text-sm text-gray-700 mb-1">Nom *</label>
               <input
                 type="text"
                 required
                 value={formData.nom}
                 onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
-                className="w-full rounded-lg bg-white/10 px-3 py-2 text-white border border-white/10 focus:border-indigo-500 focus:outline-none"
+                className="w-full rounded-lg bg-white px-3 py-2 text-gray-900 border border-gray-300 focus:border-indigo-500 focus:outline-none"
                 placeholder="Ex: Nid de poule"
               />
             </div>
             <div>
-              <label className="block text-sm text-slate-300 mb-1">Icône</label>
+              <label className="block text-sm text-gray-700 mb-1">Icône</label>
               <select
                 value={formData.icone}
                 onChange={(e) => setFormData({ ...formData, icone: e.target.value })}
-                className="w-full rounded-lg bg-white/10 px-3 py-2 text-white border border-white/10 focus:border-indigo-500 focus:outline-none"
+                className="w-full rounded-lg bg-white px-3 py-2 text-gray-900 border border-gray-300 focus:border-indigo-500 focus:outline-none"
               >
                 {ICONES_PREDEFINIES.map((icone) => (
                   <option key={icone} value={icone}>{icone}</option>
@@ -157,11 +157,11 @@ export default function TypesProblemes() {
           </div>
 
           <div>
-            <label className="block text-sm text-slate-300 mb-1">Description</label>
+            <label className="block text-sm text-gray-700 mb-1">Description</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full rounded-lg bg-white/10 px-3 py-2 text-white border border-white/10 focus:border-indigo-500 focus:outline-none"
+              className="w-full rounded-lg bg-white px-3 py-2 text-gray-900 border border-gray-300 focus:border-indigo-500 focus:outline-none"
               rows={2}
               placeholder="Description du type de problème..."
             />
@@ -169,14 +169,14 @@ export default function TypesProblemes() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-slate-300 mb-1">Couleur</label>
+              <label className="block text-sm text-gray-700 mb-1">Couleur</label>
               <div className="flex gap-2 flex-wrap">
                 {COULEURS_PREDEFINIES.map((couleur) => (
                   <button
                     key={couleur}
                     type="button"
                     onClick={() => setFormData({ ...formData, couleur })}
-                    className={`w-8 h-8 rounded-full border-2 ${formData.couleur === couleur ? 'border-white' : 'border-transparent'}`}
+                    className={`w-8 h-8 rounded-full border-2 ${formData.couleur === couleur ? 'border-indigo-600' : 'border-gray-300'}`}
                     style={{ backgroundColor: couleur }}
                   />
                 ))}
@@ -189,7 +189,7 @@ export default function TypesProblemes() {
               </div>
             </div>
             <div className="flex items-center">
-              <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.actif}
@@ -212,7 +212,7 @@ export default function TypesProblemes() {
             <button
               type="button"
               onClick={resetForm}
-              className="rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20"
+              className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
             >
               Annuler
             </button>
@@ -221,11 +221,11 @@ export default function TypesProblemes() {
       )}
 
       {loading ? (
-        <div className="text-center py-8 text-slate-400">
+        <div className="text-center py-8 text-gray-500">
           <i className="fa fa-spinner fa-spin mr-2" /> Chargement...
         </div>
       ) : types.length === 0 ? (
-        <div className="text-center py-8 text-slate-400">
+        <div className="text-center py-8 text-gray-500">
           Aucun type de problème configuré
         </div>
       ) : (
@@ -233,7 +233,7 @@ export default function TypesProblemes() {
           {types.map((type) => (
             <div
               key={type.id}
-              className={`rounded-xl border p-4 ${type.actif ? 'border-white/10 bg-white/5' : 'border-red-500/20 bg-red-500/5'}`}
+              className={`rounded-xl border p-4 shadow-sm ${type.actif ? 'border-gray-200 bg-white' : 'border-red-200 bg-red-50'}`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
@@ -244,33 +244,33 @@ export default function TypesProblemes() {
                     <i className={`fa ${type.icone || 'fa-warning'}`} style={{ color: type.couleur }} />
                   </div>
                   <div>
-                    <h3 className="font-medium text-white">{type.nom}</h3>
-                    <p className="text-xs text-slate-400">
+                    <h3 className="font-medium text-gray-900">{type.nom}</h3>
+                    <p className="text-xs text-gray-500">
                       {type.actif ? 'Actif' : 'Inactif'}
                     </p>
                   </div>
                 </div>
               </div>
               {type.description && (
-                <p className="mt-2 text-sm text-slate-300 line-clamp-2">{type.description}</p>
+                <p className="mt-2 text-sm text-gray-600 line-clamp-2">{type.description}</p>
               )}
               <div className="mt-3 flex gap-2">
                 <button
                   onClick={() => handleEdit(type)}
-                  className="rounded px-2 py-1 text-xs bg-white/10 text-white hover:bg-white/20"
+                  className="rounded px-2 py-1 text-xs bg-gray-100 text-gray-700 hover:bg-gray-200"
                 >
                   <i className="fa fa-edit mr-1" /> Modifier
                 </button>
                 <button
                   onClick={() => handleToggleActif(type)}
-                  className={`rounded px-2 py-1 text-xs ${type.actif ? 'bg-orange-500/20 text-orange-300' : 'bg-green-500/20 text-green-300'} hover:opacity-80`}
+                  className={`rounded px-2 py-1 text-xs ${type.actif ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'} hover:opacity-80`}
                 >
                   <i className={`fa ${type.actif ? 'fa-eye-slash' : 'fa-eye'} mr-1`} />
                   {type.actif ? 'Désactiver' : 'Activer'}
                 </button>
                 <button
                   onClick={() => handleDelete(type.id)}
-                  className="rounded px-2 py-1 text-xs bg-red-500/20 text-red-300 hover:bg-red-500/30"
+                  className="rounded px-2 py-1 text-xs bg-red-100 text-red-600 hover:bg-red-200"
                 >
                   <i className="fa fa-trash mr-1" /> Supprimer
                 </button>
