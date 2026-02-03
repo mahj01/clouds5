@@ -67,8 +67,8 @@ export class UtilisateursController {
   }
 
   @Post()
-  create(@Body() dto: CreateUtilisateurDto, @Headers('x-manager-email') managerEmail?: string, @Headers('x-manager-password') managerPassword?: string) {
-    return this.svc.create(dto, managerEmail, managerPassword);
+  create(@Body() dto: CreateUtilisateurDto, @Req() req: any) {
+    return this.svc.create(dto, req?.user?.id);
   }
 
   @Put(':id')

@@ -29,17 +29,15 @@ export class UtilisateursService {
     @InjectRepository(Role) private roleRepo: Repository<Role>,
   ) {}
 
-  async create(dto: CreateUtilisateurDto, managerEmail?: string, managerPassword?: string) {
-    // If requesting creation of a client, require manager credentials
+  async create(dto: CreateUtilisateurDto, actorUserId?: number) {
+    // If requesting creation of a client, require manager authentication
     if (dto.roleId) {
       const roleCheck = await this.roleRepo.findOne({ where: { id: dto.roleId } });
       if (roleCheck && roleCheck.nom === 'client') {
-        if (!managerEmail || !managerPassword) throw new UnauthorizedException('Manager credentials required to create client');
-        const managerRole = await this.roleRepo.findOne({ where: { nom: 'manager' } });
-        if (!managerRole) throw new UnauthorizedException('Manager role not configured');
-        const manager = await this.repo.findOne({ where: { email: managerEmail }, relations: ['role'] });
-        if (!manager || manager.motDePasse !== managerPassword || !manager.role || manager.role.id !== managerRole.id) {
-          throw new UnauthorizedException('Invalid manager credentials');
+        if (!actorUserId) throw new UnauthorizedException('Authentication required to create client');
+        const actor = await this.repo.findOne({ where: { id: actorUserId }, relations: ['role'] });
+        if (!actor || !actor.role || actor.role.nom !== 'manager') {
+          throw new ForbiddenException('Only manager can create client accounts');
         }
       }
     }

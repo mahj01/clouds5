@@ -35,6 +35,8 @@ export default function Utilisateurs() {
   const [formError, setFormError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [filterStatus, setFilterStatus] = useState('tous') // 'tous', 'actif', 'bloque'
+  const [actionMessage, setActionMessage] = useState('')
+  const [actionType, setActionType] = useState('') // 'success' | 'error'
 
   const loadData = async () => {
     setLoading(true)
@@ -47,6 +49,8 @@ export default function Utilisateurs() {
       setRoles(rolesData)
     } catch (e) {
       console.error('Erreur chargement:', e)
+      setActionType('error')
+      setActionMessage(e?.message ? String(e.message) : 'Erreur lors du chargement des données')
     }
     setLoading(false)
   }
@@ -59,6 +63,8 @@ export default function Utilisateurs() {
     setEditingUser(null)
     setFormData({ email: '', motDePasse: '', nom: '', prenom: '', roleId: '' })
     setFormError('')
+    setActionMessage('')
+    setActionType('')
     setShowModal(true)
   }
 
@@ -72,6 +78,8 @@ export default function Utilisateurs() {
       roleId: user.role?.id || '',
     })
     setFormError('')
+    setActionMessage('')
+    setActionType('')
     setShowModal(true)
   }
 
@@ -86,70 +94,138 @@ export default function Utilisateurs() {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
+  const resolveUserId = (user) => user?.id ?? user?.id_utilisateur
+
+  const isValidEmail = (value) => {
+    const email = String(value || '').trim()
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setFormError('')
     setSubmitting(true)
 
     try {
+      const emailValue = String(formData.email || '').trim()
+      const passwordValue = String(formData.motDePasse || '').trim()
+      
+      // Validation frontend
+      if (!isValidEmail(emailValue)) {
+        setFormError('Email invalide')
+        setActionType('error')
+        setActionMessage('Vérifiez le format de l\'email.')
+        setSubmitting(false)
+        return
+      }
+      
+      if (!editingUser && !passwordValue) {
+        setFormError('Le mot de passe est obligatoire')
+        setActionType('error')
+        setActionMessage('Mot de passe obligatoire pour la création.')
+        setSubmitting(false)
+        return
+      }
+      
+      if (!editingUser && passwordValue.length < 4) {
+        setFormError('Le mot de passe doit contenir au moins 4 caractères')
+        setActionType('error')
+        setActionMessage('Mot de passe trop court.')
+        setSubmitting(false)
+        return
+      }
+
+      // Construire le payload - backend exige email et motDePasse toujours
+      const payload = {
+        email: emailValue,
+        motDePasse: passwordValue || 'unchanged_placeholder_pwd',
+        nom: String(formData.nom || ''),
+        prenom: String(formData.prenom || ''),
+      }
+      
+      if (formData.roleId) {
+        payload.roleId = Number(formData.roleId)
+      }
+      
+      console.log('Payload envoyé:', JSON.stringify(payload, null, 2))
+
       if (editingUser) {
         // Modification
-        const payload = {
-          email: formData.email,
-          nom: formData.nom,
-          prenom: formData.prenom,
-          roleId: formData.roleId ? Number(formData.roleId) : undefined,
-        }
-        if (formData.motDePasse) {
-          payload.motDePasse = formData.motDePasse
-        }
-        await updateUtilisateur(editingUser.id, payload)
-      } else {
-        // Création
-        if (!formData.motDePasse) {
-          setFormError('Le mot de passe est obligatoire')
+        const userId = resolveUserId(editingUser)
+        if (!userId) {
+          setFormError('ID utilisateur manquant')
+          setActionType('error')
+          setActionMessage('Impossible de modifier : ID utilisateur introuvable.')
           setSubmitting(false)
           return
         }
-        await createUtilisateur({
-          email: formData.email,
-          motDePasse: formData.motDePasse,
-          nom: formData.nom,
-          prenom: formData.prenom,
-          roleId: formData.roleId ? Number(formData.roleId) : undefined,
-        })
+        
+        await updateUtilisateur(userId, payload)
+        setActionType('success')
+        setActionMessage('Utilisateur modifié avec succès.')
+      } else {
+        // Création
+        await createUtilisateur(payload)
+        setActionType('success')
+        setActionMessage('Utilisateur créé avec succès.')
       }
       closeModal()
       loadData()
     } catch (err) {
       setFormError(err.message || 'Erreur lors de la sauvegarde')
+      setActionType('error')
+      setActionMessage(err?.message ? String(err.message) : 'Erreur lors de la sauvegarde')
     }
     setSubmitting(false)
   }
 
   const handleToggleBlocage = async (user) => {
     const isBlocked = !!user.dateBlocage
+    const userId = resolveUserId(user)
+    
+    if (!userId) {
+      setActionType('error')
+      setActionMessage('ID utilisateur introuvable.')
+      return
+    }
+    
     if (!confirm(isBlocked ? 'Débloquer cet utilisateur ?' : 'Bloquer cet utilisateur ?')) return
     
     try {
       if (isBlocked) {
-        await unlockUser(user.id)
+        await unlockUser(userId)
+        setActionType('success')
+        setActionMessage('Utilisateur débloqué avec succès.')
       } else {
-        await lockUser(user.id)
+        await lockUser(userId)
+        setActionType('success')
+        setActionMessage('Utilisateur bloqué avec succès.')
       }
-      loadData()
+      await loadData()
     } catch (err) {
-      alert(err.message || 'Erreur lors du changement de statut')
+      setActionType('error')
+      setActionMessage(err?.message ? String(err.message) : 'Erreur lors du changement de statut')
     }
   }
 
   const handleDelete = async (user) => {
+    const userId = resolveUserId(user)
+    
+    if (!userId) {
+      setActionType('error')
+      setActionMessage('ID utilisateur introuvable.')
+      return
+    }
+    
     if (!confirm(`Supprimer l'utilisateur "${user.email}" ?`)) return
     try {
-      await supprimerUtilisateur(user.id)
-      loadData()
+      await supprimerUtilisateur(userId)
+      setActionType('success')
+      setActionMessage('Utilisateur supprimé avec succès.')
+      await loadData()
     } catch (err) {
-      alert(err.message || 'Erreur lors de la suppression')
+      setActionType('error')
+      setActionMessage(err?.message ? String(err.message) : 'Erreur lors de la suppression. Cet utilisateur peut avoir des données liées (signalements, sessions, etc.).')
     }
   }
 
@@ -178,6 +254,17 @@ export default function Utilisateurs() {
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      {actionMessage ? (
+        <div
+          className={`mb-4 rounded-xl border px-4 py-3 text-sm ${
+            actionType === 'success'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+              : 'border-red-200 bg-red-50 text-red-700'
+          }`}
+        >
+          {actionMessage}
+        </div>
+      ) : null}
       <div className="flex justify-between items-center flex-wrap gap-4">
         <h2 className="text-xl font-semibold text-slate-800">
           <i className="fa fa-users mr-2 text-indigo-500" />
@@ -231,11 +318,13 @@ export default function Utilisateurs() {
             </thead>
 
             <tbody>
-              {filteredUtilisateurs.map((u) => (
-                <tr
-                  key={u.id}
-                  className="border-b border-slate-100 hover:bg-slate-50"
-                >
+              {filteredUtilisateurs.map((u) => {
+                const userId = resolveUserId(u)
+                return (
+                  <tr
+                    key={userId}
+                    className="border-b border-slate-100 hover:bg-slate-50"
+                  >
                   <td className="py-3">{u.email}</td>
                   <td className="py-3">{u.nom || '—'}</td>
                   <td className="py-3">{u.prenom || '—'}</td>
@@ -269,8 +358,9 @@ export default function Utilisateurs() {
                       </>
                     )}
                   </td>
-                </tr>
-              ))}
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
