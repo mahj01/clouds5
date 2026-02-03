@@ -11,7 +11,7 @@ import { RegisterDto } from './dto/register.dto';
 import { FirebaseLoginDto } from './dto/firebase-login.dto';
 import { FirebaseRegisterDto } from './dto/firebase-register.dto';
 import { firebaseConfig, firebaseSignInWithPassword, firebaseSignUpWithPassword } from '../firebase';
-import * as bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 
 import { DEFAULT_AUTH_SESSION_TTL_MINUTES, MAX_LOGIN_ATTEMPTS } from './auth.constants';

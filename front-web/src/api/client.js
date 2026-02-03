@@ -55,7 +55,7 @@ export async function apiFetch(path, options = {}) {
       headers: { 'Content-Type': 'application/json', ...extraHeaders },
       ...options,
     })
-  } catch {
+  } catch (e) {
     // Network / offline / DNS / CORS errors
     throw new Error('Impossible de contacter le serveur (hors ligne ?).')
   }
@@ -101,4 +101,85 @@ export function listLockedUsers() {
 
 export function unlockUser(id) {
   return apiFetch(`/utilisateurs/unlock/${id}`, { method: 'POST' })
+}
+export function getAuthToken() {
+  try {
+    return localStorage.getItem('auth_token')
+  } catch {
+    return null
+  }
+}
+
+function authHeaders() {
+  const token = getAuthToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+export function getSignalements() {
+  return apiFetch('/signalements', {
+    headers: authHeaders(),
+  })
+}
+
+export function getEntreprises() {
+  return apiFetch('/entreprises', {
+    headers: authHeaders(),
+  })
+}
+
+export function getUtilisateurs() {
+  return apiFetch('/utilisateurs', {
+    headers: authHeaders(),
+  })
+}
+
+export function updateUtilisateur(id, payload) {
+  return apiFetch(`/utilisateurs/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  })
+}
+
+export function getStatutsCompte() {
+  return apiFetch('/statuts-compte', {
+    headers: authHeaders(),
+  })
+}
+
+export function getHistoriqueStatusUtilisateur() {
+  return apiFetch('/historique-status-utilisateur', {
+    headers: authHeaders(),
+  })
+}
+
+export function createHistoriqueStatusUtilisateur(payload) {
+  return apiFetch('/historique-status-utilisateur', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateSignalement(id, payload) {
+  return apiFetch(`/signalements/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  })
+}
+// --------------------------
+
+export function getAllUtilisateurs() {
+  return apiFetch('/utilisateurs', {
+    headers: authHeaders(),
+  })
+}
+
+
+export function supprimerUtilisateur(id) {
+  return apiFetch(`/utilisateurs/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
 }
