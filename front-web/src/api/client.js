@@ -1,4 +1,18 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+function getApiBase() {
+  const fromEnv = import.meta?.env?.VITE_API_URL
+  if (fromEnv) return String(fromEnv).replace(/\/+$/, '')
+
+  // Default: same host as the frontend, backend on port 3001.
+  // This fixes cases where the app is opened via LAN IP (not localhost).
+  if (typeof window !== 'undefined' && window?.location) {
+    const { protocol, hostname } = window.location
+    if (protocol && hostname) return `${protocol}//${hostname}:3001`
+  }
+
+  return 'http://localhost:3001'
+}
+
+const API_BASE = getApiBase()
 
 async function parseError(res) {
   let message = `Erreur ${res.status}`
