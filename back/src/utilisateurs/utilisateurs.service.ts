@@ -7,7 +7,7 @@ import { CreateUtilisateurDto } from './dto/create-utilisateur.dto';
 import { UpdateUtilisateurDto } from './dto/update-utilisateur.dto';
 import { Role } from '../roles/role.entity';
 
-const MAX_LOGIN_ATTEMPTS = 3;
+import { MAX_LOGIN_ATTEMPTS } from '../auth/auth.constants';
 
 function toSafeUser(u: Utilisateur) {
   return {

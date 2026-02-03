@@ -1,0 +1,3 @@
+export const MAX_LOGIN_ATTEMPTS = 3;
+
+export const DEFAULT_AUTH_SESSION_TTL_MINUTES = 120;
