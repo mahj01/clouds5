@@ -16,6 +16,7 @@ import { HistoriqueStatusUtilisateurModule } from './historique_status_utilisate
 import { AuthModule } from './auth/auth.module';
 import { FirestoreModule } from './firestore/firestore.module';
 import { ParametresModule } from './parametres/parametres.module';
+import { ProblemesModule } from './problemes/problemes.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { ParametresModule } from './parametres/parametres.module';
     HistoriqueStatusUtilisateurModule,
     AuthModule,
     ParametresModule,
+    ProblemesModule,
     // Firestore sync module (syncs selected entities to Firestore at startup)
     FirestoreModule,
   ],

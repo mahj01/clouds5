@@ -8,4 +8,7 @@ export const DASHBOARD_NAV_ITEMS = [
   { id: 'statistiques', label: 'Statistiques', icon: 'fa fa-line-chart', path: '/statistiques', adminOnly: true },
   { id: 'maplibre', label: 'MapLibre', icon: 'fa fa-line-chart', path: '/maplibre' },
   { id: 'parametres', label: 'Paramètres', icon: 'fa fa-cog', path: '/parametres', adminOnly: true },
+  { id: 'signalements', label: 'Signalements', icon: 'fa fa-exclamation-triangle', path: '/signalements' },
+  { id: 'problemes-routiers', label: 'Problèmes Routiers', icon: 'fa fa-road', path: '/problemes-routiers' },
+  { id: 'statistiques', label: 'Statistiques', icon: 'fa fa-line-chart', path: '/statistiques' },
 ]

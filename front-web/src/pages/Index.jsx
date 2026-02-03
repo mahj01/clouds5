@@ -25,6 +25,33 @@ export default function Index({ onGoLogin, onGoRegister }) {
           </button>
         </div>
 
+        {/* Section Problèmes Routiers */}
+        <div className="mt-8 pt-6 border-t border-white/10">
+          <h2 className="text-lg font-semibold text-white mb-3">
+            <i className="fa fa-road mr-2 text-indigo-400" />
+            Problèmes Routiers
+          </h2>
+          <p className="text-sm text-slate-400 mb-4">
+            Consultez la carte des problèmes routiers ou signalez un nouveau problème.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <a
+              href="/carte-problemes"
+              className="rounded-xl bg-green-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-green-500/20 transition hover:bg-green-500"
+            >
+              <i className="fa fa-map-marker mr-2" />
+              Voir la carte
+            </a>
+            <a
+              href="/signaler-probleme"
+              className="rounded-xl border border-orange-500/50 bg-orange-500/10 px-5 py-3 text-sm font-semibold text-orange-300 transition hover:bg-orange-500/20"
+            >
+              <i className="fa fa-plus-circle mr-2" />
+              Signaler un problème
+            </a>
+          </div>
+        </div>
+
         <div className="mt-6 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-slate-300">
           <p>
             Astuce: le token est stocké dans <span className="font-mono text-indigo-200">localStorage</span>{' '}
