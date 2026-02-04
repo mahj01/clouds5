@@ -4,6 +4,7 @@
       <IonToolbar>
         <IonTitle>Offline Map</IonTitle>
         <IonButtons slot="end">
+          <IonButton @click="$router.push('/home')">Home</IonButton>
           <IonButton @click="startSignalementFlow" :disabled="!loggedInUserId">
             {{ pickingLocation ? 'Choisir position…' : 'Ajouter signalement' }}
           </IonButton>

@@ -25,6 +25,13 @@ export type AuthError = {
   original?: any;
 };
 
+export type LoginOptions = {
+  /** Session time-to-live in milliseconds. Defaults to 24h. */
+  sessionTtlMs?: number;
+};
+
+const DEFAULT_SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+
 function normalizeEmail(email: string) {
   return String(email || '').trim().toLowerCase();
 }
@@ -38,8 +45,16 @@ function normalizeEmail(email: string) {
  * we cannot reliably obtain the target user's uid. That means we can only enforce lockout by uid
  * once the user is successfully authenticated.
  */
-export async function loginOnline(emailRaw: string, motDePasse: string): Promise<NormalizedResult<AuthSession>> {
+export async function loginOnline(
+  emailRaw: string,
+  motDePasse: string,
+  options: LoginOptions = {},
+): Promise<NormalizedResult<AuthSession>> {
   const email = normalizeEmail(emailRaw);
+  const sessionTtlMs =
+    typeof options.sessionTtlMs === 'number' && Number.isFinite(options.sessionTtlMs) && options.sessionTtlMs > 0
+      ? options.sessionTtlMs
+      : DEFAULT_SESSION_TTL_MS;
 
   try {
     // Pre-check lockout when we can resolve uid from email (best-effort).
@@ -106,7 +121,7 @@ export async function loginOnline(emailRaw: string, motDePasse: string): Promise
     await markLoginSuccess(uid);
 
     // Persist a minimal session for app usage
-    const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+    const expiresAt = new Date(Date.now() + sessionTtlMs).toISOString();
     const token = uid;
     const session: AuthSession = { token, expiresAt, user: { uid, email: user?.email ?? email } };
     await setSession(session);

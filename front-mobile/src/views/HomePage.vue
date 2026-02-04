@@ -1,4 +1,3 @@
-
 <template>
   <IonPage>
     <IonHeader :translucent="true">
@@ -6,6 +5,7 @@
         <IonTitle>Blank</IonTitle>
         <IonButtons slot="end">
           <IonButton @click="$router.push('/map')">Map</IonButton>
+          <IonButton color="medium" @click="onLogout">Logout</IonButton>
         </IonButtons>
       </IonToolbar>
     </IonHeader>
@@ -33,6 +33,25 @@
 
 <script setup lang="ts">
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent } from '@ionic/vue';
+import { useRouter } from 'vue-router';
+import authService from '@/services/auth';
+
+const router = useRouter();
+
+async function onLogout() {
+  // Best-effort sign out + session removal.
+  try {
+    await authService.firebaseLogout();
+  } catch {
+    try {
+      await authService.logout();
+    } catch {
+      // ignore
+    }
+  } finally {
+    await router.replace('/login');
+  }
+}
 </script>
 
 <style scoped>
