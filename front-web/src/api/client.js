@@ -50,10 +50,14 @@ export async function apiFetch(path, options = {}) {
   if (storedToken && !extraHeaders.Authorization && !extraHeaders.authorization) {
     extraHeaders.Authorization = `Bearer ${storedToken}`
   }
+  
+  // Séparer les headers des autres options pour éviter l'écrasement
+  const { headers: _ignoredHeaders, ...restOptions } = options
+  
   try {
     res = await fetch(`${API_BASE}${path}`, {
+      ...restOptions,
       headers: { 'Content-Type': 'application/json', ...extraHeaders },
-      ...options,
     })
   } catch (e) {
     // Network / offline / DNS / CORS errors
@@ -95,26 +99,6 @@ export function loginVisitor() {
   return apiFetch('/auth/visiteur', { method: 'POST' })
 }
 
-export function listLockedUsers() {
-  return apiFetch('/utilisateurs/locked')
-}
-
-export function unlockUser(id) {
-  return apiFetch(`/utilisateurs/unlock/${id}`, { method: 'POST' })
-}
-
-export function lockUser(id) {
-  return apiFetch(`/utilisateurs/lock/${id}`, { method: 'POST' })
-}
-
-export function createUtilisateur(payload) {
-  return apiFetch('/utilisateurs', {
-    method: 'POST',
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  })
-}
-
 export function getAuthToken() {
   try {
     return localStorage.getItem('auth_token')
@@ -126,6 +110,34 @@ export function getAuthToken() {
 function authHeaders() {
   const token = getAuthToken()
   return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+export function listLockedUsers() {
+  return apiFetch('/utilisateurs/locked', {
+    headers: authHeaders(),
+  })
+}
+
+export function unlockUser(id) {
+  return apiFetch(`/utilisateurs/unlock/${id}`, {
+    method: 'POST',
+    headers: authHeaders(),
+  })
+}
+
+export function lockUser(id) {
+  return apiFetch(`/utilisateurs/lock/${id}`, {
+    method: 'POST',
+    headers: authHeaders(),
+  })
+}
+
+export function createUtilisateur(payload) {
+  return apiFetch('/utilisateurs', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  })
 }
 
 export function getSignalements() {
