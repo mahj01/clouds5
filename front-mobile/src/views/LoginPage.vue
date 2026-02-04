@@ -21,6 +21,11 @@
             </IonItem>
           </div>
 
+          <div class="field remember-field">
+            <IonCheckbox v-model="rememberMe" />
+            <label class="field-label remember-label">Remember me (30 days)</label>
+          </div>
+
           <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 
           <IonButton
@@ -40,13 +45,16 @@
 <script setup lang="ts">
 import { ref, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
-import { IonPage, IonContent, IonItem, IonInput, IonButton } from '@ionic/vue';
+import { IonPage, IonContent, IonItem, IonInput, IonButton, IonCheckbox } from '@ionic/vue';
 
 import authService from '@/services/auth';
 
 const router = useRouter();
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
 const email = ref('');
 const password = ref('');
+const rememberMe = ref(false);
 const errorMessage = ref('');
 const isSubmitting = ref(false);
 const isLocked = ref(false);
@@ -62,7 +70,9 @@ async function onLogin() {
   isLocked.value = false;
   isSubmitting.value = true;
   try {
-    const res = await authService.loginOnline(email.value, password.value);
+    const res = await authService.loginOnline(email.value, password.value, {
+      sessionTtlMs: rememberMe.value ? THIRTY_DAYS_MS : undefined,
+    });
     if (!res.ok) {
       if (res.error.code === 'ACCOUNT_LOCKED' || res.error.isLocked) {
         // Reset the UI but keep showing the blocked message and keep the button locked.
@@ -201,4 +211,14 @@ onBeforeUnmount(() => unsubscribe());
    text-align: center;
    font-size: 15px;
  }
+.field.remember-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.remember-label {
+  margin: 0;
+  color: #666;
+}
 </style>
