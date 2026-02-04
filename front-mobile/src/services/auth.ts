@@ -42,6 +42,34 @@ export async function loginOnline(emailRaw: string, motDePasse: string): Promise
   const email = normalizeEmail(emailRaw);
 
   try {
+    // Pre-check lockout when we can resolve uid from email (best-effort).
+    // This allows blocking accounts *before* validating credentials.
+    try {
+      const preUid = await getUidForEmail(email);
+      if (preUid) {
+        const preStatus = await getAccountStatus(preUid);
+        if (preStatus?.statut === 'bloqué') {
+          try {
+            await signOut(firebaseAuth);
+          } catch {
+            // ignore
+          }
+          await removeSession();
+          return {
+            ok: false,
+            error: {
+              code: 'ACCOUNT_LOCKED',
+              isLocked: true,
+              remainingAttempts: 0,
+              message: 'Compte bloqué. Contactez un administrateur.',
+            },
+          };
+        }
+      }
+    } catch {
+      // If the pre-check fails (offline / permissions), fall back to normal login flow.
+    }
+
     // Firebase auth
     await signInWithEmailAndPassword(firebaseAuth, email, motDePasse);
 

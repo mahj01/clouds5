@@ -51,6 +51,12 @@ const errorMessage = ref('');
 const isSubmitting = ref(false);
 const isLocked = ref(false);
 
+function resetForm(opts?: { keepEmail?: boolean }) {
+  // Reset the page inputs/state but keep the blocked message visible.
+  password.value = '';
+  if (!opts?.keepEmail) email.value = '';
+}
+
 async function onLogin() {
   errorMessage.value = '';
   isLocked.value = false;
@@ -59,8 +65,10 @@ async function onLogin() {
     const res = await authService.loginOnline(email.value, password.value);
     if (!res.ok) {
       if (res.error.code === 'ACCOUNT_LOCKED' || res.error.isLocked) {
+        // Reset the UI but keep showing the blocked message and keep the button locked.
         isLocked.value = true;
         errorMessage.value = res.error.message || 'Account locked. Contact an administrator.';
+        resetForm({ keepEmail: true });
         return;
       }
 
