@@ -5,23 +5,34 @@
         <IonTitle>Offline Map</IonTitle>
         <IonButtons slot="end">
           <IonButton @click="$router.push('/home')">Home</IonButton>
-          <IonButton @click="startSignalementFlow" :disabled="!loggedInUserId">
-            {{ pickingLocation ? 'Choisir position…' : 'Ajouter signalement' }}
-          </IonButton>
         </IonButtons>
       </IonToolbar>
     </IonHeader>
 
     <IonContent>
       <div id="map" style="height: 100%;"></div>
+
+      <!-- Instruction banner when picking location -->
+      <Transition name="slide-down">
+        <div v-if="pickingLocation && !validationPromptVisible" class="picking-banner">
+          <span class="picking-icon">📍</span>
+          <span class="picking-text">Touchez la carte pour choisir la position</span>
+        </div>
+      </Transition>
     </IonContent>
 
-    <IonModal :is-open="modalOpen" @didDismiss="onCancel">
+    <IonModal :is-open="modalOpen" @didDismiss="onModalDismiss">
       <IonHeader>
         <IonToolbar>
           <IonTitle>Nouveau signalement</IonTitle>
+          <IonButtons slot="start">
+            <IonButton @click="onBackToLocationPicking">
+              <span style="font-size: 20px;">←</span>
+              Retour
+            </IonButton>
+          </IonButtons>
           <IonButtons slot="end">
-            <IonButton @click="onCancel">Annuler</IonButton>
+            <IonButton @click="onCancelFlow" color="danger">Annuler</IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
@@ -58,6 +69,20 @@
     </IonModal>
 
     <IonToast :is-open="toastOpen" :message="toastMessage" :duration="2200" @didDismiss="toastOpen = false" />
+
+    <FloatingButton
+      :is-cancel="pickingLocation"
+      @click="handleFloatingButtonClick"
+    />
+
+    <ValidationPrompt
+      :visible="validationPromptVisible"
+      :message="validationMessage"
+      :latitude="selectedLocation?.lat"
+      :longitude="selectedLocation?.lng"
+      @confirm="confirmLocation"
+      @cancel="cancelLocationSelection"
+    />
   </IonPage>
 </template>
 
@@ -80,6 +105,8 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 import Signalement from '@/components/Signalement.vue'
+import FloatingButton from '@/components/FloatingButton.vue';
+import ValidationPrompt from '@/components/ValidationPrompt.vue';
 import {
   applySignalementDiffs,
   loadSignalementCache,
@@ -117,6 +144,10 @@ const loggedInUserId = computed(() => {
   const n = Number(raw)
   return Number.isInteger(n) && n > 0 ? n : 0
 })
+
+const validationPromptVisible = ref(false)
+const validationMessage = ref('')
+const selectedLocation = ref(null)
 
 async function showUserLocation() {
   try {
@@ -233,6 +264,51 @@ function onCreated() {
   showToast('Signalement créé')
   modalOpen.value = false
   pickingLocation.value = false
+  cleanupMarker()
+}
+
+function cleanupMarker() {
+  if (marker) {
+    marker.remove()
+    marker = undefined
+  }
+  pickedLat.value = null
+  pickedLng.value = null
+  selectedLocation.value = null
+}
+
+function onCancelFlow() {
+  // Complete exit from the flow
+  modalOpen.value = false
+  pickingLocation.value = false
+  validationPromptVisible.value = false
+  cleanupMarker()
+}
+
+function onModalDismiss() {
+  // When modal is dismissed (swipe down, back button), treat as cancel
+  if (modalOpen.value) {
+    onCancelFlow()
+  }
+}
+
+function onBackToLocationPicking() {
+  // Go back to location picking mode
+  modalOpen.value = false
+  pickingLocation.value = true
+  cleanupMarker()
+  showToast('Touchez la carte pour choisir une autre position')
+}
+
+function handleFloatingButtonClick() {
+  if (pickingLocation.value) {
+    // Cancel the flow
+    onCancelFlow()
+    showToast('Signalement annulé')
+  } else {
+    // Start the flow
+    startAjoutSignalementFlow()
+  }
 }
 
 function onCancel() {
@@ -246,6 +322,62 @@ function onCancel() {
   }
 }
 
+function startAjoutSignalementFlow() {
+  pickingLocation.value = true
+  modalOpen.value = false
+  pickedLat.value = null
+  pickedLng.value = null
+  if (marker) {
+    marker.remove()
+    marker = undefined
+  }
+  showToast('Touchez la carte pour choisir la position')
+}
+
+function confirmLocation() {
+  pickingLocation.value = false
+  validationPromptVisible.value = false
+  if (selectedLocation.value) {
+    pickedLng.value = selectedLocation.value.lng
+    pickedLat.value = selectedLocation.value.lat
+    if (!marker) {
+      marker = new maplibregl.Marker({ color: '#e11d48' }).setLngLat([pickedLng.value, pickedLat.value]).addTo(map)
+    } else {
+      marker.setLngLat([pickedLng.value, pickedLat.value])
+    }
+    modalOpen.value = true
+  }
+}
+
+function cancelLocationSelection() {
+  // User wants to pick a different location, remove temp marker and keep listening
+  validationPromptVisible.value = false
+  if (marker) {
+    marker.remove()
+    marker = undefined
+  }
+  selectedLocation.value = null
+}
+
+function handleMapClick(e: any) {
+  if (!pickingLocation.value) return
+
+  const lng = Number(e?.lngLat?.lng)
+  const lat = Number(e?.lngLat?.lat)
+  if (!Number.isFinite(lng) || !Number.isFinite(lat)) return
+
+  // Show temporary marker at clicked location
+  if (!marker) {
+    marker = new maplibregl.Marker({ color: '#e11d48' }).setLngLat([lng, lat]).addTo(map)
+  } else {
+    marker.setLngLat([lng, lat])
+  }
+
+  selectedLocation.value = { lng, lat }
+  validationMessage.value = 'Est-ce la bonne position ?'
+  validationPromptVisible.value = true
+}
+
 onIonViewDidEnter(() => {
   map = new maplibregl.Map({
     container: 'map',
@@ -254,25 +386,7 @@ onIonViewDidEnter(() => {
     zoom: 12
   });
 
-  map.on('click', (e: any) => {
-    if (!pickingLocation.value) return
-
-    const lng = Number(e?.lngLat?.lng)
-    const lat = Number(e?.lngLat?.lat)
-    if (!Number.isFinite(lng) || !Number.isFinite(lat)) return
-
-    pickedLng.value = lng
-    pickedLat.value = lat
-
-    if (!marker) {
-      marker = new maplibregl.Marker({ color: '#e11d48' }).setLngLat([lng, lat]).addTo(map)
-    } else {
-      marker.setLngLat([lng, lat])
-    }
-
-    pickingLocation.value = false
-    modalOpen.value = true
-  })
+  map.on('click', handleMapClick);
 
   // 1) Load cached signalements and render them immediately
   const cached = loadSignalementCache()
@@ -322,5 +436,54 @@ onBeforeUnmount(() => {
 .hint {
   display: block;
   margin-bottom: 12px;
+}
+
+/* Picking banner styles */
+.picking-banner {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(37, 99, 235, 0.95);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.picking-icon {
+  font-size: 20px;
+  animation: bounce 1s ease infinite;
+}
+
+.picking-text {
+  white-space: nowrap;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Slide down transition */
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-down-enter-from,
+.slide-down-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-20px);
 }
 </style>

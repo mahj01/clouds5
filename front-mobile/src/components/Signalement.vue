@@ -2,8 +2,11 @@
 	<IonCard class="signalement-card">
 		<IonCardHeader>
 			<IonCardTitle>Créer un signalement</IonCardTitle>
-			<IonCardSubtitle>
+			<IonCardSubtitle v-if="mode === 'full'">
 				API: <span class="mono">{{ apiBase }}</span>
+			</IonCardSubtitle>
+			<IonCardSubtitle v-else>
+				<span class="mono">Firebase Firestore</span>
 			</IonCardSubtitle>
 		</IonCardHeader>
 

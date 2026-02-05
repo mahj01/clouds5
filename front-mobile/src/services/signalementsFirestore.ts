@@ -138,14 +138,11 @@ export async function createSignalementInFirestore(input: FirestoreSignalementCr
     throw new Error('Vous devez être connecté (Firebase) pour envoyer un signalement.')
   }
 
-  // Required by the SQL schema, but not user-input: we take it from the app session.
-  // This is set during login in LoginPage.vue.
+  // Try to get id_utilisateur from localStorage (set during API login)
+  // If not available, we use null - the Firebase UID will serve as user identifier
   const id_utilisateur_raw = localStorage.getItem('auth_user_id') || ''
   const id_utilisateur_num = Number(id_utilisateur_raw)
   const id_utilisateur = Number.isInteger(id_utilisateur_num) && id_utilisateur_num > 0 ? id_utilisateur_num : null
-  if (!id_utilisateur) {
-    throw new Error("id_utilisateur manquant. Connectez-vous (création session API) puis réessayez.")
-  }
 
   // Conform to SQL-like column names without forcing a numeric PK in Firestore.
   // Firestore will generate the document id.
@@ -161,7 +158,7 @@ export async function createSignalementInFirestore(input: FirestoreSignalementCr
     id_utilisateur,
     id_entreprise: null,
 
-    // Optional traceability (not part of SQL schema)
+    // Firebase user identification (always available when logged in)
     utilisateurUid: user.uid,
     utilisateurEmail: user.email ?? null,
 
