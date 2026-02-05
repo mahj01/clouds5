@@ -87,9 +87,13 @@ import {
   type FirestoreSignalement,
   type SignalementDiff,
 } from '@/services/signalementsFirestore'
+import { Geolocation } from '@capacitor/geolocation';
+
 
 let map: any;
 let marker: any;
+let userLocationMarker: any = null;
+
 
 const markersById = new Map<string, any>()
 const signalementsById = new Map<string, FirestoreSignalement>()
@@ -113,6 +117,39 @@ const loggedInUserId = computed(() => {
   const n = Number(raw)
   return Number.isInteger(n) && n > 0 ? n : 0
 })
+
+async function showUserLocation() {
+  try {
+    const position = await Geolocation.getCurrentPosition({
+      enableHighAccuracy: true,
+      timeout: 10000,
+    });
+
+    const { latitude, longitude } = position.coords;
+
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+
+    // Create or update marker
+    if (!userLocationMarker) {
+      userLocationMarker = new maplibregl.Marker({ color: '#dc2626' }) // red
+          .setLngLat([longitude, latitude])
+          .addTo(map);
+    } else {
+      userLocationMarker.setLngLat([longitude, latitude]);
+    }
+
+    // Optional: center map on user
+    map.flyTo({
+      center: [longitude, latitude],
+      zoom: 14,
+      speed: 0.6,
+    });
+
+  } catch (err) {
+    console.warn('Unable to get user location', err);
+    showToast('Impossible d’obtenir la position GPS');
+  }
+}
 
 function showToast(message: string) {
   toastMessage.value = message
@@ -243,6 +280,11 @@ onIonViewDidEnter(() => {
     signalementsById.set(it.id, it)
     upsertMarker(it)
   }
+
+  map.on('load', async () => {
+    await showUserLocation();
+  });
+
 
   // 2) Subscribe to Firestore updates (diffs) to avoid refetching everything
   unsubscribeSignalements = subscribeSignalements(
