@@ -31,4 +31,8 @@ export class Utilisateur {
 
   @Column({ name: 'date_creation', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   dateCreation: Date;
+
+  // Firebase UID - null si pas encore synchronisé avec Firebase
+  @Column({ name: 'firebase_uid', type: 'varchar', length: 128, nullable: true })
+  firebaseUid?: string | null;
 }

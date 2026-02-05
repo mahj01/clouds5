@@ -1,9 +1,7 @@
 
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { FirebaseLoginDto } from './dto/firebase-login.dto';
-import { FirebaseRegisterDto } from './dto/firebase-register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
@@ -28,21 +26,23 @@ export class AuthController {
   }
 
   @Post('register')
-  @ApiOperation({ summary: 'Register a new user' })
-  @ApiResponse({ status: 201, description: 'User registered' })
+  @ApiOperation({ summary: 'Register a new user (local only, no Firebase)' })
+  @ApiResponse({ status: 201, description: 'User registered locally' })
   register(@Body() dto: RegisterDto) {
     return this.auth.register(dto);
   }
 
-  @Post('firebase-login')
-  @ApiOperation({ summary: 'Login with Firebase ID token or email/password (same as /auth/login)' })
-  firebaseLogin(@Body() body: FirebaseLoginDto) {
-    return this.auth.firebaseLogin(body);
+  @Post('sync-firebase')
+  @ApiOperation({ summary: 'Synchronize unsynced users to Firebase' })
+  @ApiResponse({ status: 200, description: 'Returns sync results' })
+  syncFirebase() {
+    return this.auth.syncToFirebase();
   }
 
-  @Post('firebase-register')
-  @ApiOperation({ summary: 'Register via Firebase ID token or email/password (same as /auth/register)' })
-  firebaseRegister(@Body() dto: RegisterDto) {
-    return this.auth.firebaseRegister(dto);
+  @Get('unsynced-count')
+  @ApiOperation({ summary: 'Get count of unsynced users' })
+  @ApiResponse({ status: 200, description: 'Returns count of users not yet synced to Firebase' })
+  getUnsyncedCount() {
+    return this.auth.getUnsyncedCount();
   }
 }

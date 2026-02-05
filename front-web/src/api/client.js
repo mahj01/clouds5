@@ -216,3 +216,17 @@ export function supprimerUtilisateur(id) {
     headers: authHeaders(),
   })
 }
+
+// Synchronisation Firebase
+export function syncUsersToFirebase() {
+  return apiFetch('/auth/sync-firebase', {
+    method: 'POST',
+    headers: authHeaders(),
+  })
+}
+
+export function getUnsyncedUsersCount() {
+  return apiFetch('/auth/unsynced-count', {
+    headers: authHeaders(),
+  })
+}

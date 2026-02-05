@@ -5,8 +5,8 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
   const emailId = useId()
   const passwordId = useId()
 
-  const [email, setEmail] = useState('')
-  const [motDePasse, setMotDePasse] = useState('')
+  const [email, setEmail] = useState('test@mail.com')
+  const [motDePasse, setMotDePasse] = useState('12345678')
 
   const [loading, setLoading] = useState(false)
   const [visitorLoading, setVisitorLoading] = useState(false)
