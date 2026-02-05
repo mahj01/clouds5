@@ -34,7 +34,7 @@ import '@ionic/vue/css/palettes/dark.system.css';
 /* Theme variables */
 import './theme/variables.css';
 
-import { bootstrapFirestoreCollectionsOnce } from '@/services/firestore-bootstrap'
+import { bootstrapFirestoreCollectionsOnce } from '@/services/firestore-bootstrap';
 
 const app = createApp(App)
   .use(IonicVue)
@@ -42,9 +42,9 @@ const app = createApp(App)
 
 router.isReady().then(async () => {
   try {
-    await bootstrapFirestoreCollectionsOnce()
+    await bootstrapFirestoreCollectionsOnce();
   } catch (err) {
-    console.error('[firestore-bootstrap] bootstrap failed', err)
+    console.error('[firestore-bootstrap] bootstrap failed', err);
   }
 
   app.mount('#app');
