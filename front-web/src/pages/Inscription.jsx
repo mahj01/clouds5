@@ -8,10 +8,10 @@ export default function Inscription({ onGoLogin } = {}) {
   const prenomId = useId()
   const roleId = useId()
 
-  const [email, setEmail] = useState('')
-  const [motDePasse, setMotDePasse] = useState('')
-  const [nom, setNom] = useState('')
-  const [prenom, setPrenom] = useState('')
+  const [email, setEmail] = useState('test@mail.com')
+  const [motDePasse, setMotDePasse] = useState('12345678')
+  const [nom, setNom] = useState('RAN')
+  const [prenom, setPrenom] = useState('Antonio')
 
   const [roles, setRoles] = useState([])
   const [selectedRoleId, setSelectedRoleId] = useState('')
@@ -119,7 +119,7 @@ export default function Inscription({ onGoLogin } = {}) {
             value={motDePasse}
             onChange={(e) => setMotDePasse(e.target.value)}
             autoComplete="new-password"
-            minLength={8}
+            minLength={4}
             required
             className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400"
           />

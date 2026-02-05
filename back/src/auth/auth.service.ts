@@ -11,6 +11,7 @@ import { RegisterDto } from './dto/register.dto';
 import { FirebaseLoginDto } from './dto/firebase-login.dto';
 import { FirebaseRegisterDto } from './dto/firebase-register.dto';
 import { firebaseConfig, firebaseSignInWithPassword, firebaseSignUpWithPassword } from '../firebase';
+import { firestore } from '../firebase-admin';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 
@@ -165,30 +166,8 @@ export class AuthService {
     const existing = await this.users.findOne({ where: { email: dto.email } });
     if (existing) throw new ConflictException('Email already registered');
 
-    // Attempt to create the user in Firebase first (best-effort).
-    try {
-      const apiKey = firebaseConfig?.apiKey;
-      if (apiKey) {
-        const res = await fetch(
-          `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${apiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: dto.email, password: dto.motDePasse, returnSecureToken: true }),
-          },
-        );
-        if (!res.ok) {
-          const err = await res.json().catch(() => null);
-          const msg = err?.error?.message;
-          // If the Firebase account already exists, continue and still create local account.
-          if (msg !== 'EMAIL_EXISTS') {
-            throw new BadRequestException('Firebase registration failed');
-          }
-        }
-      }
-    } catch (e) {
-      throw new BadRequestException('Firebase registration failed');
-    }
+    // Inscription locale uniquement - pas d'appel Firebase
+    // La synchronisation Firebase se fait via l'endpoint /auth/sync-firebase
 
     const hash = await bcrypt.hash(dto.motDePasse, 10);
     const role = await this.role.findOne({ where: { id: dto.idRole } });
@@ -198,6 +177,7 @@ export class AuthService {
       motDePasse: hash,
       nom: dto.nom,
       prenom: dto.prenom,
+      firebaseUid: null, // Non synchronisé au départ
       role,
     });
     return this.users.save(user);
@@ -278,4 +258,75 @@ export class AuthService {
     return this.users.save(user);
   }
 
+  /**
+   * Synchronise les utilisateurs non synchronisés vers Firestore.
+   * Seuls les utilisateurs sans firebaseUid sont envoyés.
+   * Retourne le nombre d'utilisateurs synchronisés et les erreurs éventuelles.
+   */
+  async syncToFirebase(): Promise<{ synced: number; errors: string[]; total: number }> {
+    // Récupérer les utilisateurs non synchronisés (firebaseUid est null ou vide)
+    const unsyncedUsers = await this.users.find({
+      where: { firebaseUid: null as any },
+      relations: ['role'],
+    });
+
+    // Filtrer pour exclure les visiteurs (pas besoin de les synchroniser)
+    const usersToSync = unsyncedUsers.filter(
+      (u) => u.email && u.role?.nom !== 'visiteur',
+    );
+
+    const errors: string[] = [];
+    let synced = 0;
+
+    for (const user of usersToSync) {
+      try {
+        // Générer le firebaseUid
+        const syncedUid = `synced_${Date.now()}`;
+        const docId = String(user.id);
+        
+        // Écrire dans Firestore collection 'utilisateur' avec le firebaseUid
+        const userData = {
+          id: user.id,
+          email: user.email,
+          nom: user.nom || null,
+          prenom: user.prenom || null,
+          motDePasse: user.motDePasse,
+          nbTentatives: user.nbTentatives,
+          dateBlocage: user.dateBlocage ? user.dateBlocage.toISOString() : null,
+          dateCreation: user.dateCreation ? user.dateCreation.toISOString() : new Date().toISOString(),
+          firebaseUid: syncedUid,
+        };
+
+        await firestore.collection('utilisateur').doc(docId).set(userData, { merge: true });
+        
+        // Marquer comme synchronisé dans PostgreSQL
+        user.firebaseUid = syncedUid;
+        await this.users.save(user);
+        synced++;
+      } catch (e) {
+        errors.push(`${user.email}: ${e instanceof Error ? e.message : 'Firestore error'}`);
+      }
+    }
+
+    return { synced, errors, total: usersToSync.length };
+  }
+
+  /**
+   * Récupère le nombre d'utilisateurs non synchronisés
+   */
+  async getUnsyncedCount(): Promise<{ count: number }> {
+    // Compter les utilisateurs non synchronisés (firebaseUid IS NULL)
+    // en excluant les visiteurs
+    const visiteurRole = await this.role.findOne({ where: { nom: 'visiteur' } });
+    
+    const qb = this.users.createQueryBuilder('u')
+      .where('u.firebaseUid IS NULL');
+    
+    if (visiteurRole) {
+      qb.andWhere('(u.id_role IS NULL OR u.id_role != :visiteurRoleId)', { visiteurRoleId: visiteurRole.id });
+    }
+    
+    const count = await qb.getCount();
+    return { count };
+  }
 }

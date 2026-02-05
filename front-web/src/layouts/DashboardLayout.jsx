@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { DASHBOARD_NAV_ITEMS } from '../constants/dashboardNav.js'
+import SyncFirebaseButton from '../components/SyncFirebaseButton.jsx'
 
 function getStoredRoleName() {
   try {
@@ -40,6 +41,7 @@ export default function DashboardLayout({ onLogout }) {
           ☰
         </button>
         <span className="text-sm font-semibold text-slate-800">Clouds5</span>
+        {roleName === 'manager' && <SyncFirebaseButton />}
       </header>
 
       {sidebarOpen && (
@@ -53,7 +55,9 @@ export default function DashboardLayout({ onLogout }) {
       <aside
         className={`fixed left-0 top-0 z-40 h-full w-72 border-r border-slate-200 bg-slate-100 px-5 py-6 transition-transform md:sticky md:top-0 md:h-screen md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
-        <div className="text-lg font-semibold text-indigo-600">Clouds5</div>
+        <div className="flex items-center justify-between">
+          <div className="text-lg font-semibold text-indigo-600">Clouds5</div>
+        </div>
 
         <nav className="mt-6 space-y-2" aria-label="Navigation latérale">
           {navItems.map((item) => (
@@ -85,6 +89,12 @@ export default function DashboardLayout({ onLogout }) {
       </aside>
 
       <main className="flex-1 px-4 pb-10 pt-20 md:pt-6">
+        {/* Header avec bouton Synchroniser en haut à droite */}
+        {roleName === 'manager' && (
+          <div className="mb-4 flex justify-end">
+            <SyncFirebaseButton />
+          </div>
+        )}
         <div className="mx-auto h-full w-full max-w-7xl">
           <Outlet />
         </div>

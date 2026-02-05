@@ -62,7 +62,7 @@ async function bootstrap() {
     }
 
     // default manager
-    const adminEmail = 'admin';
+    const adminEmail = 'admin@mail.com';
     let admin = await userRepo.findOne({ where: { email: adminEmail }, relations: ['role'] });
     if (!admin) {
       const hash = await bcrypt.hash('admin', 10);
@@ -80,7 +80,7 @@ async function bootstrap() {
     }
 
     // default visiteur (no credentials required to use public login)
-    const visiteurEmail = 'visiteur@default';
+    const visiteurEmail = 'visiteur@mail.com';
     let visiteur = await userRepo.findOne({ where: { email: visiteurEmail }, relations: ['role'] });
     if (!visiteur) {
       visiteur = userRepo.create({ email: visiteurEmail, motDePasse: '', role: roles['visiteur'], nbTentatives: 3, dateBlocage: null });
