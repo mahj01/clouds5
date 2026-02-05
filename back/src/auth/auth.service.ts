@@ -320,7 +320,7 @@ export class AuthService {
     const visiteurRole = await this.role.findOne({ where: { nom: 'visiteur' } });
     
     const qb = this.users.createQueryBuilder('u')
-      .where('u.firebaseUid IS NULL');
+      .where('u.firebase_uid IS NULL');
     
     if (visiteurRole) {
       qb.andWhere('(u.id_role IS NULL OR u.id_role != :visiteurRoleId)', { visiteurRoleId: visiteurRole.id });
