@@ -8,9 +8,6 @@ import { Session } from '../sessions/session.entity';
 import { TentativeConnexion } from '../tentative_connexion/tentative-connexion.entity';
 import { ConfigService } from '@nestjs/config';
 import { RegisterDto } from './dto/register.dto';
-import { FirebaseLoginDto } from './dto/firebase-login.dto';
-import { FirebaseRegisterDto } from './dto/firebase-register.dto';
-import { firebaseConfig, firebaseSignInWithPassword, firebaseSignUpWithPassword } from '../firebase';
 import { firestore } from '../firebase-admin';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
@@ -119,29 +116,7 @@ export class AuthService {
       await this.users.save(user);
       await this.recordAttempt(user, true);
       
-      
-
-      // Attempt Firebase email/password sign-in as fallback
-      try {
-        const apiKey = firebaseConfig?.apiKey;
-        if (apiKey) {
-          const res = await fetch(
-            `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email, password: motDePasse, returnSecureToken: true }),
-            },
-          );
-          if (res.ok) {
-            const data = await res.json();
-            // Use firebase token flow to find/create local user
-            return this.firebaseLogin({ email, motDePasse });
-          }
-        }
-      } catch (e) {
-        // ignore and fallthrough to error
-      }      
+      // Authentification locale uniquement - pas de Firebase Auth
       return this.createSessionForUser(user);
     }
     
@@ -183,80 +158,7 @@ export class AuthService {
     return this.users.save(user);
   }
 
-  private async verifyIdToken(idToken: string) {
-    if (!idToken) throw new BadRequestException('idToken required');
-    try {
-      const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
-      if (!res.ok) throw new BadRequestException('Invalid Firebase token');
-      const data = await res.json();
-      // tokeninfo returns email when valid
-      if (!data.email) throw new BadRequestException('Token does not contain email');
-      return data as { email: string; sub?: string };
-    } catch (e) {
-      throw new BadRequestException('Failed to verify Firebase token');
-    }
-  }
 
-  async firebaseLogin(dto: FirebaseLoginDto | { email?: string; motDePasse?: string }) {
-    // Accept email+motDePasse and sign in via firebase helper to obtain the email
-    if (!(dto as any).email || !(dto as any).motDePasse) {
-      throw new BadRequestException('email and motDePasse required');
-    }
-    let firebaseResp: any;
-    try {
-      firebaseResp = await firebaseSignInWithPassword((dto as any).email, (dto as any).motDePasse);
-    } catch (e) {
-      throw new BadRequestException('Firebase sign-in failed');
-    }
-    const email = firebaseResp.email || (dto as any).email;
-    let user = await this.users.findOne({ where: { email }, relations: ['role'] });
-    if (!user) {
-      // create a visiteur account for Firebase users that don't exist yet
-      const visiteurRole = await this.role.findOne({ where: { nom: 'visiteur' } });
-      user = this.users.create({ email, motDePasse: '', role: visiteurRole ?? undefined, nbTentatives: MAX_LOGIN_ATTEMPTS });
-      user = await this.users.save(user);
-    }
-
-    if (user.dateBlocage) {
-      await this.recordAttempt(user, false);
-      this.throwLocked();
-    }
-
-    user.nbTentatives = MAX_LOGIN_ATTEMPTS;
-    user.dateBlocage = null;
-    await this.users.save(user);
-    await this.recordAttempt(user, true);
-
-    // Always create a local session token for API calls
-    return this.createSessionForUser(user);
-  }
-
-  async firebaseRegister(dto: FirebaseRegisterDto | RegisterDto) {
-    // Expect RegisterDto with email & motDePasse
-    const reg = dto as RegisterDto;
-    const existing = await this.users.findOne({ where: { email: reg.email } });
-    if (existing) throw new ConflictException('Email already registered');
-
-    // Create Firebase account first (best-effort)
-    try {
-      await firebaseSignUpWithPassword(reg.email, reg.motDePasse);
-    } catch (e: any) {
-      const msg = String(e?.message || e);
-      if (!msg.includes('EMAIL_EXISTS')) {
-        throw new BadRequestException('Firebase registration failed');
-      }
-      // if EMAIL_EXISTS, continue and create local user
-    }
-
-    const hash = await bcrypt.hash(reg.motDePasse, 10);
-    const user = this.users.create({
-      email: reg.email,
-      motDePasse: hash,
-      nom: reg.nom,
-      prenom: reg.prenom,
-    });
-    return this.users.save(user);
-  }
 
   /**
    * Synchronise les utilisateurs non synchronisés vers Firestore.

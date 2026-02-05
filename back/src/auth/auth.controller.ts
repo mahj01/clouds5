@@ -2,8 +2,6 @@
 import { Controller, Post, Body, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { FirebaseLoginDto } from './dto/firebase-login.dto';
-import { FirebaseRegisterDto } from './dto/firebase-register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
@@ -46,17 +44,5 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Returns count of users not yet synced to Firebase' })
   getUnsyncedCount() {
     return this.auth.getUnsyncedCount();
-  }
-
-  @Post('firebase-login')
-  @ApiOperation({ summary: 'Login with Firebase ID token or email/password (same as /auth/login)' })
-  firebaseLogin(@Body() body: FirebaseLoginDto) {
-    return this.auth.firebaseLogin(body);
-  }
-
-  @Post('firebase-register')
-  @ApiOperation({ summary: 'Register via Firebase ID token or email/password (same as /auth/register)' })
-  firebaseRegister(@Body() dto: RegisterDto) {
-    return this.auth.firebaseRegister(dto);
   }
 }
