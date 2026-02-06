@@ -44,7 +44,20 @@ export async function bootstrapFirestoreCollectionsOnce() {
     { merge: true },
   )
 
-  // 3) mark as done
+  // 3) type_signalement dummy doc
+  await setDoc(
+    doc(db, 'type_signalement', INIT_DOC_ID),
+    {
+      libelle: 'bootstrap placeholder',
+      actif: true,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      __system: true,
+    },
+    { merge: true },
+  )
+
+  // 4) mark as done
   await setDoc(
     guardRef,
     {
