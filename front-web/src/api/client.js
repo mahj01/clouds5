@@ -208,6 +208,18 @@ export function getEntreprises() {
   })
 }
 
+export function getHistoriqueBySignalement(signalementId) {
+  return apiFetch(`/historique-signalement/signalement/${signalementId}`, {
+    headers: authHeaders(),
+  })
+}
+
+export function getAllHistoriqueSignalements() {
+  return apiFetch('/historique-signalement', {
+    headers: authHeaders(),
+  })
+}
+
 export function getUtilisateurs() {
   return apiFetch('/utilisateurs', {
     headers: authHeaders(),

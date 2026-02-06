@@ -5,17 +5,21 @@ import { getSignalementsStatistiques } from '../../api/client.js'
 
 export default function CarteProblemesFrontOffice() {
   const [stats, setStats] = useState(null)
+  const [statsError, setStatsError] = useState(null)
 
   useEffect(() => {
     loadStats()
   }, [])
 
   async function loadStats() {
+    setStatsError(null)
     try {
       const data = await getSignalementsStatistiques()
       setStats(data)
     } catch (e) {
-      console.error('Erreur chargement stats:', e)
+      const msg = e?.message || String(e)
+      console.error('Erreur chargement stats:', msg)
+      setStatsError(msg)
     }
   }
 
@@ -76,6 +80,17 @@ export default function CarteProblemesFrontOffice() {
           </div>
         )}
       </div>
+
+      {/* Erreur API stats */}
+      {statsError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex items-center gap-2">
+          <i className="fa fa-exclamation-circle" />
+          <span className="flex-1">Erreur lors du chargement des statistiques : {statsError}</span>
+          <button onClick={loadStats} className="text-red-600 hover:text-red-800 font-medium text-xs">
+            <i className="fa fa-refresh mr-1" />Réessayer
+          </button>
+        </div>
+      )}
 
       {/* Carte */}
       <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
