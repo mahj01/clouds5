@@ -3,6 +3,7 @@ export const DASHBOARD_NAV_ITEMS = [
   { id: 'utilisateurs', label: 'Liste des Utilisateurs', icon: 'fa fa-users', path: '/utilisateurs', adminOnly: true },
   { id: 'entreprises', label: 'Entreprises', icon: 'fa fa-building', path: '/entreprises' },
   { id: 'signalements', label: 'Signalements', icon: 'fa fa-exclamation-triangle', path: '/signalements' },
+  { id: 'historique-signalements', label: 'Historique Signalements', icon: 'fa fa-history', path: '/historique-signalements' },
   { id: 'statistiques', label: 'Statistiques', icon: 'fa fa-line-chart', path: '/statistiques' },
   { id: 'maplibre', label: 'Carte Antananarivo', icon: 'fa fa-map', path: '/maplibre' },
   // Pages Front-Office accessibles depuis le dashboard
