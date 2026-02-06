@@ -8,6 +8,7 @@ import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { Entreprise } from '../entreprises/entreprise.entity';
 import { TypeProbleme } from '../problemes/type-probleme.entity';
 import { JournalService } from '../journal/journal.service';
+import { HistoriqueSignalementService } from '../historique_signalement/historique-signalement.service';
 
 @Injectable()
 export class SignalementsService {
@@ -17,6 +18,7 @@ export class SignalementsService {
     @InjectRepository(Entreprise) private entRepo: Repository<Entreprise>,
     @InjectRepository(TypeProbleme) private typeRepo: Repository<TypeProbleme>,
     private readonly journalService: JournalService,
+    private readonly historiqueService: HistoriqueSignalementService,
   ) {}
 
   private async logAction(action: string, ressource: string, utilisateurId?: number, niveau: string = 'info', details?: string) {
@@ -123,10 +125,25 @@ export class SignalementsService {
     if (dto.surfaceM2 !== undefined) entity.surfaceM2 = String(dto.surfaceM2);
     if (dto.budget !== undefined) entity.budget = String(dto.budget);
 
-    if (dto.statut !== undefined) {
+    if (dto.statut !== undefined && dto.statut !== entity.statut) {
+      const ancienStatut = entity.statut;
       entity.statut = dto.statut;
       if (dto.statut === StatutSignalement.RESOLU) {
         entity.dateResolution = new Date();
+      }
+      // Enregistrer l'historique du changement de statut
+      const managerId = dto.utilisateurId || entity.utilisateur?.id;
+      if (managerId) {
+        try {
+          await this.historiqueService.create({
+            ancienStatut,
+            nouveauStatut: dto.statut,
+            signalementId: id,
+            managerId,
+          });
+        } catch (e) {
+          console.error('Erreur enregistrement historique:', e);
+        }
       }
     }
 
@@ -179,12 +196,25 @@ export class SignalementsService {
     const user = await this.userRepo.findOne({ where: { id: utilisateurResolutionId } });
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
 
+    const ancienStatut = entity.statut;
     entity.statut = StatutSignalement.RESOLU;
     entity.dateResolution = new Date();
     entity.utilisateurResolution = user;
     if (commentaire) entity.commentaireResolution = commentaire;
 
     const saved = await this.repo.save(entity);
+
+    // Enregistrer l'historique
+    try {
+      await this.historiqueService.create({
+        ancienStatut,
+        nouveauStatut: StatutSignalement.RESOLU,
+        signalementId: id,
+        managerId: utilisateurResolutionId,
+      });
+    } catch (e) {
+      console.error('Erreur enregistrement historique:', e);
+    }
     
     // Log resolution
     await this.logAction('RESOLVE_SIGNALEMENT', 'signalements', utilisateurResolutionId, 'info', `Signalement résolu: ${entity.titre} (ID: ${id})`);

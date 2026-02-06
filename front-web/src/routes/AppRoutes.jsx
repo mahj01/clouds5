@@ -16,6 +16,7 @@ import Parametres from '../pages/dashboard/Parametres.jsx'
 import Journal from '../pages/dashboard/Journal.jsx'
 import Sauvegarde from '../pages/dashboard/Sauvegarde.jsx'
 import ValidationDonnees from '../pages/dashboard/ValidationDonnees.jsx'
+import HistoriqueSignalements from '../pages/dashboard/HistoriqueSignalements.jsx'
 import CarteProblemesFrontOffice from '../pages/frontoffice/CarteProblemesFrontOffice.jsx'
 import SignalerProblemeFrontOffice from '../pages/frontoffice/SignalerProblemeFrontOffice.jsx'
 
@@ -111,6 +112,7 @@ export default function AppRoutes() {
         
         <Route path="/entreprises" element={<Entreprises />} />
         <Route path="/signalements" element={<Signalements />} />
+        <Route path="/historique-signalements" element={<HistoriqueSignalements />} />
         <Route path="/statistiques" element={<Statistiques />} />
         <Route path="/parametres" element={<Parametres />} />
         <Route path="/maplibre" element={<MapPage />} />

@@ -64,22 +64,45 @@ export default function SignalerProblemeFrontOffice() {
   }
 
   function handleGetLocation() {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setFormData((prev) => ({
-            ...prev,
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          }))
-        },
-        (err) => {
-          setError('Impossible d\'obtenir votre position: ' + err.message)
-        }
-      )
-    } else {
+    if (!navigator.geolocation) {
       setError('La géolocalisation n\'est pas supportée par votre navigateur')
+      return
     }
+    setError(null)
+
+    function onSuccess(position) {
+      setError(null)
+      setFormData((prev) => ({
+        ...prev,
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      }))
+    }
+
+    function onError(err) {
+      if (err.code === 1) {
+        setError('Géolocalisation refusée. Activez-la dans les paramètres de votre navigateur, ou saisissez les coordonnées manuellement.')
+      } else if (err.code === 2) {
+        setError('Position indisponible. Vérifiez que votre GPS est activé.')
+      } else if (err.code === 3) {
+        setError('Délai d\'attente dépassé pour la géolocalisation. Réessayez.')
+      } else {
+        setError('Impossible d\'obtenir votre position: ' + err.message)
+      }
+    }
+
+    // Essayer haute précision d'abord, puis fallback basse précision
+    navigator.geolocation.getCurrentPosition(
+      onSuccess,
+      () => {
+        navigator.geolocation.getCurrentPosition(
+          onSuccess,
+          onError,
+          { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 }
+        )
+      },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+    )
   }
 
   if (success) {

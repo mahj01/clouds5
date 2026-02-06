@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getSignalements, updateSignalement, deleteSignalement, resoudreSignalement } from '../../api/client.js'
+import { getSignalements, updateSignalement, deleteSignalement, resoudreSignalement, getEntreprises } from '../../api/client.js'
 import { getTypesProblemeActifs } from '../../api/problemes.js'
 
 const STATUTS = [
@@ -37,6 +37,7 @@ export default function Signalements() {
   const [success, setSuccess] = useState(null)
   const [signalements, setSignalements] = useState([])
   const [types, setTypes] = useState([])
+  const [entreprises, setEntreprises] = useState([])
   const [filtreStatut, setFiltreStatut] = useState(null)
   
   // Modals
@@ -57,12 +58,14 @@ export default function Signalements() {
     setLoading(true)
     setError(null)
     try {
-      const [sigs, typesData] = await Promise.all([
+      const [sigs, typesData, entreprisesData] = await Promise.all([
         getSignalements(),
         getTypesProblemeActifs(),
+        getEntreprises(),
       ])
       setSignalements(Array.isArray(sigs) ? sigs : [])
       setTypes(Array.isArray(typesData) ? typesData : [])
+      setEntreprises(Array.isArray(entreprisesData) ? entreprisesData : [])
     } catch (e) {
       setError(e?.message || String(e))
     } finally {
@@ -79,11 +82,21 @@ export default function Signalements() {
     : signalements
 
   // Ouvrir modal Voir (lecture seule)
-  function openView(s) {
+  async function openView(s) {
     setViewing(s)
     setEditing(null)
     setSuccess(null)
     setError(null)
+    setHistorique([])
+    setLoadingHistorique(true)
+    try {
+      const hist = await getHistoriqueBySignalement(s.id)
+      setHistorique(Array.isArray(hist) ? hist : [])
+    } catch (e) {
+      console.error('Erreur chargement historique:', e)
+    } finally {
+      setLoadingHistorique(false)
+    }
   }
 
   // Ouvrir modal Modifier
@@ -101,6 +114,7 @@ export default function Signalements() {
       typeProblemeId: s?.typeProbleme?.id ?? '',
       surfaceM2: s?.surfaceM2 ?? '',
       budget: s?.budget ?? '',
+      entrepriseId: s?.entreprise?.id ?? '',
     })
   }
 
@@ -123,6 +137,8 @@ export default function Signalements() {
         typeProblemeId: form.typeProblemeId ? parseInt(form.typeProblemeId) : null,
         surfaceM2: form.surfaceM2 ? parseFloat(form.surfaceM2) : null,
         budget: form.budget ? parseFloat(form.budget) : null,
+        entrepriseId: form.entrepriseId ? parseInt(form.entrepriseId) : null,
+        utilisateurId: parseInt(localStorage.getItem('auth_userId') || '1'),
       })
       setSuccess('Signalement mis à jour avec succès.')
       closeModals()
@@ -148,7 +164,8 @@ export default function Signalements() {
 
   async function handlePrendreEnCharge(s) {
     try {
-      await updateSignalement(s.id, { statut: 'en_cours' })
+      const userId = parseInt(localStorage.getItem('auth_userId') || '1')
+      await updateSignalement(s.id, { statut: 'en_cours', utilisateurId: userId })
       setSuccess('Signalement pris en charge.')
       await refresh()
     } catch (e) {
@@ -306,6 +323,11 @@ export default function Signalements() {
                         <i className="fa fa-money mr-1" />{formatMoney(s.budget)}
                       </span>
                     )}
+                    {s.entreprise && (
+                      <span className="text-purple-600 font-medium">
+                        <i className="fa fa-building mr-1" />{s.entreprise.nom}
+                      </span>
+                    )}
                     {s.dateResolution && (
                       <span className="text-green-600">
                         <i className="fa fa-check mr-1" />Résolu le {formatDate(s.dateResolution)}
@@ -432,6 +454,14 @@ export default function Signalements() {
                 <div className="text-xs text-indigo-600 mb-1">Budget alloué</div>
                 <div className="font-bold text-indigo-700 text-lg">
                   {viewing.budget ? formatMoney(viewing.budget) : 'Non défini'}
+                </div>
+              </div>
+              <div className="rounded-xl bg-purple-50 border border-purple-100 p-4">
+                <div className="text-xs text-purple-600 mb-1">Entreprise assignée</div>
+                <div className="font-bold text-purple-700">
+                  {viewing.entreprise ? (
+                    <><i className="fa fa-building mr-1" />{viewing.entreprise.nom}</>
+                  ) : 'Non assignée'}
                 </div>
               </div>
               {viewing.dateResolution && (
@@ -581,6 +611,26 @@ export default function Signalements() {
                 />
                 <p className="text-xs text-indigo-600 mt-1">
                   Définissez le budget nécessaire pour résoudre ce problème
+                </p>
+              </div>
+
+              {/* Assignation Entreprise */}
+              <div className="sm:col-span-2 rounded-xl border-2 border-purple-200 bg-purple-50 p-4">
+                <label className="block text-sm font-semibold text-purple-700 mb-2">
+                  <i className="fa fa-building mr-2" />Entreprise assignée
+                </label>
+                <select
+                  value={form.entrepriseId}
+                  onChange={(e) => setForm(f => ({ ...f, entrepriseId: e.target.value }))}
+                  className="w-full rounded-xl border border-purple-300 px-4 py-3 text-sm font-medium focus:border-purple-500 focus:outline-none"
+                >
+                  <option value="">— Aucune entreprise —</option>
+                  {entreprises.map(ent => (
+                    <option key={ent.id} value={ent.id}>{ent.nom}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-purple-600 mt-1">
+                  Assignez une entreprise pour la résolution de ce signalement
                 </p>
               </div>
 

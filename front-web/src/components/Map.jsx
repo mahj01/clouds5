@@ -73,6 +73,12 @@ export default function Map() {
   const [signalements, setSignalements] = useState([]);
   const didFitRef = useRef(false);
   const geojsonRef = useRef({ type: 'FeatureCollection', features: [] });
+  const containerRef = useRef(null);
+  const userMarkerRef = useRef(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   useEffect(() => {
     if (mapRef.current) return;
@@ -265,6 +271,105 @@ export default function Map() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Géolocalisation utilisateur
+  function handleLocateUser() {
+    if (!navigator.geolocation) {
+      setApiError('La géolocalisation n\'est pas supportée par votre navigateur');
+      return;
+    }
+    setApiError(null);
+
+    function onSuccess(position) {
+      const { latitude, longitude } = position.coords;
+      setApiError(null);
+      if (mapRef.current) {
+        mapRef.current.flyTo({ center: [longitude, latitude], zoom: 15, duration: 1000 });
+      }
+      if (userMarkerRef.current) userMarkerRef.current.remove();
+      const el = document.createElement('div');
+      el.style.cssText = 'width:20px;height:20px;background:#3b82f6;border:3px solid white;border-radius:50%;box-shadow:0 0 10px rgba(59,130,246,0.5);';
+      userMarkerRef.current = new maplibregl.Marker({ element: el })
+        .setLngLat([longitude, latitude])
+        .setPopup(new maplibregl.Popup({ offset: 15 }).setHTML('<div style="padding:4px;font-size:13px;font-weight:600;">Vous êtes ici</div>'))
+        .addTo(mapRef.current);
+      userMarkerRef.current.togglePopup();
+    }
+
+    function onError(err) {
+      if (err.code === 1) setApiError('Géolocalisation refusée. Activez-la dans les paramètres de votre navigateur.');
+      else if (err.code === 2) setApiError('Position indisponible. Vérifiez que votre GPS est activé.');
+      else if (err.code === 3) setApiError('Délai de géolocalisation dépassé. Réessayez.');
+      else setApiError('Impossible d\'obtenir votre position: ' + err.message);
+    }
+
+    // Essayer d'abord avec haute précision, puis fallback sans
+    navigator.geolocation.getCurrentPosition(
+      onSuccess,
+      () => {
+        navigator.geolocation.getCurrentPosition(
+          onSuccess,
+          onError,
+          { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 }
+        );
+      },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+    );
+  }
+
+  // Plein écran
+  function toggleFullscreen() {
+    if (!containerRef.current) return;
+    if (!document.fullscreenElement) {
+      containerRef.current.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+    } else {
+      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+    }
+  }
+
+  useEffect(() => {
+    function onFsChange() { setIsFullscreen(!!document.fullscreenElement); }
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  // Recherche d'adresse via Nominatim
+  async function handleSearch(e) {
+    e?.preventDefault();
+    if (!searchQuery.trim()) return;
+    setSearchLoading(true);
+    setSearchResults([]);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&countrycodes=mg&limit=5`
+      );
+      const data = await res.json();
+      setSearchResults(data || []);
+      if (data?.length > 0 && mapRef.current) {
+        mapRef.current.flyTo({
+          center: [parseFloat(data[0].lon), parseFloat(data[0].lat)],
+          zoom: 15,
+          duration: 1000
+        });
+      }
+    } catch {
+      setApiError('Erreur lors de la recherche d\'adresse');
+    } finally {
+      setSearchLoading(false);
+    }
+  }
+
+  function selectSearchResult(result) {
+    if (mapRef.current) {
+      mapRef.current.flyTo({
+        center: [parseFloat(result.lon), parseFloat(result.lat)],
+        zoom: 16,
+        duration: 1000
+      });
+    }
+    setSearchResults([]);
+    setSearchQuery(result.display_name.split(',').slice(0, 2).join(','));
+  }
+
   // Sync map source when signalements change
   useEffect(() => {
     const map = mapRef.current;
@@ -339,7 +444,7 @@ export default function Map() {
   }, [signalements]);
 
   return (
-    <div className="relative h-full w-full">
+    <div ref={containerRef} className="relative h-full w-full">
       <style>{`
         .signalement-popup .maplibregl-popup-content {
           background: rgba(255, 255, 255, 0.95);
@@ -358,7 +463,62 @@ export default function Map() {
         <div ref={mapContainer} className="h-full w-full" />
       </div>
 
-      <div className="pointer-events-none absolute left-4 top-4 right-4 flex flex-col gap-3 md:right-auto md:w-[400px]">
+      {/* Contrôles carte: Recherche + Localisation + Plein écran */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[10] flex flex-col items-center gap-2">
+        <form onSubmit={handleSearch} className="flex gap-1">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Rechercher une rue, un lieu..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-64 rounded-lg bg-white/95 backdrop-blur px-3 py-2 pl-8 text-sm border border-slate-300 shadow-lg focus:border-indigo-500 focus:outline-none"
+            />
+            <i className="fa fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
+          </div>
+          <button
+            type="submit"
+            disabled={searchLoading}
+            className="px-3 py-2 rounded-lg bg-indigo-500 text-white text-sm shadow-lg hover:bg-indigo-600 disabled:opacity-50"
+          >
+            {searchLoading ? <i className="fa fa-spinner fa-spin" /> : <i className="fa fa-search" />}
+          </button>
+          <button
+            type="button"
+            onClick={handleLocateUser}
+            className="px-3 py-2 rounded-lg bg-white/95 backdrop-blur text-blue-600 border border-slate-300 text-sm shadow-lg hover:bg-blue-50"
+            title="Ma position"
+          >
+            <i className="fa fa-crosshairs" />
+          </button>
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            className="px-3 py-2 rounded-lg bg-white/95 backdrop-blur text-slate-700 border border-slate-300 text-sm shadow-lg hover:bg-slate-100"
+            title={isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
+          >
+            <i className={`fa ${isFullscreen ? 'fa-compress' : 'fa-expand'}`} />
+          </button>
+        </form>
+
+        {/* Résultats de recherche */}
+        {searchResults.length > 0 && (
+          <div className="bg-white/95 backdrop-blur rounded-lg shadow-lg border border-slate-200 max-h-48 overflow-y-auto w-80">
+            {searchResults.map((r, i) => (
+              <button
+                key={i}
+                onClick={() => selectSearchResult(r)}
+                className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-indigo-50 border-b border-gray-100 last:border-0"
+              >
+                <i className="fa fa-map-marker mr-2 text-indigo-500" />
+                {r.display_name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="pointer-events-none absolute left-4 top-16 right-4 flex flex-col gap-3 md:right-auto md:w-[400px]">
         <div className="pointer-events-auto rounded-2xl border border-slate-200 bg-white/95 backdrop-blur px-4 py-3 shadow-lg">
           <div className="flex items-start justify-between gap-3">
             <div>
