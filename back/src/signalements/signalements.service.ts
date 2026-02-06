@@ -7,6 +7,7 @@ import { UpdateSignalementDto } from './dto/update-signalement.dto';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { Entreprise } from '../entreprises/entreprise.entity';
 import { TypeProbleme } from '../problemes/type-probleme.entity';
+import { JournalService } from '../journal/journal.service';
 
 @Injectable()
 export class SignalementsService {
@@ -15,7 +16,16 @@ export class SignalementsService {
     @InjectRepository(Utilisateur) private userRepo: Repository<Utilisateur>,
     @InjectRepository(Entreprise) private entRepo: Repository<Entreprise>,
     @InjectRepository(TypeProbleme) private typeRepo: Repository<TypeProbleme>,
+    private readonly journalService: JournalService,
   ) {}
+
+  private async logAction(action: string, ressource: string, utilisateurId?: number, niveau: string = 'info', details?: string) {
+    try {
+      await this.journalService.create({ action, ressource, utilisateurId, niveau, details });
+    } catch (e) {
+      console.error('Failed to log action:', e);
+    }
+  }
 
   async create(dto: CreateSignalementDto) {
     const user = await this.userRepo.findOne({ where: { id: dto.utilisateurId } });
@@ -51,7 +61,12 @@ export class SignalementsService {
       typeProbleme,
       entreprise,
     });
-    return this.repo.save(entity);
+    const saved = await this.repo.save(entity);
+    
+    // Log creation
+    await this.logAction('CREATE_SIGNALEMENT', 'signalements', dto.utilisateurId, 'info', `Nouveau signalement créé: ${dto.titre} (ID: ${saved.id})`);
+    
+    return saved;
   }
 
   findAll() {
@@ -151,7 +166,12 @@ export class SignalementsService {
       }
     }
 
-    return this.repo.save(entity);
+    const saved = await this.repo.save(entity);
+    
+    // Log update
+    await this.logAction('UPDATE_SIGNALEMENT', 'signalements', dto.utilisateurId || entity.utilisateur?.id, 'info', `Signalement modifié: ${entity.titre} (ID: ${id})`);
+    
+    return saved;
   }
 
   async resoudre(id: number, utilisateurResolutionId: number, commentaire?: string) {
@@ -164,11 +184,20 @@ export class SignalementsService {
     entity.utilisateurResolution = user;
     if (commentaire) entity.commentaireResolution = commentaire;
 
-    return this.repo.save(entity);
+    const saved = await this.repo.save(entity);
+    
+    // Log resolution
+    await this.logAction('RESOLVE_SIGNALEMENT', 'signalements', utilisateurResolutionId, 'info', `Signalement résolu: ${entity.titre} (ID: ${id})`);
+    
+    return saved;
   }
 
   async remove(id: number) {
     const item = await this.findOne(id);
+    
+    // Log deletion
+    await this.logAction('DELETE_SIGNALEMENT', 'signalements', item.utilisateur?.id, 'warning', `Signalement supprimé: ${item.titre} (ID: ${id})`);
+    
     await this.repo.remove(item);
   }
 

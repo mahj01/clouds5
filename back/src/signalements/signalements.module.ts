@@ -6,9 +6,13 @@ import { SignalementsController } from './signalements.controller';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { Entreprise } from '../entreprises/entreprise.entity';
 import { TypeProbleme } from '../problemes/type-probleme.entity';
+import { JournalModule } from '../journal/journal.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Signalement, Utilisateur, Entreprise, TypeProbleme])],
+  imports: [
+    TypeOrmModule.forFeature([Signalement, Utilisateur, Entreprise, TypeProbleme]),
+    JournalModule,
+  ],
   providers: [SignalementsService],
   controllers: [SignalementsController],
   exports: [SignalementsService],
