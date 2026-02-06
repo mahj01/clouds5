@@ -119,7 +119,7 @@ export default function ValidationDonnees() {
 
       {/* Statistiques */}
       {stats && (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           <div className="rounded-xl border border-slate-200 bg-white p-4">
             <div className="text-xs text-slate-500">Total</div>
             <div className="mt-1 text-2xl font-bold text-slate-800">{stats.total}</div>
@@ -148,14 +148,14 @@ export default function ValidationDonnees() {
         <button
           onClick={handleValiderTous}
           disabled={processing}
-          className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-600 disabled:opacity-50"
+          className="w-full sm:w-auto min-h-[36px] rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-600 disabled:opacity-50"
         >
           {processing ? 'Validation en cours…' : 'Valider automatiquement tous'}
         </button>
         <button
           onClick={charger}
           disabled={loading}
-          className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+          className="w-full sm:w-auto min-h-[36px] rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
         >
           Actualiser
         </button>
@@ -174,16 +174,16 @@ export default function ValidationDonnees() {
       )}
 
       {/* Onglets */}
-      <div className="flex gap-2 border-b border-slate-200">
+      <div className="flex flex-wrap gap-2 border-b border-slate-200">
         <button
           onClick={() => setActiveTab('validations')}
-          className={`px-4 py-2 text-sm font-semibold ${activeTab === 'validations' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
+          className={`w-full sm:w-auto px-4 py-2 text-sm font-semibold ${activeTab === 'validations' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
         >
           Validations ({validations.length})
         </button>
         <button
           onClick={() => setActiveTab('nonValides')}
-          className={`px-4 py-2 text-sm font-semibold ${activeTab === 'nonValides' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
+          className={`w-full sm:w-auto px-4 py-2 text-sm font-semibold ${activeTab === 'nonValides' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
         >
           Non validés ({nonValides.length})
         </button>
@@ -192,7 +192,92 @@ export default function ValidationDonnees() {
       {/* Tableau des validations */}
       {activeTab === 'validations' && (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-          <div className="overflow-x-auto">
+
+          {/* Mobile : cartes */}
+          <div className="md:hidden divide-y divide-slate-100">
+            {loading ? (
+              <div className="p-6 text-center text-slate-400">Chargement…</div>
+            ) : validations.length === 0 ? (
+              <div className="p-6 text-center text-slate-400">Aucune validation</div>
+            ) : (
+              validations.map((v) => (
+                <div key={v.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-semibold text-slate-800 text-sm">
+                        #{v.signalement?.id} - {v.signalement?.titre || '—'}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-0.5">
+                        {v.signalement?.latitude}, {v.signalement?.longitude}
+                      </div>
+                    </div>
+                    <StatutBadge statut={v.statut} />
+                  </div>
+                  <div className="flex flex-wrap gap-3 text-sm">
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-slate-400">Coord.</span>
+                      <CheckIcon ok={v.coordonneesValides} />
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-slate-400">Complét.</span>
+                      <CheckIcon ok={v.donneesCompletes} />
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-slate-400">Cohér.</span>
+                      <CheckIcon ok={v.coherenceDonnees} />
+                    </div>
+                  </div>
+                  {v.erreursDetectees && (
+                    <div>
+                      <span className="text-xs text-slate-400">Erreurs</span>
+                      <ul className="list-inside list-disc text-xs text-red-600 mt-0.5">
+                        {JSON.parse(v.erreursDetectees).map((err, i) => (
+                          <li key={i}>{err}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                    <div>
+                      <span className="text-xs text-slate-400">Date</span>
+                      <p className="text-slate-700">{formatDate(v.dateValidation)}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-slate-400">Validé par</span>
+                      <p className="text-slate-700">{v.validePar?.nom || v.validePar?.email || '—'}</p>
+                    </div>
+                  </div>
+                  {v.statut !== 'valide' && v.statut !== 'rejete' && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          const signalementId = v.signalement?.id || v.signalementId
+                          if (signalementId) handleValider(signalementId, 'valide')
+                          else setError('ID du signalement non trouvé')
+                        }}
+                        className="flex-1 min-h-[40px] rounded-lg bg-green-500 px-3 py-2 text-sm font-medium text-white hover:bg-green-600"
+                      >
+                        ✓ Valider
+                      </button>
+                      <button
+                        onClick={() => {
+                          const signalementId = v.signalement?.id || v.signalementId
+                          if (signalementId) handleValider(signalementId, 'rejete')
+                          else setError('ID du signalement non trouvé')
+                        }}
+                        className="flex-1 min-h-[40px] rounded-lg bg-red-500 px-3 py-2 text-sm font-medium text-white hover:bg-red-600"
+                      >
+                        ✗ Rejeter
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop : tableau */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
                 <tr>
@@ -266,14 +351,14 @@ export default function ValidationDonnees() {
                         ) : v.statut === 'rejete' ? (
                           <span className="text-xs text-red-600 font-medium">✗ Rejeté</span>
                         ) : (
-                          <div className="flex gap-1">
+                          <div className="flex flex-col sm:flex-row gap-2">
                             <button
                               onClick={() => {
                                 const signalementId = v.signalement?.id || v.signalementId
                                 if (signalementId) handleValider(signalementId, 'valide')
                                 else setError('ID du signalement non trouvé')
                               }}
-                              className="rounded bg-green-500 px-2 py-1 text-xs text-white hover:bg-green-600"
+                              className="w-full sm:w-auto rounded-lg bg-green-500 px-3 py-2 text-xs font-medium text-white hover:bg-green-600 min-h-[36px] min-w-[36px]"
                               title="Valider"
                             >
                               ✓
@@ -284,7 +369,7 @@ export default function ValidationDonnees() {
                                 if (signalementId) handleValider(signalementId, 'rejete')
                                 else setError('ID du signalement non trouvé')
                               }}
-                              className="rounded bg-red-500 px-2 py-1 text-xs text-white hover:bg-red-600"
+                              className="w-full sm:w-auto rounded-lg bg-red-500 px-3 py-2 text-xs font-medium text-white hover:bg-red-600 min-h-[36px] min-w-[36px]"
                               title="Rejeter"
                             >
                               ✗
@@ -304,7 +389,58 @@ export default function ValidationDonnees() {
       {/* Tableau des non validés */}
       {activeTab === 'nonValides' && (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-          <div className="overflow-x-auto">
+
+          {/* Mobile : cartes */}
+          <div className="md:hidden divide-y divide-slate-100">
+            {loading ? (
+              <div className="p-6 text-center text-slate-400">Chargement…</div>
+            ) : nonValides.length === 0 ? (
+              <div className="p-6 text-center text-slate-400">Tous les signalements ont été validés</div>
+            ) : (
+              nonValides.map((s) => (
+                <div key={s.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-semibold text-slate-800 text-sm">#{s.id} - {s.titre || '—'}</div>
+                      <div className="text-xs text-slate-500 mt-0.5">{s.latitude}, {s.longitude}</div>
+                    </div>
+                    <span className="text-xs text-slate-500 shrink-0">{s.statut || '—'}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <div>
+                      <span className="text-xs text-slate-400">Surface</span>
+                      <p className="text-slate-700">{s.surfaceM2 || '—'} m²</p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-slate-400">Budget</span>
+                      <p className="text-slate-700">{s.budget || '—'} MGA</p>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-xs text-slate-400">Entreprise</span>
+                      <p className="text-slate-700">{s.entreprise?.nom || '—'}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleValider(s.id, 'valide')}
+                      className="flex-1 min-h-[40px] rounded-lg bg-green-500 px-3 py-2 text-sm font-medium text-white hover:bg-green-600"
+                    >
+                      ✓ Valider
+                    </button>
+                    <button
+                      onClick={() => handleValider(s.id, 'rejete')}
+                      className="flex-1 min-h-[40px] rounded-lg bg-red-500 px-3 py-2 text-sm font-medium text-white hover:bg-red-600"
+                    >
+                      ✗ Rejeter
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop : tableau */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
                 <tr>
@@ -344,16 +480,16 @@ export default function ValidationDonnees() {
                       <td className="px-4 py-3 text-slate-600">{s.budget || '—'} MGA</td>
                       <td className="px-4 py-3 text-slate-600">{s.entreprise?.nom || '—'}</td>
                       <td className="px-4 py-3">
-                        <div className="flex gap-1">
+                        <div className="flex gap-2">
                           <button
                             onClick={() => handleValider(s.id, 'valide')}
-                            className="rounded bg-green-500 px-2 py-1 text-xs text-white hover:bg-green-600"
+                            className="rounded-lg bg-green-500 px-3 py-2 text-xs font-medium text-white hover:bg-green-600"
                           >
                             Valider
                           </button>
                           <button
                             onClick={() => handleValider(s.id, 'rejete')}
-                            className="rounded bg-red-500 px-2 py-1 text-xs text-white hover:bg-red-600"
+                            className="rounded-lg bg-red-500 px-3 py-2 text-xs font-medium text-white hover:bg-red-600"
                           >
                             Rejeter
                           </button>

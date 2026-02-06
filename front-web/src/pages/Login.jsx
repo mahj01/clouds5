@@ -72,12 +72,12 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-lg rounded-2xl border border-white/10 bg-white/5 p-8 shadow-xl shadow-black/30">
-      <h1 className="text-2xl font-semibold text-white"><i className="fa fa-sign-in mr-2" aria-hidden="true"/>Connexion</h1>
+    <div className="mx-auto w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xl">
+      <h1 className="text-2xl font-semibold text-slate-800"><i className="fa fa-sign-in mr-2 text-indigo-500" aria-hidden="true"/>Connexion</h1>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-2">
-          <label htmlFor={emailId} className="text-sm font-medium text-slate-200">
+          <label htmlFor={emailId} className="text-sm font-medium text-slate-700">
             Email
           </label>
           <input
@@ -88,12 +88,12 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
             placeholder="ex: user@mail.com"
             autoComplete="email"
             required
-            className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400"
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none"
           />
         </div>
 
         <div className="space-y-2">
-          <label htmlFor={passwordId} className="text-sm font-medium text-slate-200">
+          <label htmlFor={passwordId} className="text-sm font-medium text-slate-700">
             Mot de passe
           </label>
           <input
@@ -103,7 +103,7 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
             onChange={(e) => setMotDePasse(e.target.value)}
             autoComplete="current-password"
             required
-            className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400"
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none"
           />
         </div>
 
@@ -117,7 +117,7 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
         </button>
 
         <button
-          className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
           type="button"
           onClick={handleVisitor}
           disabled={loading || visitorLoading}
@@ -127,7 +127,7 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
         </button>
 
         <button
-          className="w-full text-sm text-indigo-200 transition hover:text-indigo-100"
+          className="w-full text-sm text-indigo-600 transition hover:text-indigo-500"
           type="button"
           onClick={() => onGoRegister?.()}
           disabled={loading || visitorLoading}
@@ -136,9 +136,9 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
           Pas de compte ? S’inscrire
         </button>
 
-        {error && <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</p>}
+        {error && <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
         {success && (
-          <p className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+          <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
             Connexion réussie{tokenStored ? ' (token enregistré).' : '.'}
           </p>
         )}

@@ -322,18 +322,18 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated }) 
   }
 
   return (
-    <div ref={containerRef} className={`relative ${isFullscreen ? 'h-screen' : 'h-[600px]'} rounded-xl overflow-hidden border border-gray-200 shadow-sm`}>
+    <div ref={containerRef} className={`relative ${isFullscreen ? 'h-screen' : 'h-[400px] sm:h-[500px] md:h-[600px]'} rounded-xl overflow-hidden border border-gray-200 shadow-sm`}>
       {/* Contrôles de la carte */}
-      <div className="absolute top-4 left-4 z-[10] flex flex-col gap-2">
+      <div className="absolute top-3 left-3 z-[10] flex flex-col gap-2 max-w-[calc(100%-70px)] sm:max-w-none sm:top-4 sm:left-4">
         {/* Recherche d'adresse */}
         <form onSubmit={handleSearch} className="flex gap-1">
           <div className="relative">
             <input
               type="text"
-              placeholder="Rechercher une rue, un lieu..."
+              placeholder="Rechercher un lieu..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-56 rounded-lg bg-white px-3 py-2 pl-8 text-sm border border-gray-300 shadow-lg focus:border-indigo-500 focus:outline-none"
+              className="w-full sm:w-56 rounded-lg bg-white px-3 py-2 pl-8 text-sm border border-gray-300 shadow-lg focus:border-indigo-500 focus:outline-none"
             />
             <i className="fa fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
           </div>
@@ -391,7 +391,7 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated }) 
             className="flex-1 px-3 py-2 rounded-lg bg-white text-blue-600 border border-gray-300 text-sm shadow-lg hover:bg-blue-50"
             title="Ma position"
           >
-            <i className="fa fa-crosshairs mr-1" />Ma position
+            <i className="fa fa-crosshairs sm:mr-1" /><span className="hidden sm:inline">Ma position</span>
           </button>
           <button
             onClick={toggleFullscreen}
@@ -419,7 +419,7 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated }) 
       )}
 
       {/* Légende */}
-      <div className="absolute bottom-4 left-4 z-[10] bg-white/95 rounded-lg p-3 text-xs text-gray-900 shadow-lg border border-gray-200">
+      <div className="hidden sm:block absolute bottom-4 left-4 z-[10] bg-white/95 rounded-lg p-3 text-xs text-gray-900 shadow-lg border border-gray-200">
         <div className="font-medium mb-2 text-gray-700">Légende</div>
         <div className="space-y-1">
           {types.slice(0, 5).map((type) => (

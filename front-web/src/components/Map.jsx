@@ -464,15 +464,15 @@ export default function Map() {
       </div>
 
       {/* Contrôles carte: Recherche + Localisation + Plein écran */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[10] flex flex-col items-center gap-2">
-        <form onSubmit={handleSearch} className="flex gap-1">
-          <div className="relative">
+      <div className="absolute top-3 left-3 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:top-4 z-[10] flex flex-col items-center gap-2">
+        <form onSubmit={handleSearch} className="flex gap-1 w-full sm:w-auto">
+          <div className="relative flex-1 sm:flex-initial">
             <input
               type="text"
-              placeholder="Rechercher une rue, un lieu..."
+              placeholder="Rechercher un lieu..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-64 rounded-lg bg-white/95 backdrop-blur px-3 py-2 pl-8 text-sm border border-slate-300 shadow-lg focus:border-indigo-500 focus:outline-none"
+              className="w-full sm:w-64 rounded-lg bg-white/95 backdrop-blur px-3 py-2 pl-8 text-sm border border-slate-300 shadow-lg focus:border-indigo-500 focus:outline-none"
             />
             <i className="fa fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
           </div>
@@ -503,7 +503,7 @@ export default function Map() {
 
         {/* Résultats de recherche */}
         {searchResults.length > 0 && (
-          <div className="bg-white/95 backdrop-blur rounded-lg shadow-lg border border-slate-200 max-h-48 overflow-y-auto w-80">
+          <div className="bg-white/95 backdrop-blur rounded-lg shadow-lg border border-slate-200 max-h-48 overflow-y-auto w-full sm:w-80">
             {searchResults.map((r, i) => (
               <button
                 key={i}
@@ -518,7 +518,7 @@ export default function Map() {
         )}
       </div>
 
-      <div className="pointer-events-none absolute left-4 top-16 right-4 flex flex-col gap-3 md:right-auto md:w-[400px]">
+      <div className="pointer-events-none absolute left-3 top-16 right-3 flex flex-col gap-3 sm:left-4 sm:right-auto sm:w-[320px] md:w-[400px]">
         <div className="pointer-events-auto rounded-2xl border border-slate-200 bg-white/95 backdrop-blur px-4 py-3 shadow-lg">
           <div className="flex items-start justify-between gap-3">
             <div>

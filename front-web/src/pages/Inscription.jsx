@@ -88,13 +88,13 @@ export default function Inscription({ onGoLogin } = {}) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-xl rounded-2xl border border-white/10 bg-white/5 p-8 shadow-xl shadow-black/30">
-      <h1 className="text-2xl font-semibold text-white"><i className="fa fa-user-plus mr-2" aria-hidden="true"/>Inscription</h1>
-      <p className="mt-1 text-sm text-slate-300">Créez votre compte Clouds5.</p>
+    <div className="mx-auto w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xl">
+      <h1 className="text-2xl font-semibold text-slate-800"><i className="fa fa-user-plus mr-2 text-indigo-500" aria-hidden="true"/>Inscription</h1>
+      <p className="mt-1 text-sm text-slate-500">Créez votre compte Clouds5.</p>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-2">
-          <label htmlFor={emailId} className="text-sm font-medium text-slate-200">
+          <label htmlFor={emailId} className="text-sm font-medium text-slate-700">
             Email
           </label>
           <input
@@ -105,12 +105,12 @@ export default function Inscription({ onGoLogin } = {}) {
             placeholder="ex: user@mail.com"
             autoComplete="email"
             required
-            className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400"
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none"
           />
         </div>
 
         <div className="space-y-2">
-          <label htmlFor={passwordId} className="text-sm font-medium text-slate-200">
+          <label htmlFor={passwordId} className="text-sm font-medium text-slate-700">
             Mot de passe
           </label>
           <input
@@ -121,13 +121,13 @@ export default function Inscription({ onGoLogin } = {}) {
             autoComplete="new-password"
             minLength={4}
             required
-            className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400"
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none"
           />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <label htmlFor={nomId} className="text-sm font-medium text-slate-200">
+            <label htmlFor={nomId} className="text-sm font-medium text-slate-700">
               Nom
             </label>
             <input
@@ -136,12 +136,12 @@ export default function Inscription({ onGoLogin } = {}) {
               value={nom}
               onChange={(e) => setNom(e.target.value)}
               placeholder="Votre nom"
-              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none"
             />
           </div>
 
           <div className="space-y-2">
-            <label htmlFor={prenomId} className="text-sm font-medium text-slate-200">
+            <label htmlFor={prenomId} className="text-sm font-medium text-slate-700">
               Prénom
             </label>
             <input
@@ -150,13 +150,13 @@ export default function Inscription({ onGoLogin } = {}) {
               value={prenom}
               onChange={(e) => setPrenom(e.target.value)}
               placeholder="Votre prénom"
-              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none"
             />
           </div>
         </div>
 
         <div className="space-y-2">
-          <label htmlFor={roleId} className="text-sm font-medium text-slate-200">
+          <label htmlFor={roleId} className="text-sm font-medium text-slate-700">
             Rôle
           </label>
           <select
@@ -165,7 +165,7 @@ export default function Inscription({ onGoLogin } = {}) {
             onChange={(e) => setSelectedRoleId(e.target.value)}
             disabled={rolesLoading || roles.length === 0}
             required
-            className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-sm text-white focus:border-indigo-400"
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none"
           >
             {roles.length === 0 ? (
               <option value="">{rolesLoading ? 'Chargement…' : 'Aucun rôle disponible'}</option>
@@ -188,12 +188,12 @@ export default function Inscription({ onGoLogin } = {}) {
           {loading ? 'Création…' : 'Créer mon compte'}
         </button>
 
-        {rolesError && <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">{rolesError}</p>}
-        {error && <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</p>}
-        {success && <p className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">Compte créé avec succès.</p>}
+        {rolesError && <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">{rolesError}</p>}
+        {error && <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+        {success && <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">Compte créé avec succès.</p>}
 
         <div className="mt-4 text-center">
-          <button type="button" className="text-sm text-indigo-200 hover:text-indigo-100" onClick={() => onGoLogin?.()}>
+          <button type="button" className="text-sm text-indigo-600 hover:text-indigo-500" onClick={() => onGoLogin?.()}>
             <i className="fa fa-sign-in mr-2" aria-hidden="true"/>Déjà inscrit ? Se connecter
           </button>
         </div>

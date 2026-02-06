@@ -119,7 +119,7 @@ export default function Sauvegarde() {
 
       {/* Statistiques */}
       {stats && (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
           <div className="rounded-xl border border-slate-200 bg-white p-4">
             <div className="text-xs text-slate-500">Total sauvegardes</div>
             <div className="mt-1 text-2xl font-bold text-slate-800">{stats.totalSauvegardes}</div>
@@ -149,21 +149,21 @@ export default function Sauvegarde() {
           <button
             onClick={() => handleCreer('signalements')}
             disabled={creating}
-            className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-600 disabled:opacity-50"
+            className="w-full sm:w-auto min-h-[36px] rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-600 disabled:opacity-50"
           >
             {creating ? 'Création…' : 'Signalements'}
           </button>
           <button
             onClick={() => handleCreer('entreprises')}
             disabled={creating}
-            className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600 disabled:opacity-50"
+            className="w-full sm:w-auto min-h-[36px] rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600 disabled:opacity-50"
           >
             {creating ? 'Création…' : 'Entreprises'}
           </button>
           <button
             onClick={() => handleCreer('complete')}
             disabled={creating}
-            className="rounded-lg bg-purple-500 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-600 disabled:opacity-50"
+            className="w-full sm:w-auto min-h-[36px] rounded-lg bg-purple-500 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-600 disabled:opacity-50"
           >
             {creating ? 'Création…' : 'Sauvegarde complète'}
           </button>
@@ -183,11 +183,69 @@ export default function Sauvegarde() {
       )}
 
       {/* Liste des sauvegardes */}
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
         <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
           <h2 className="font-semibold text-slate-800">Historique des sauvegardes</h2>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Mobile : cartes */}
+        <div className="md:hidden divide-y divide-slate-100">
+          {loading ? (
+            <div className="p-6 text-center text-slate-400">Chargement…</div>
+          ) : sauvegardes.length === 0 ? (
+            <div className="p-6 text-center text-slate-400">Aucune sauvegarde</div>
+          ) : (
+            sauvegardes.map((s) => (
+              <div key={s.id} className="p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold text-slate-800 text-sm truncate">{s.nom}</span>
+                  <StatutBadge statut={s.statut} />
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <div>
+                    <span className="text-xs text-slate-400">Type</span>
+                    <p className="text-slate-700">{s.type}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-slate-400">Éléments</span>
+                    <p className="text-slate-700">{s.nombreElements || 0}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-slate-400">Taille</span>
+                    <p className="text-slate-700">{formatSize(s.tailleFichier)}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-slate-400">Date</span>
+                    <p className="text-slate-700">{formatDate(s.dateCreation)}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-xs text-slate-400">Créé par</span>
+                    <p className="text-slate-700">{s.creePar?.nom || s.creePar?.email || '—'}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {s.statut === 'termine' && (
+                    <button
+                      onClick={() => handleTelecharger(s.id)}
+                      className="flex-1 min-h-[40px] rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-600"
+                    >
+                      Télécharger
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleSupprimer(s.id)}
+                    className="flex-1 min-h-[40px] rounded-lg bg-red-500 px-3 py-2 text-sm font-semibold text-white hover:bg-red-600"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop : tableau */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
               <tr>
@@ -235,14 +293,14 @@ export default function Sauvegarde() {
                         {s.statut === 'termine' && (
                           <button
                             onClick={() => handleTelecharger(s.id)}
-                            className="rounded-lg bg-blue-500 px-2 py-1 text-xs font-semibold text-white hover:bg-blue-600"
+                            className="rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-600"
                           >
                             Télécharger
                           </button>
                         )}
                         <button
                           onClick={() => handleSupprimer(s.id)}
-                          className="rounded-lg bg-red-500 px-2 py-1 text-xs font-semibold text-white hover:bg-red-600"
+                          className="rounded-lg bg-red-500 px-3 py-2 text-sm font-semibold text-white hover:bg-red-600"
                         >
                           Supprimer
                         </button>

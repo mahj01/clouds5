@@ -125,7 +125,7 @@ export default function SignalerProblemeFrontOffice() {
       <div className="mx-auto max-w-2xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
             <i className="fa fa-plus-circle text-indigo-600 mr-3" />
             Signaler un Problème
           </h1>
@@ -135,7 +135,7 @@ export default function SignalerProblemeFrontOffice() {
         </div>
 
         {/* Formulaire */}
-        <form onSubmit={handleSubmit} className="rounded-2xl border border-gray-200 bg-white p-6 space-y-6 shadow-sm">
+        <form onSubmit={handleSubmit} className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 space-y-6 shadow-sm">
           {error && (
             <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-red-600 text-sm">
               <i className="fa fa-exclamation-circle mr-2" />{error}
@@ -147,7 +147,7 @@ export default function SignalerProblemeFrontOffice() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <i className="fa fa-tag mr-2 text-indigo-600" />Type de problème *
             </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {types.map((type) => (
                 <button
                   key={type.id}
@@ -219,7 +219,7 @@ export default function SignalerProblemeFrontOffice() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <i className="fa fa-crosshairs mr-2 text-indigo-600" />Position GPS
             </label>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1">
                 <input
                   type="number"
@@ -259,7 +259,7 @@ export default function SignalerProblemeFrontOffice() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <i className="fa fa-flag mr-2 text-indigo-600" />Niveau d'urgence
             </label>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               {[
                 { value: 1, label: 'Normal', color: 'bg-blue-500' },
                 { value: 2, label: 'Important', color: 'bg-orange-500' },

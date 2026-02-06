@@ -78,7 +78,7 @@ export default function HistoriqueSignalements() {
         <button
           onClick={loadAll}
           disabled={loading}
-          className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+          className="w-full sm:w-auto min-h-[36px] rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
         >
           <i className={`fa ${loading ? 'fa-spinner fa-spin' : 'fa-refresh'} mr-2`} />
           Rafraîchir
@@ -86,25 +86,25 @@ export default function HistoriqueSignalements() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="text-2xl font-bold text-gray-900">{historiques.length}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-4 shadow-sm">
+          <div className="text-xl sm:text-2xl font-bold text-gray-900">{historiques.length}</div>
           <div className="text-sm text-gray-500">Total modifications</div>
         </div>
-        <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4 shadow-sm">
-          <div className="text-2xl font-bold text-yellow-700">
+        <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-3 sm:p-4 shadow-sm">
+          <div className="text-xl sm:text-2xl font-bold text-yellow-700">
             {historiques.filter(h => h.nouveauStatut === 'en_cours').length}
           </div>
           <div className="text-sm text-yellow-600">Prises en charge</div>
         </div>
-        <div className="rounded-xl border border-green-200 bg-green-50 p-4 shadow-sm">
-          <div className="text-2xl font-bold text-green-700">
+        <div className="rounded-xl border border-green-200 bg-green-50 p-3 sm:p-4 shadow-sm">
+          <div className="text-xl sm:text-2xl font-bold text-green-700">
             {historiques.filter(h => h.nouveauStatut === 'resolu').length}
           </div>
           <div className="text-sm text-green-600">Résolutions</div>
         </div>
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 shadow-sm">
-          <div className="text-2xl font-bold text-red-700">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 sm:p-4 shadow-sm">
+          <div className="text-xl sm:text-2xl font-bold text-red-700">
             {historiques.filter(h => h.nouveauStatut === 'rejete').length}
           </div>
           <div className="text-sm text-red-600">Rejets</div>

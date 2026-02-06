@@ -158,7 +158,7 @@ export default function UtilisateursDeblocage() {
   }
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-xl font-semibold text-slate-800"><i className="fa fa-unlock-alt mr-2 text-indigo-500"/>Déblocage utilisateurs</h2>
@@ -238,7 +238,7 @@ export default function UtilisateursDeblocage() {
                     </td>
                     <td className="px-3 py-3 text-sm text-slate-600">{user.email}</td>
                     <td className="px-3 py-3 text-sm text-slate-600">{statutLabel}</td>
-                    <td className="px-3 py-3 text-sm text-slate-200">
+                    <td className="px-3 py-3 text-sm text-slate-600">
                       {user.dateBlocage ? new Date(user.dateBlocage).toLocaleString() : '—'}
                     </td>
                     <td className="px-3 py-3">

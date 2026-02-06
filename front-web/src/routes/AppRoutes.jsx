@@ -39,22 +39,28 @@ function ManagerOnly({ children }) {
 function LoginRoute() {
   const navigate = useNavigate()
   return (
-    <Login
-      onGoRegister={() => navigate('/inscription')}
-      onLoginSuccess={({ token, expiresAt, roleName, userId }) => {
-        localStorage.setItem('auth_token', token)
-        localStorage.setItem('auth_expiresAt', String(expiresAt))
-        if (roleName) localStorage.setItem('auth_role', String(roleName))
-        if (userId) localStorage.setItem('auth_userId', String(userId))
-        navigate('/dashboard')
-      }}
-    />
+    <div className="flex min-h-screen items-center justify-center px-4 py-8">
+      <Login
+        onGoRegister={() => navigate('/inscription')}
+        onLoginSuccess={({ token, expiresAt, roleName, userId }) => {
+          localStorage.setItem('auth_token', token)
+          localStorage.setItem('auth_expiresAt', String(expiresAt))
+          if (roleName) localStorage.setItem('auth_role', String(roleName))
+          if (userId) localStorage.setItem('auth_userId', String(userId))
+          navigate('/dashboard')
+        }}
+      />
+    </div>
   )
 }
 
 function InscriptionRoute() {
   const navigate = useNavigate()
-  return <Inscription onGoLogin={() => navigate('/login')} />
+  return (
+    <div className="flex min-h-screen items-center justify-center px-4 py-8">
+      <Inscription onGoLogin={() => navigate('/login')} />
+    </div>
+  )
 }
 
 function IndexRoute() {
