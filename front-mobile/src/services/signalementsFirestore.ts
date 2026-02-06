@@ -8,11 +8,13 @@ export type FirestoreSignalementCreate = {
   surfaceM2?: number
   latitude: number
   longitude: number
+  typeSignalement?: string
 }
 
 export type FirestoreSignalement = {
   id: string
   titre: string | null
+  type_signalement: string | null
   description: string | null
   latitude: number
   longitude: number
@@ -70,6 +72,7 @@ function docToSignalement(id: string, d: any): FirestoreSignalement {
   return {
     id,
     titre: d?.titre ?? null,
+    type_signalement: d?.type_signalement ?? null,
     description: d?.description ?? null,
     latitude: Number(d?.latitude),
     longitude: Number(d?.longitude),
@@ -148,6 +151,7 @@ export async function createSignalementInFirestore(input: FirestoreSignalementCr
   // Firestore will generate the document id.
   const docData = {
     titre: null,
+    type_signalement: input.typeSignalement?.trim() || null,
     description: input.description ?? null,
     latitude: roundTo(input.latitude, 6),
     longitude: roundTo(input.longitude, 6),

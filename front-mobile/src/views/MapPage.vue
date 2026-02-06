@@ -4,6 +4,7 @@
       <IonToolbar>
         <IonTitle>Offline Map</IonTitle>
         <IonButtons slot="end">
+          <IonButton @click="$router.push('/recap-signalements')">Récap</IonButton>
           <IonButton @click="$router.push('/home')">Home</IonButton>
         </IonButtons>
       </IonToolbar>
@@ -147,7 +148,9 @@ const loggedInUserId = computed(() => {
 
 const validationPromptVisible = ref(false)
 const validationMessage = ref('')
-const selectedLocation = ref(null)
+
+type PickedLocation = { lng: number; lat: number }
+const selectedLocation = ref<PickedLocation | null>(null)
 
 async function showUserLocation() {
   try {
@@ -337,16 +340,22 @@ function startAjoutSignalementFlow() {
 function confirmLocation() {
   pickingLocation.value = false
   validationPromptVisible.value = false
-  if (selectedLocation.value) {
-    pickedLng.value = selectedLocation.value.lng
-    pickedLat.value = selectedLocation.value.lat
-    if (!marker) {
-      marker = new maplibregl.Marker({ color: '#e11d48' }).setLngLat([pickedLng.value, pickedLat.value]).addTo(map)
-    } else {
-      marker.setLngLat([pickedLng.value, pickedLat.value])
-    }
-    modalOpen.value = true
+  const loc = selectedLocation.value
+  if (!loc) return
+
+  pickedLng.value = loc.lng
+  pickedLat.value = loc.lat
+
+  // pickedLng/pickedLat are definitely set here
+  const lng = loc.lng
+  const lat = loc.lat
+
+  if (!marker) {
+    marker = new maplibregl.Marker({ color: '#e11d48' }).setLngLat([lng, lat]).addTo(map)
+  } else {
+    marker.setLngLat([lng, lat])
   }
+  modalOpen.value = true
 }
 
 function cancelLocationSelection() {
@@ -378,7 +387,67 @@ function handleMapClick(e: any) {
   validationPromptVisible.value = true
 }
 
+function clearAllSignalementMarkers() {
+  for (const m of markersById.values()) {
+    try {
+      m.remove?.()
+    } catch {
+      // ignore
+    }
+  }
+  markersById.clear()
+}
+
+function clearMapResources() {
+  // Stop firestore subscription
+  if (unsubscribeSignalements) {
+    unsubscribeSignalements()
+    unsubscribeSignalements = null
+  }
+
+  // Remove per-signalement markers
+  clearAllSignalementMarkers()
+
+  // Remove temp marker
+  if (marker) {
+    try {
+      marker.remove?.()
+    } catch {
+      // ignore
+    }
+    marker = undefined
+  }
+
+  // Remove user marker
+  if (userLocationMarker) {
+    try {
+      userLocationMarker.remove?.()
+    } catch {
+      // ignore
+    }
+    userLocationMarker = null
+  }
+
+  // Remove map instance so next enter starts fresh
+  if (map) {
+    try {
+      map.off?.('click', handleMapClick)
+      map.remove?.()
+    } catch {
+      // ignore
+    }
+    map = null
+  }
+
+  // Keep data maps fresh too
+  signalementsById.clear()
+}
+
 onIonViewDidEnter(() => {
+  // If we come back to this view from another route, Ionic may reuse the component.
+  // Make sure we start clean and always re-render markers.
+  clearMapResources()
+
   map = new maplibregl.Map({
     container: 'map',
     style: 'http://127.0.0.1:8080/style.json',
@@ -413,17 +482,11 @@ onIonViewDidEnter(() => {
 });
 
 onIonViewWillLeave(() => {
-  if (unsubscribeSignalements) {
-    unsubscribeSignalements()
-    unsubscribeSignalements = null
-  }
+  clearMapResources()
 })
 
 onBeforeUnmount(() => {
-  if (unsubscribeSignalements) {
-    unsubscribeSignalements()
-    unsubscribeSignalements = null
-  }
+  clearMapResources()
 })
 </script>
 
