@@ -14,13 +14,16 @@ export class FirestoreSyncService implements OnModuleInit {
   constructor(private readonly ds: DataSource) {}
 
   async onModuleInit() {
-    // Run a full sync at startup (best-effort)
-    try {
-      await this.syncAll();
-      this.logger.log('Initial Firestore sync completed');
-    } catch (e) {
-      this.logger.warn('Firestore sync failed at startup: ' + String(e?.message ?? e));
-    }
+    // Run sync in background - don't block app startup
+    // This allows the backend to start even without internet
+    this.syncInBackground();
+  }
+
+  private syncInBackground() {
+    // Run sync asynchronously without awaiting - non-blocking
+    this.syncAll()
+      .then(() => this.logger.log('Initial Firestore sync completed'))
+      .catch((e) => this.logger.warn('Firestore sync failed (no internet?): ' + String(e?.message ?? e)));
   }
 
   private async syncEntity(entity: any) {
