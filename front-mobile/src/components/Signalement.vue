@@ -12,7 +12,8 @@
 
 		<IonCardContent>
 			<IonList lines="full">
-				<IonItem v-if="mode === 'full'">
+				<!-- Titre is needed both for API mode and Firestore (map) mode -->
+				<IonItem>
 					<IonInput v-model="titre" label="Titre" label-placement="stacked" placeholder="Ex: Dépôt sauvage" />
 				</IonItem>
 
@@ -363,9 +364,10 @@ async function submit() {
 			const lat = toRequiredNumber(latitude.value, 'Latitude')
 			const lng = toRequiredNumber(longitude.value, 'Longitude')
 			await createSignalementInFirestore({
-				typeSignalement: typeSignalement.value.trim() || undefined,
+				titre: titre.value.trim() || undefined,
+				type_signalement: typeSignalement.value.trim() || undefined,
 				description: description.value.trim() || undefined,
-				surfaceM2: toOptionalNumber(surfaceM2.value),
+				surface: toOptionalNumber(surfaceM2.value),
 				latitude: lat,
 				longitude: lng,
 			})

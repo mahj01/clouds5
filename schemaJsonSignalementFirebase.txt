@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "titre": { "type": ["string", "null"] },
+    "type_signalement": { "type": ["string", "null"] },
+    "description": { "type": ["string", "null"] },
+    "latitude": { "type": "number" },
+    "longitude": { "type": "number" },
+    "date_signalement_ms": { "type": ["number", "null"] },
+    "statut": { "type": "string" },
+    "surface": { "type": ["number", "null"] },
+    "budget": { "type": ["number", "null"] },
+    "entreprise": { "type": ["string", "null"] },
+    "utilisateurUid": { "type": ["string", "null"] },
+    "firebase_signalement_id": { "type": "string" }
+  },
+  "required": ["latitude", "longitude"]
+}

@@ -12,6 +12,7 @@ import type { FirestoreSignalement } from '@/services/signalementsFirestore'
 function s(partial: Partial<FirestoreSignalement>): FirestoreSignalement {
   return {
     id: partial.id ?? 'id',
+    firebase_signalement_id: partial.firebase_signalement_id ?? (partial.id ?? 'id'),
     titre: partial.titre ?? null,
     type_signalement: partial.type_signalement ?? null,
     description: partial.description ?? null,
@@ -19,10 +20,10 @@ function s(partial: Partial<FirestoreSignalement>): FirestoreSignalement {
     longitude: partial.longitude ?? 0,
     date_signalement_ms: partial.date_signalement_ms ?? null,
     statut: partial.statut ?? 'nouveau',
-    surface_m2: partial.surface_m2 ?? null,
+    surface: partial.surface ?? null,
     budget: partial.budget ?? null,
-    id_utilisateur: partial.id_utilisateur ?? 1,
-    id_entreprise: partial.id_entreprise ?? null,
+    entreprise: partial.entreprise ?? null,
+    utilisateurUid: partial.utilisateurUid ?? null,
   }
 }
 

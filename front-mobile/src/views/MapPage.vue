@@ -61,7 +61,7 @@
         <div v-if="selected" class="details">
           <div><strong>Statut:</strong> {{ selected.statut }}</div>
           <div><strong>Description:</strong> {{ selected.description || '-' }}</div>
-          <div><strong>Surface:</strong> {{ selected.surface_m2 ?? '-' }}</div>
+          <div><strong>Surface:</strong> {{ selected.surface ?? '-' }}</div>
           <div><strong>Latitude:</strong> {{ selected.latitude }}</div>
           <div><strong>Longitude:</strong> {{ selected.longitude }}</div>
           <div><strong>Date:</strong> {{ formatDate(selected.date_signalement_ms) }}</div>

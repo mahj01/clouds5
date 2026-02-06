@@ -33,7 +33,7 @@
               <span class="mono">{{ s.id }}</span>
             </div>
             <div class="sub">{{ formatDate(s.date_signalement_ms) }}</div>
-            <div class="sub">{{ s.latitude }}, {{ s.longitude }} | surface={{ s.surface_m2 ?? '-' }}</div>
+            <div class="sub">{{ s.latitude }}, {{ s.longitude }} | surface={{ s.surface ?? '-' }}</div>
             <div class="sub">{{ s.description || '-' }}</div>
           </IonLabel>
         </IonItem>
@@ -56,10 +56,9 @@
           <div><strong>ID:</strong> <span class="mono">{{ selected.id }}</span></div>
           <div><strong>Statut:</strong> {{ selected.statut }}</div>
           <div><strong>Description:</strong> {{ selected.description || '-' }}</div>
-          <div><strong>Surface:</strong> {{ selected.surface_m2 ?? '-' }}</div>
+          <div><strong>Surface:</strong> {{ selected.surface ?? '-' }}</div>
           <div><strong>Latitude:</strong> {{ selected.latitude }}</div>
           <div><strong>Longitude:</strong> {{ selected.longitude }}</div>
-          <div><strong>Entreprise:</strong> {{ selected.id_entreprise ?? '-' }}</div>
           <div><strong>Date:</strong> {{ formatDate(selected.date_signalement_ms) }}</div>
         </div>
       </IonContent>
@@ -155,7 +154,7 @@ async function createDebugDoc() {
   try {
     await createSignalementInFirestore({
       description: `DEBUG ${new Date().toISOString()}`,
-      surfaceM2: 1,
+      surface: 1,
       latitude: 0,
       longitude: 0,
     })

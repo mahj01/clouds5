@@ -1,18 +1,21 @@
-import { addDoc, collection, getDocsFromServer, onSnapshot, serverTimestamp } from 'firebase/firestore'
+import { collection, doc, getDocsFromServer, onSnapshot, setDoc } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
 
 export const SIGNALMENT_COLLECTION = 'signalement'
 
 export type FirestoreSignalementCreate = {
+  titre?: string
+  type_signalement?: string
   description?: string
-  surfaceM2?: number
+  surface?: number
   latitude: number
   longitude: number
-  typeSignalement?: string
 }
 
 export type FirestoreSignalement = {
   id: string
+  /** Stable Firestore doc id to dedupe local DB inserts */
+  firebase_signalement_id: string
   titre: string | null
   type_signalement: string | null
   description: string | null
@@ -20,10 +23,11 @@ export type FirestoreSignalement = {
   longitude: number
   date_signalement_ms: number | null
   statut: string
-  surface_m2: number | null
+  surface: number | null
   budget: number | null
-  id_utilisateur: number
-  id_entreprise: number | null
+  entreprise: string | null
+  /** Firebase UID, used to notify the author when status changes */
+  utilisateurUid: string | null
 }
 
 type SignalementCache = {
@@ -69,19 +73,35 @@ export type SignalementDiff =
   | { type: 'removed'; id: string }
 
 function docToSignalement(id: string, d: any): FirestoreSignalement {
+  const surface = d?.surface != null ? Number(d.surface) : d?.surface_m2 != null ? Number(d.surface_m2) : null
+
+  // Prefer the explicit millis field; fall back to Firestore Timestamp / Date stored in date_signalement
+  const dateMs = toMillis(d?.date_signalement_ms) ?? toMillis(d?.date_signalement)
+
+  const budget = d?.budget != null ? Number(d.budget) : null
+
+  // New schema: entreprise is a label string. Backward-compat: if older docs store a numeric id,
+  // we stringify it so callers can still display/dedupe.
+  const entrepriseRaw = d?.entreprise ?? d?.entreprise_libelle ?? d?.entrepriseLibelle ?? d?.id_entreprise ?? d?.entrepriseId
+  const entreprise = entrepriseRaw != null && String(entrepriseRaw).trim() ? String(entrepriseRaw) : null
+
+  // Prefer explicit field if exists, but default to the actual doc id.
+  const firebaseId = d?.firebase_signalement_id != null ? String(d.firebase_signalement_id) : id
+
   return {
     id,
+    firebase_signalement_id: firebaseId,
     titre: d?.titre ?? null,
     type_signalement: d?.type_signalement ?? null,
     description: d?.description ?? null,
     latitude: Number(d?.latitude),
     longitude: Number(d?.longitude),
-    date_signalement_ms: toMillis(d?.date_signalement),
-    statut: String(d?.statut ?? 'nouveau'),
-    surface_m2: d?.surface_m2 != null ? Number(d.surface_m2) : null,
-    budget: d?.budget != null ? Number(d.budget) : null,
-    id_utilisateur: Number(d?.id_utilisateur),
-    id_entreprise: d?.id_entreprise != null ? Number(d.id_entreprise) : null,
+    date_signalement_ms: dateMs,
+    statut: String(d?.statut ?? d?.status ?? 'nouveau'),
+    surface: surface != null && Number.isFinite(surface) ? surface : null,
+    budget: budget != null && Number.isFinite(budget) ? budget : null,
+    entreprise,
+    utilisateurUid: d?.utilisateurUid != null ? String(d.utilisateurUid) : null,
   }
 }
 
@@ -141,36 +161,35 @@ export async function createSignalementInFirestore(input: FirestoreSignalementCr
     throw new Error('Vous devez être connecté (Firebase) pour envoyer un signalement.')
   }
 
-  // Try to get id_utilisateur from localStorage (set during API login)
-  // If not available, we use null - the Firebase UID will serve as user identifier
-  const id_utilisateur_raw = localStorage.getItem('auth_user_id') || ''
-  const id_utilisateur_num = Number(id_utilisateur_raw)
-  const id_utilisateur = Number.isInteger(id_utilisateur_num) && id_utilisateur_num > 0 ? id_utilisateur_num : null
+  const nowMs = Date.now()
 
-  // Conform to SQL-like column names without forcing a numeric PK in Firestore.
-  // Firestore will generate the document id.
+  // Generate the Firestore document id client-side so we can store it in the same write.
+  const ref = doc(collection(db, SIGNALMENT_COLLECTION))
+
+  // Always write the full canonical document shape.
+  // Fields not provided by the user are explicitly stored as null.
   const docData = {
-    titre: null,
-    type_signalement: input.typeSignalement?.trim() || null,
+    titre: input.titre?.trim() || null,
+    type_signalement: input.type_signalement?.trim() || null,
     description: input.description ?? null,
     latitude: roundTo(input.latitude, 6),
     longitude: roundTo(input.longitude, 6),
-    date_signalement: serverTimestamp(),
+    date_signalement_ms: nowMs,
     statut: 'nouveau',
-    surface_m2: input.surfaceM2 != null ? roundTo(input.surfaceM2, 2) : null,
-    budget: null,
-    id_utilisateur,
-    id_entreprise: null,
+    surface: input.surface != null ? roundTo(input.surface, 2) : null,
 
-    // Firebase user identification (always available when logged in)
+    // Not input by the user on submission
+    budget: null as number | null,
+    entreprise: null as string | null,
+
+    // Firebase user identification (for notifications)
     utilisateurUid: user.uid,
-    utilisateurEmail: user.email ?? null,
 
-    // Timestamps
-    createdAt: serverTimestamp(),
+    // Stored for local DB dedupe
+    firebase_signalement_id: ref.id,
   }
 
-  // Collection name matches the SQL table: "signalement"
-  const ref = await addDoc(collection(db, SIGNALMENT_COLLECTION), docData)
+  await setDoc(ref, docData)
+
   return { id: ref.id, ...docData }
 }
