@@ -4,6 +4,7 @@ import HomePage from '../views/HomePage.vue';
 import MapPage from '@/views/MapPage.vue';
 import LoginPage from '@/views/LoginPage.vue';
 import SignalementsPage from '@/views/SignalementsPage.vue';
+import RecapitulatifSignalementPage from '@/views/RecapitulatifSignalementPage.vue';
 
 
 const routes: Array<RouteRecordRaw> = [
@@ -31,7 +32,12 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Signalements',
     component: SignalementsPage,
   },
-  
+  {
+    path: '/recap-signalements',
+    name: 'RecapSignalements',
+    component: RecapitulatifSignalementPage,
+  },
+
 ]
 
 const router = createRouter({

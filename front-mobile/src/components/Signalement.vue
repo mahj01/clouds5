@@ -101,6 +101,24 @@
 						placeholder="Optionnel"
 					/>
 				</IonItem>
+
+				<IonItem v-if="mode === 'map'">
+					<IonSelect
+						v-model="typeSignalement"
+						label="Type de signalement"
+						label-placement="stacked"
+						interface="popover"
+						placeholder="Choisir un type"
+					>
+						<IonSelectOption v-for="t in typesSignalement" :key="t.id" :value="t.libelle">
+							{{ t.libelle }}
+						</IonSelectOption>
+					</IonSelect>
+				</IonItem>
+
+				<IonText v-if="mode === 'map' && typesSignalementError" color="danger" class="block-msg">
+					{{ typesSignalementError }}
+				</IonText>
 			</IonList>
 
 			<IonText v-if="error" color="danger" class="block-msg">{{ error }}</IonText>
@@ -121,7 +139,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import {
 	IonButton,
 	IonCard,
@@ -140,6 +158,10 @@ import {
 } from '@ionic/vue'
 
 import { createSignalementInFirestore } from '@/services/signalementsFirestore'
+import {
+	subscribeTypesSignalement,
+	type FirestoreTypeSignalement,
+} from '@/services/type-signalementFirestore'
 
 type VisitorLoginResponse = {
 	token: string
@@ -185,6 +207,11 @@ const surfaceM2 = ref('')
 const budget = ref('')
 const utilisateurId = ref('')
 const entrepriseId = ref('')
+
+const typeSignalement = ref('')
+const typesSignalement = ref<FirestoreTypeSignalement[]>([])
+const typesSignalementError = ref('')
+let unsubscribeTypes: null | (() => void) = null
 
 const busy = ref(false)
 const error = ref('')
@@ -336,6 +363,7 @@ async function submit() {
 			const lat = toRequiredNumber(latitude.value, 'Latitude')
 			const lng = toRequiredNumber(longitude.value, 'Longitude')
 			await createSignalementInFirestore({
+				typeSignalement: typeSignalement.value.trim() || undefined,
 				description: description.value.trim() || undefined,
 				surfaceM2: toOptionalNumber(surfaceM2.value),
 				latitude: lat,
@@ -396,6 +424,28 @@ onMounted(() => {
 
 	const uid = getStoredUserId()
 	if (uid && !utilisateurId.value) utilisateurId.value = uid
+
+	if (mode.value === 'map') {
+		typesSignalementError.value = ''
+		unsubscribeTypes = subscribeTypesSignalement(
+			(list) => {
+				typesSignalement.value = list
+					.filter((x) => x.actif)
+					.filter((x) => x.id !== 'bootstrap_init')
+					.sort((a, b) => a.libelle.localeCompare(b.libelle))
+			},
+			(err) => {
+				typesSignalementError.value = err instanceof Error ? err.message : String(err)
+			},
+		)
+	}
+})
+
+onBeforeUnmount(() => {
+	if (unsubscribeTypes) {
+		unsubscribeTypes()
+		unsubscribeTypes = null
+	}
 })
 </script>
 
