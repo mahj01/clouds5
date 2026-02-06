@@ -8,13 +8,14 @@ import DashboardLayout from '../layouts/DashboardLayout.jsx'
 import FrontOfficeLayout from '../layouts/FrontOfficeLayout.jsx'
 import DashboardHome from '../pages/dashboard/DashboardHome.jsx'
 import Utilisateurs from '../pages/dashboard/Utilisateurs.jsx'
-import DeblocageComptes from '../pages/dashboard/UtilisateursDeblocage.jsx'
 import UtilisateursDeblocage from '../pages/dashboard/UtilisateursDeblocage.jsx'
 import Entreprises from '../pages/dashboard/Entreprises.jsx'
 import Signalements from '../pages/dashboard/Signalements.jsx'
 import Statistiques from '../pages/dashboard/Statistiques.jsx'
 import Parametres from '../pages/dashboard/Parametres.jsx'
-import ProblemesRoutiers from '../pages/dashboard/ProblemesRoutiers.jsx'
+import Journal from '../pages/dashboard/Journal.jsx'
+import Sauvegarde from '../pages/dashboard/Sauvegarde.jsx'
+import ValidationDonnees from '../pages/dashboard/ValidationDonnees.jsx'
 import CarteProblemesFrontOffice from '../pages/frontoffice/CarteProblemesFrontOffice.jsx'
 import SignalerProblemeFrontOffice from '../pages/frontoffice/SignalerProblemeFrontOffice.jsx'
 
@@ -85,10 +86,9 @@ export default function AppRoutes() {
       <Route path="/login" element={<LoginRoute />} />
       <Route path="/inscription" element={<InscriptionRoute />} />
 
-      {/* Front-office - Pages publiques des problèmes routiers */}
+      {/* Front-office - Pages publiques (pour visiteurs non connectés) */}
       <Route element={<FrontOfficeLayout />}>
-        <Route path="/carte-problemes" element={<CarteProblemesFrontOffice />} />
-        <Route path="/signaler-probleme" element={<SignalerProblemeFrontOffice />} />
+        <Route path="/map" element={<MapLeaflet />} />
       </Route>
 
       {/* Back-office - Dashboard admin */}
@@ -110,22 +110,39 @@ export default function AppRoutes() {
         />
         
         <Route path="/entreprises" element={<Entreprises />} />
-        <Route
-          path="/signalements"
-          element={(
-            <ManagerOnly>
-              <Signalements />
-            </ManagerOnly>
-          )}
-        />
         <Route path="/signalements" element={<Signalements />} />
-        <Route path="/problemes-routiers" element={<ProblemesRoutiers />} />
         <Route path="/statistiques" element={<Statistiques />} />
         <Route path="/parametres" element={<Parametres />} />
         <Route path="/maplibre" element={<MapPage />} />
+        {/* Pages front-office accessibles depuis le dashboard */}
+        <Route path="/carte-problemes" element={<CarteProblemesFrontOffice />} />
+        <Route path="/signaler-probleme" element={<SignalerProblemeFrontOffice />} />
+        {/* Nouvelles fonctionnalités admin */}
+        <Route
+          path="/journal"
+          element={(
+            <ManagerOnly>
+              <Journal />
+            </ManagerOnly>
+          )}
+        />
+        <Route
+          path="/sauvegarde"
+          element={(
+            <ManagerOnly>
+              <Sauvegarde />
+            </ManagerOnly>
+          )}
+        />
+        <Route
+          path="/validation"
+          element={(
+            <ManagerOnly>
+              <ValidationDonnees />
+            </ManagerOnly>
+          )}
+        />
       </Route>
-
-      <Route path="/map" element={<MapLeaflet />} />
     </Routes>
   )
 }

@@ -1,0 +1,429 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "type": "signalements",
+    "exportedAt": "2026-02-06T05:46:46.677Z"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          47.5,
+          -18.95
+        ]
+      },
+      "properties": {
+        "id": 2,
+        "titre": "Serie de nids de poule RN7",
+        "description": "Plusieurs trous consecutifs sur 100m rendant la circulation difficile",
+        "statut": "nouveau",
+        "surfaceM2": null,
+        "budget": null,
+        "dateSignalement": "2026-02-03T08:37:25.940Z",
+        "utilisateurId": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          47.5281,
+          -18.9089
+        ]
+      },
+      "properties": {
+        "id": 3,
+        "titre": "Nid de poule devant le marche",
+        "description": "Trou profond qui se remplit d'eau lors des pluies",
+        "statut": "en_cours",
+        "surfaceM2": null,
+        "budget": null,
+        "dateSignalement": "2026-02-03T08:37:25.940Z",
+        "utilisateurId": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          47.515,
+          -18.895
+        ]
+      },
+      "properties": {
+        "id": 4,
+        "titre": "Fissures multiples Boulevard Ratsimilaho",
+        "description": "Reseau de fissures sur 200m necessitant une refection complŠte",
+        "statut": "nouveau",
+        "surfaceM2": null,
+        "budget": null,
+        "dateSignalement": "2026-02-03T08:37:25.940Z",
+        "utilisateurId": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          47.54,
+          -18.88
+        ]
+      },
+      "properties": {
+        "id": 5,
+        "titre": "Zone inondable recurrente",
+        "description": "Cette zone est reguliŠrement inondee lors des pluies, drainage insuffisant",
+        "statut": "nouveau",
+        "surfaceM2": null,
+        "budget": null,
+        "dateSignalement": "2026-02-03T08:37:25.940Z",
+        "utilisateurId": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          47.51,
+          -18.93
+        ]
+      },
+      "properties": {
+        "id": 6,
+        "titre": "Accumulation d'eau permanente",
+        "description": "Flaque d'eau stagnante depuis plusieurs semaines",
+        "statut": "en_cours",
+        "surfaceM2": null,
+        "budget": null,
+        "dateSignalement": "2026-02-03T08:37:25.940Z",
+        "utilisateurId": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          47.55,
+          -18.87
+        ]
+      },
+      "properties": {
+        "id": 7,
+        "titre": "Affaissement de chaussee critique",
+        "description": "La route s'est affaissee de 30cm, circulation trŠs dangereuse",
+        "statut": "nouveau",
+        "surfaceM2": null,
+        "budget": null,
+        "dateSignalement": "2026-02-03T08:37:25.940Z",
+        "utilisateurId": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          47.48,
+          -18.9
+        ]
+      },
+      "properties": {
+        "id": 8,
+        "titre": "Panneau directionnel manquant",
+        "description": "Le panneau indiquant la direction de l'aeroport a disparu",
+        "statut": "nouveau",
+        "surfaceM2": null,
+        "budget": null,
+        "dateSignalement": "2026-02-03T08:37:25.940Z",
+        "utilisateurId": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          47.535,
+          -18.925
+        ]
+      },
+      "properties": {
+        "id": 9,
+        "titre": "Lampadaires non fonctionnels",
+        "description": "Serie de 5 lampadaires eteints rendant la zone trŠs sombre la nuit",
+        "statut": "nouveau",
+        "surfaceM2": null,
+        "budget": null,
+        "dateSignalement": "2026-02-03T08:37:25.940Z",
+        "utilisateurId": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          47.505,
+          -18.885
+        ]
+      },
+      "properties": {
+        "id": 10,
+        "titre": "Zone non eclairee dangereuse",
+        "description": "Tron‡on de 500m sans aucun eclairage",
+        "statut": "en_cours",
+        "surfaceM2": null,
+        "budget": null,
+        "dateSignalement": "2026-02-03T08:37:25.940Z",
+        "utilisateurId": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          47.525,
+          -18.94
+        ]
+      },
+      "properties": {
+        "id": 11,
+        "titre": "Debris de construction",
+        "description": "Tas de gravats laisse sur le bord de la route depuis un mois",
+        "statut": "nouveau",
+        "surfaceM2": null,
+        "budget": null,
+        "dateSignalement": "2026-02-03T08:37:25.940Z",
+        "utilisateurId": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          47.56,
+          -18.91
+        ]
+      },
+      "properties": {
+        "id": 12,
+        "titre": "eboulement aprŠs les pluies",
+        "description": "Terre et rochers sur la chaussee suite aux fortes pluies",
+        "statut": "nouveau",
+        "surfaceM2": null,
+        "budget": null,
+        "dateSignalement": "2026-02-03T08:37:25.940Z",
+        "utilisateurId": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          47.528,
+          -18.918
+        ]
+      },
+      "properties": {
+        "id": 13,
+        "titre": "Passage pieton efface",
+        "description": "Marquage du passage pieton complŠtement efface devant l'ecole",
+        "statut": "nouveau",
+        "surfaceM2": null,
+        "budget": null,
+        "dateSignalement": "2026-02-03T08:37:25.940Z",
+        "utilisateurId": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          47.515,
+          -18.905
+        ]
+      },
+      "properties": {
+        "id": 14,
+        "titre": "Lignes de voies invisibles",
+        "description": "Le marquage des voies est totalement efface sur 300m",
+        "statut": "en_cours",
+        "surfaceM2": null,
+        "budget": null,
+        "dateSignalement": "2026-02-03T08:37:25.940Z",
+        "utilisateurId": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          47.545,
+          -18.89
+        ]
+      },
+      "properties": {
+        "id": 15,
+        "titre": "Pont avec garde-corps casse",
+        "description": "Garde-corps metallique arrache suite … un accident",
+        "statut": "nouveau",
+        "surfaceM2": null,
+        "budget": null,
+        "dateSignalement": "2026-02-03T08:37:25.940Z",
+        "utilisateurId": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          47.5,
+          -18.935
+        ]
+      },
+      "properties": {
+        "id": 16,
+        "titre": "Fissures sur tablier de pont",
+        "description": "Fissures visibles sur le tablier du pont, expertise necessaire",
+        "statut": "en_cours",
+        "surfaceM2": null,
+        "budget": null,
+        "dateSignalement": "2026-02-03T08:37:25.940Z",
+        "utilisateurId": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          47.53,
+          -18.92
+        ]
+      },
+      "properties": {
+        "id": 17,
+        "titre": "Grande fissure transversale",
+        "description": "Fissure de 5cm de large traversant toute la chaussee",
+        "statut": "termine",
+        "surfaceM2": null,
+        "budget": null,
+        "dateSignalement": "2026-02-03T08:37:25.940Z",
+        "utilisateurId": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          47.52,
+          -18.91
+        ]
+      },
+      "properties": {
+        "id": 18,
+        "titre": "Stop illisible",
+        "description": "Panneau stop complŠtement efface, carrefour dangereux",
+        "statut": "termine",
+        "surfaceM2": null,
+        "budget": null,
+        "dateSignalement": "2026-02-03T08:37:25.940Z",
+        "utilisateurId": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          47.52,
+          -18.86
+        ]
+      },
+      "properties": {
+        "id": 19,
+        "titre": "Arbre tombe partiellement",
+        "description": "Arbre penche mena‡ant de tomber sur la route",
+        "statut": "termine",
+        "surfaceM2": null,
+        "budget": null,
+        "dateSignalement": "2026-02-03T08:37:25.940Z",
+        "utilisateurId": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          47.477389,
+          -18.884412
+        ]
+      },
+      "properties": {
+        "id": 20,
+        "titre": "Degradee",
+        "description": "test",
+        "statut": "nouveau",
+        "surfaceM2": null,
+        "budget": null,
+        "dateSignalement": "2026-02-03T09:11:12.694Z",
+        "utilisateurId": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          47.5226,
+          -18.9137
+        ]
+      },
+      "properties": {
+        "id": 1,
+        "titre": "Nid de poule dangereux Avenue de l'Independance",
+        "description": "Grand trou d'environ 50cm de diamŠtre au milieu de la voie, trŠs dangereux pour les deux-roues",
+        "statut": "nouveau",
+        "surfaceM2": "100.00",
+        "budget": "10000.00",
+        "dateSignalement": "2026-02-03T08:37:25.940Z",
+        "utilisateurId": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          47.477389,
+          -18.884412
+        ]
+      },
+      "properties": {
+        "id": 21,
+        "titre": "Degradee",
+        "description": "test",
+        "statut": "resolu",
+        "surfaceM2": null,
+        "budget": null,
+        "dateSignalement": "2026-02-03T09:11:12.694Z",
+        "utilisateurId": 1
+      }
+    }
+  ]
+}

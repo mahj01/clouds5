@@ -1,6 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { TypeProbleme } from './type-probleme.entity';
+import type { Signalement } from '../signalements/signalement.entity';
 
 export enum StatutProbleme {
   ACTIF = 'actif',
@@ -63,4 +64,9 @@ export class ProblemeRoutier {
   @ManyToOne(() => Utilisateur, { nullable: true })
   @JoinColumn({ name: 'id_utilisateur_resolution' })
   utilisateurResolution?: Utilisateur;
+
+  // Relation avec Signalement - chaque problème routier est lié à un signalement
+  @OneToOne('Signalement', 'problemeRoutier', { nullable: true, cascade: true })
+  @JoinColumn({ name: 'id_signalement' })
+  signalement?: Signalement;
 }

@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { getProblemesGeoJSON, getTypesProblemeActifs } from '../../api/problemes.js'
+import { getTypesProblemeActifs } from '../../api/problemes.js'
+import { getSignalementsGeoJSON } from '../../api/client.js'
 
 // Style de carte OSM raster (comme dans Map.jsx)
 function osmRasterStyle() {
@@ -183,7 +184,7 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated }) 
     setLoading(true)
     try {
       const [geoData, typesData] = await Promise.all([
-        getProblemesGeoJSON(filtreStatut),
+        getSignalementsGeoJSON(filtreStatut),
         getTypesProblemeActifs(),
       ])
       setProblemes(geoData?.features || [])

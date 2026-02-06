@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { getTypesProblemeActifs, createProblemeRoutier } from '../../api/problemes.js'
+import { getTypesProblemeActifs } from '../../api/problemes.js'
+import { createSignalement } from '../../api/client.js'
 
 export default function SignalerProblemeFrontOffice() {
   const navigate = useNavigate()
@@ -22,6 +23,7 @@ export default function SignalerProblemeFrontOffice() {
     priorite: 1,
     latitude: latFromUrl ? parseFloat(latFromUrl) : -18.8792,
     longitude: lngFromUrl ? parseFloat(lngFromUrl) : 47.5079,
+    surfaceM2: '',
   })
 
   useEffect(() => {
@@ -45,11 +47,12 @@ export default function SignalerProblemeFrontOffice() {
     setLoading(true)
     setError(null)
     try {
-      const userId = parseInt(localStorage.getItem('auth_user_id') || '1')
-      await createProblemeRoutier({
+      const userId = parseInt(localStorage.getItem('auth_userId') || localStorage.getItem('auth_user_id') || '1')
+      await createSignalement({
         ...formData,
         typeProblemeId: parseInt(formData.typeProblemeId),
-        utilisateurSignaleurId: userId,
+        utilisateurId: userId,
+        surfaceM2: formData.surfaceM2 ? parseFloat(formData.surfaceM2) : null,
       })
       setSuccess(true)
       setTimeout(() => navigate('/carte-problemes'), 2000)
@@ -253,6 +256,25 @@ export default function SignalerProblemeFrontOffice() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Surface estimée */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <i className="fa fa-expand mr-2 text-indigo-600" />Surface estimée (m²)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={formData.surfaceM2}
+              onChange={(e) => setFormData({ ...formData, surfaceM2: e.target.value })}
+              className="w-full rounded-xl bg-white px-4 py-3 text-gray-900 border border-gray-300 focus:border-indigo-500 focus:outline-none"
+              placeholder="Ex: 2.5"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Indiquez la surface approximative de la zone endommagée
+            </p>
           </div>
 
           {/* Boutons */}

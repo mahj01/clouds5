@@ -6,6 +6,7 @@ import { CreateProblemeRoutierDto } from './dto/create-probleme-routier.dto';
 import { UpdateProblemeRoutierDto } from './dto/update-probleme-routier.dto';
 import { TypeProbleme } from './type-probleme.entity';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
+import { Signalement } from '../signalements/signalement.entity';
 
 @Injectable()
 export class ProblemesRoutiersService {
@@ -13,6 +14,7 @@ export class ProblemesRoutiersService {
     @InjectRepository(ProblemeRoutier) private repo: Repository<ProblemeRoutier>,
     @InjectRepository(TypeProbleme) private typeRepo: Repository<TypeProbleme>,
     @InjectRepository(Utilisateur) private userRepo: Repository<Utilisateur>,
+    @InjectRepository(Signalement) private signalementRepo: Repository<Signalement>,
   ) {}
 
   async create(dto: CreateProblemeRoutierDto) {
@@ -23,6 +25,18 @@ export class ProblemesRoutiersService {
     const utilisateur = await this.userRepo.findOne({ where: { id: dto.utilisateurSignaleurId } });
     if (!utilisateur) throw new NotFoundException('Utilisateur non trouvé');
 
+    // Créer d'abord un signalement dans la table signalement
+    const signalement = this.signalementRepo.create({
+      titre: dto.titre,
+      description: dto.description,
+      latitude: String(dto.latitude),
+      longitude: String(dto.longitude),
+      statut: this.mapStatutToSignalement(dto.statut ?? StatutProbleme.ACTIF),
+      utilisateur,
+    });
+    const savedSignalement = await this.signalementRepo.save(signalement);
+
+    // Créer le problème routier lié au signalement
     const entity = this.repo.create({
       titre: dto.titre,
       description: dto.description,
@@ -34,13 +48,25 @@ export class ProblemesRoutiersService {
       photoUrl: dto.photoUrl,
       typeProbleme,
       utilisateurSignaleur: utilisateur,
+      signalement: savedSignalement,
     });
     return this.repo.save(entity);
   }
 
+  // Convertir le statut probleme vers statut signalement
+  private mapStatutToSignalement(statut: StatutProbleme): string {
+    switch (statut) {
+      case StatutProbleme.ACTIF: return 'nouveau';
+      case StatutProbleme.EN_COURS: return 'en_cours';
+      case StatutProbleme.RESOLU: return 'termine';
+      case StatutProbleme.REJETE: return 'rejete';
+      default: return 'nouveau';
+    }
+  }
+
   findAll() {
     return this.repo.find({
-      relations: ['typeProbleme', 'utilisateurSignaleur', 'utilisateurResolution'],
+      relations: ['typeProbleme', 'utilisateurSignaleur', 'utilisateurResolution', 'signalement'],
       order: { dateSignalement: 'DESC' },
     });
   }
@@ -48,7 +74,7 @@ export class ProblemesRoutiersService {
   findAllActifs() {
     return this.repo.find({
       where: { statut: StatutProbleme.ACTIF },
-      relations: ['typeProbleme', 'utilisateurSignaleur'],
+      relations: ['typeProbleme', 'utilisateurSignaleur', 'signalement'],
       order: { priorite: 'DESC', dateSignalement: 'DESC' },
     });
   }
@@ -56,7 +82,7 @@ export class ProblemesRoutiersService {
   findByStatut(statut: StatutProbleme) {
     return this.repo.find({
       where: { statut },
-      relations: ['typeProbleme', 'utilisateurSignaleur', 'utilisateurResolution'],
+      relations: ['typeProbleme', 'utilisateurSignaleur', 'utilisateurResolution', 'signalement'],
       order: { dateSignalement: 'DESC' },
     });
   }
@@ -64,7 +90,7 @@ export class ProblemesRoutiersService {
   findByType(typeId: number) {
     return this.repo.find({
       where: { typeProbleme: { id: typeId } },
-      relations: ['typeProbleme', 'utilisateurSignaleur'],
+      relations: ['typeProbleme', 'utilisateurSignaleur', 'signalement'],
       order: { dateSignalement: 'DESC' },
     });
   }
@@ -72,7 +98,7 @@ export class ProblemesRoutiersService {
   async findOne(id: number) {
     const item = await this.repo.findOne({
       where: { id },
-      relations: ['typeProbleme', 'utilisateurSignaleur', 'utilisateurResolution'],
+      relations: ['typeProbleme', 'utilisateurSignaleur', 'utilisateurResolution', 'signalement'],
     });
     if (!item) throw new NotFoundException('Problème routier non trouvé');
     return item;
@@ -95,6 +121,11 @@ export class ProblemesRoutiersService {
       if (dto.statut === StatutProbleme.RESOLU) {
         entity.dateResolution = new Date();
       }
+      // Synchroniser le statut avec le signalement lié
+      if (entity.signalement) {
+        entity.signalement.statut = this.mapStatutToSignalement(dto.statut);
+        await this.signalementRepo.save(entity.signalement);
+      }
     }
 
     if (dto.typeProblemeId !== undefined) {
@@ -113,6 +144,13 @@ export class ProblemesRoutiersService {
       }
     }
 
+    // Synchroniser titre et description avec le signalement lié
+    if (entity.signalement && (dto.titre !== undefined || dto.description !== undefined)) {
+      if (dto.titre !== undefined) entity.signalement.titre = dto.titre;
+      if (dto.description !== undefined) entity.signalement.description = dto.description;
+      await this.signalementRepo.save(entity.signalement);
+    }
+
     return this.repo.save(entity);
   }
 
@@ -126,11 +164,21 @@ export class ProblemesRoutiersService {
     entity.utilisateurResolution = user;
     if (commentaire) entity.commentaireResolution = commentaire;
 
+    // Synchroniser avec le signalement lié
+    if (entity.signalement) {
+      entity.signalement.statut = 'termine';
+      await this.signalementRepo.save(entity.signalement);
+    }
+
     return this.repo.save(entity);
   }
 
   async remove(id: number) {
     const item = await this.findOne(id);
+    // Supprimer aussi le signalement lié
+    if (item.signalement) {
+      await this.signalementRepo.remove(item.signalement);
+    }
     await this.repo.remove(item);
   }
 
