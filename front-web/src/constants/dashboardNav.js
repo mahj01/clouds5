@@ -1,5 +1,6 @@
 export const DASHBOARD_NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: 'fa fa-bar-chart', path: '/dashboard' },
+  { id: 'notifications', label: 'Notifications', icon: 'fa fa-bell', path: '/notifications' },
   { id: 'utilisateurs', label: 'Liste des Utilisateurs', icon: 'fa fa-users', path: '/utilisateurs', adminOnly: true },
   { id: 'entreprises', label: 'Entreprises', icon: 'fa fa-building', path: '/entreprises' },
   { id: 'signalements', label: 'Signalements', icon: 'fa fa-exclamation-triangle', path: '/signalements' },

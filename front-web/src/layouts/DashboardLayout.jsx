@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { DASHBOARD_NAV_ITEMS } from '../constants/dashboardNav.js'
 import SyncFirebaseButton from '../components/SyncFirebaseButton.jsx'
+import { getUnreadCount } from '../api/notifications.js'
 
 function getStoredRoleName() {
   try {
@@ -13,13 +14,33 @@ function getStoredRoleName() {
 
 export default function DashboardLayout({ onLogout }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+  const navigate = useNavigate()
 
   const roleName = useMemo(() => String(getStoredRoleName() || '').toLowerCase(), [])
+  const userId = useMemo(() => localStorage.getItem('auth_userId'), [])
   const navItems = useMemo(() => {
     const items = Array.isArray(DASHBOARD_NAV_ITEMS) ? DASHBOARD_NAV_ITEMS : []
     if (roleName === 'manager') return items
     return items.filter((i) => !i?.adminOnly)
   }, [roleName])
+
+  // Charger le compteur de notifications non lues
+  useEffect(() => {
+    if (!userId) return
+    const loadUnread = async () => {
+      try {
+        const count = await getUnreadCount(userId)
+        setUnreadCount(count)
+      } catch (err) {
+        console.error('Erreur chargement notifications:', err)
+      }
+    }
+    loadUnread()
+    // Rafraîchir toutes les 30 secondes
+    const interval = setInterval(loadUnread, 30000)
+    return () => clearInterval(interval)
+  }, [userId])
 
   const expiresAt = useMemo(() => localStorage.getItem('auth_expiresAt'), [])
   const expiresText = useMemo(() => {
@@ -41,7 +62,22 @@ export default function DashboardLayout({ onLogout }) {
           ☰
         </button>
         <span className="text-sm font-semibold text-slate-800">Clouds5</span>
-        {roleName === 'manager' && <SyncFirebaseButton />}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="relative rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-700"
+            onClick={() => navigate('/notifications')}
+            aria-label="Notifications"
+          >
+            <i className="fa fa-bell"></i>
+            {unreadCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+          {roleName === 'manager' && <SyncFirebaseButton />}
+        </div>
       </header>
 
       {sidebarOpen && (
@@ -69,6 +105,11 @@ export default function DashboardLayout({ onLogout }) {
             >
               <i className={`${item.icon} text-lg`} aria-hidden="true" />
               {item.label}
+              {item.id === 'notifications' && unreadCount > 0 && (
+                <span className="ml-auto flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1 text-xs text-white">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>

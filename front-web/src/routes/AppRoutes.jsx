@@ -20,6 +20,7 @@ import HistoriqueSignalements from '../pages/dashboard/HistoriqueSignalements.js
 import CarteProblemesFrontOffice from '../pages/frontoffice/CarteProblemesFrontOffice.jsx'
 import SignalerProblemeFrontOffice from '../pages/frontoffice/SignalerProblemeFrontOffice.jsx'
 import TableauSyntheseFrontOffice from '../pages/frontoffice/TableauSyntheseFrontOffice.jsx'
+import Notifications from '../pages/dashboard/Notifications.jsx'
 
 function getStoredRoleName() {
   try {
@@ -102,6 +103,7 @@ export default function AppRoutes() {
       {/* Back-office - Dashboard admin */}
       <Route element={<DashboardLayoutRoute />}>
         <Route path="/dashboard" element={<DashboardHome />} />
+        <Route path="/notifications" element={<Notifications />} />
         <Route path="/utilisateurs"
            element={(
             <ManagerOnly>
