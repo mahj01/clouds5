@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getSignalements, updateSignalement, deleteSignalement, resoudreSignalement, getEntreprises } from '../../api/client.js'
+import { getSignalements, updateSignalement, deleteSignalement, resoudreSignalement, getEntreprises, getHistoriqueBySignalement } from '../../api/client.js'
 import { getTypesProblemeActifs } from '../../api/problemes.js'
 
 const STATUTS = [
@@ -61,6 +61,8 @@ export default function Signalements() {
   const [editing, setEditing] = useState(null) // Modal édition
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({})
+  const [historique, setHistorique] = useState([])
+  const [loadingHistorique, setLoadingHistorique] = useState(false)
 
   // Stats
   const stats = {
@@ -438,7 +440,20 @@ export default function Signalements() {
                   {viewing.typeProbleme.nom}
                 </span>
               )}
-              {getStatutBadge(viewing.statut)}
+              {/* Statut actuel + date du statut */}
+              {(() => {
+                const s = STATUTS.find(st => st.value === viewing.statut) || STATUTS[0]
+                // Date du statut = dernier changement historique, ou dateSignalement si aucun changement
+                const dateStatut = historique.length > 0
+                  ? historique[0].dateChangement   // historique trié DESC, le [0] = le plus récent
+                  : viewing.dateSignalement
+                return (
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${s.color}`}>
+                    {s.label}
+                    <span className="opacity-70">• {formatDate(dateStatut)}</span>
+                  </span>
+                )
+              })()}
               {getPrioriteBadge(viewing.priorite)}
             </div>
 
@@ -500,6 +515,28 @@ export default function Signalements() {
                   <div className="font-medium text-green-700">{formatDate(viewing.dateResolution)}</div>
                 </div>
               )}
+              {/* Date du statut actuel — toujours affichée */}
+              {(() => {
+                const s = STATUTS.find(st => st.value === viewing.statut) || STATUTS[0]
+                const dateStatut = historique.length > 0
+                  ? historique[0].dateChangement
+                  : viewing.dateSignalement
+                const colorMap = {
+                  actif: 'bg-red-50 border-red-100 text-red-600 text-red-700',
+                  en_cours: 'bg-yellow-50 border-yellow-100 text-yellow-600 text-yellow-700',
+                  resolu: 'bg-green-50 border-green-100 text-green-600 text-green-700',
+                  rejete: 'bg-gray-50 border-gray-200 text-gray-500 text-gray-700',
+                }
+                const colors = (colorMap[viewing.statut] || colorMap.actif).split(' ')
+                return (
+                  <div className={`rounded-xl border p-4 ${colors[0]} ${colors[1]}`}>
+                    <div className={`text-xs mb-1 ${colors[2]}`}>
+                      <i className="fa fa-clock-o mr-1" />Statut « {s.label} » depuis
+                    </div>
+                    <div className={`font-bold ${colors[3]}`}>{formatDate(dateStatut)}</div>
+                  </div>
+                )
+              })()}
             </div>
 
             {/* Avancement */}
@@ -524,6 +561,104 @@ export default function Signalements() {
                 <div className="text-green-800">{viewing.commentaireResolution}</div>
               </div>
             )}
+
+            {/* Historique des changements de statut */}
+            <div className="mt-6">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                <i className="fa fa-history mr-2 text-indigo-500" />
+                Historique des changements de statut
+              </h4>
+              {loadingHistorique ? (
+                <div className="text-center py-4 text-gray-400 text-sm">
+                  <i className="fa fa-spinner fa-spin mr-2" />Chargement...
+                </div>
+              ) : (() => {
+                // Construire la timeline complète : création + changements
+                const timeline = []
+
+                // 1) Point de départ : création du signalement
+                const statutInitial = historique.length > 0
+                  ? historique[historique.length - 1].ancienStatut  // le plus ancien changement → son ancien statut = statut initial
+                  : viewing.statut // pas de changement → statut actuel = statut initial
+                timeline.push({
+                  type: 'creation',
+                  statut: statutInitial,
+                  date: viewing.dateSignalement,
+                  label: 'Signalement créé',
+                  manager: viewing.utilisateur,
+                })
+
+                // 2) Tous les changements de statut (du plus ancien au plus récent)
+                const sorted = [...historique].reverse()
+                sorted.forEach(h => {
+                  timeline.push({
+                    type: 'changement',
+                    ancienStatut: h.ancienStatut,
+                    statut: h.nouveauStatut,
+                    date: h.dateChangement,
+                    label: null,
+                    manager: h.manager,
+                  })
+                })
+
+                return (
+                  <div className="relative pl-6 space-y-0">
+                    {/* Ligne verticale */}
+                    <div className="absolute left-[9px] top-2 bottom-2 w-0.5 bg-gray-200" />
+                    {timeline.map((entry, i) => {
+                      const statutObj = STATUTS.find(s => s.value === entry.statut)
+                      const isLast = i === timeline.length - 1
+                      const dotColor = isLast ? 'bg-indigo-500' : 'bg-gray-400'
+
+                      return (
+                        <div key={i} className="relative pb-4 last:pb-0">
+                          {/* Point */}
+                          <div className={`absolute -left-6 top-1 w-[18px] h-[18px] rounded-full border-2 border-white shadow-sm ${dotColor} flex items-center justify-center`}>
+                            <div className="w-2 h-2 rounded-full bg-white" />
+                          </div>
+                          <div className={`rounded-xl border p-3 ${isLast ? 'border-indigo-200 bg-indigo-50' : 'border-gray-100 bg-gray-50'}`}>
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                              <div className="flex items-center gap-2 text-sm">
+                                {entry.type === 'creation' ? (
+                                  <>
+                                    <i className="fa fa-plus-circle text-green-500 text-xs" />
+                                    <span className="text-gray-600 text-xs font-medium">Créé</span>
+                                    <i className="fa fa-arrow-right text-gray-300 text-xs" />
+                                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statutObj?.color || 'bg-gray-100 text-gray-600'}`}>
+                                      {statutObj?.label || entry.statut || '—'}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUTS.find(s => s.value === entry.ancienStatut)?.color || 'bg-gray-100 text-gray-600'}`}>
+                                      {STATUTS.find(s => s.value === entry.ancienStatut)?.label || entry.ancienStatut || '—'}
+                                    </span>
+                                    <i className="fa fa-arrow-right text-gray-300 text-xs" />
+                                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statutObj?.color || 'bg-gray-100 text-gray-600'}`}>
+                                      {statutObj?.label || entry.statut || '—'}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                              <span className="text-xs text-gray-400 whitespace-nowrap">
+                                <i className="fa fa-clock-o mr-1" />
+                                {formatDate(entry.date)}
+                              </span>
+                            </div>
+                            {entry.manager && (
+                              <div className="mt-1.5 text-xs text-gray-500">
+                                <i className="fa fa-user mr-1" />
+                                {entry.manager.nom || entry.manager.email || '—'}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })()}
+            </div>
 
             {/* Boutons */}
             <div className="mt-6 flex justify-end gap-3">
