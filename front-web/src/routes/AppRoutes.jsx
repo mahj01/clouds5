@@ -28,9 +28,19 @@ function getStoredRoleName() {
   }
 }
 
+// Composant pour les pages admin seulement (manager)
 function ManagerOnly({ children }) {
   const role = String(getStoredRoleName() || '').toLowerCase()
   if (role !== 'manager') {
+    return <Navigate to="/dashboard" replace />
+  }
+  return children
+}
+
+// Composant pour les pages client et admin (exclut les visiteurs)
+function ClientOrManagerOnly({ children }) {
+  const role = String(getStoredRoleName() || '').toLowerCase()
+  if (role !== 'client' && role !== 'manager') {
     return <Navigate to="/dashboard" replace />
   }
   return children
@@ -80,12 +90,6 @@ function DashboardLayoutRoute() {
   return <DashboardLayout onLogout={handleLogout} />
 }
 
-function ManagerOnlyRoute({ children }) {
-  const role = localStorage.getItem('auth_role')
-  if (role !== 'manager') return <Navigate to="/dashboard" replace />
-  return children
-}
-
 export default function AppRoutes() {
   return (
     <Routes>
@@ -119,12 +123,25 @@ export default function AppRoutes() {
         <Route path="/entreprises" element={<Entreprises />} />
         <Route path="/signalements" element={<Signalements />} />
         <Route path="/historique-signalements" element={<HistoriqueSignalements />} />
-        <Route path="/statistiques" element={<Statistiques />} />
-        <Route path="/parametres" element={<Parametres />} />
+        <Route path="/statistiques" element={(
+            <ManagerOnly>
+              <Statistiques />
+            </ManagerOnly>
+          )} />
+        <Route path="/parametres" element={(
+            <ManagerOnly>
+              <Parametres />
+            </ManagerOnly>
+          )} />
         <Route path="/maplibre" element={<MapPage />} />
         {/* Pages front-office accessibles depuis le dashboard */}
         <Route path="/carte-problemes" element={<CarteProblemesFrontOffice />} />
-        <Route path="/signaler-probleme" element={<SignalerProblemeFrontOffice />} />
+        {/* Signaler un problème - réservé aux clients et admins */}
+        <Route path="/signaler-probleme" element={(
+            <ClientOrManagerOnly>
+              <SignalerProblemeFrontOffice />
+            </ClientOrManagerOnly>
+          )} />
         {/* Nouvelles fonctionnalités admin */}
         <Route
           path="/journal"

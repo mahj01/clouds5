@@ -1,0 +1,53 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "type": "signalements",
+    "exportedAt": "2026-02-08T06:30:20.240Z"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          47.5079,
+          -18.8792
+        ]
+      },
+      "properties": {
+        "id": 2,
+        "titre": "test2",
+        "description": "test",
+        "statut": "resolu",
+        "surfaceM2": "25.00",
+        "budget": "500000.00",
+        "dateSignalement": "2026-02-08T05:48:03.503Z",
+        "utilisateurId": 2,
+        "entrepriseId": 1,
+        "entrepriseNom": "Entreprise Test"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          2.3522,
+          48.8566
+        ]
+      },
+      "properties": {
+        "id": 1,
+        "titre": "Signalement test",
+        "description": "Un signalement pour tester la modification (surface/budget/entreprise/statut).",
+        "statut": "resolu",
+        "surfaceM2": "42.50",
+        "budget": "12000.00",
+        "dateSignalement": "2026-02-08T05:44:25.359Z",
+        "utilisateurId": 2,
+        "entrepriseId": 1,
+        "entrepriseNom": "Entreprise Test"
+      }
+    }
+  ]
+}

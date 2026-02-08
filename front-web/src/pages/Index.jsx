@@ -1,4 +1,17 @@
+import { useNavigate } from 'react-router-dom'
+
 export default function Index({ onGoLogin, onGoRegister }) {
+  const navigate = useNavigate()
+
+  function handleVisitorAccess() {
+    // Définir le rôle comme visiteur et accéder au dashboard
+    localStorage.setItem('auth_role', 'visiteur')
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem('auth_expiresAt')
+    localStorage.removeItem('auth_userId')
+    navigate('/dashboard')
+  }
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl items-center justify-center px-4">
       <section className="w-full max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xl">
@@ -22,6 +35,21 @@ export default function Index({ onGoLogin, onGoRegister }) {
             onClick={onGoRegister}
           >
             Créer un compte
+          </button>
+        </div>
+
+        {/* Accès visiteur */}
+        <div className="mt-6 pt-6 border-t border-slate-200">
+          <p className="text-sm text-slate-500 mb-3">
+            Vous souhaitez consulter sans vous connecter ?
+          </p>
+          <button
+            className="rounded-xl border border-indigo-200 bg-indigo-50 px-5 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
+            type="button"
+            onClick={handleVisitorAccess}
+          >
+            <i className="fa fa-eye mr-2" />
+            Accéder en mode visiteur
           </button>
         </div>
       </section>

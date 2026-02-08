@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
+import { useOutletContext } from 'react-router-dom'
 import { getSignalements, updateSignalement, deleteSignalement, resoudreSignalement, getEntreprises } from '../../api/client.js'
 import { getTypesProblemeActifs } from '../../api/problemes.js'
+import { canEdit as checkCanEdit, isVisitor as checkIsVisitor } from '../../constants/dashboardNav.js'
 
 const STATUTS = [
   { value: 'actif', label: 'Actif', color: 'bg-red-100 text-red-700' },
@@ -32,6 +34,12 @@ function formatMoney(amount) {
 }
 
 export default function Signalements() {
+  // Récupérer le contexte du layout (rôle utilisateur)
+  const outletContext = useOutletContext() || {}
+  const roleName = outletContext.roleName || localStorage.getItem('auth_role') || 'visiteur'
+  const canEdit = useMemo(() => checkCanEdit(roleName), [roleName])
+  const isVisitor = useMemo(() => checkIsVisitor(roleName), [roleName])
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
@@ -338,6 +346,7 @@ export default function Signalements() {
 
                 {/* Actions */}
                 <div className="flex flex-wrap gap-2">
+                  {/* Bouton Voir - toujours visible pour tous */}
                   <button
                     onClick={() => openView(s)}
                     className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -345,35 +354,41 @@ export default function Signalements() {
                   >
                     <i className="fa fa-eye mr-1" />Voir
                   </button>
-                  <button
-                    onClick={() => openEdit(s)}
-                    className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm text-indigo-700 hover:bg-indigo-100"
-                    title="Modifier et fixer le budget"
-                  >
-                    <i className="fa fa-pencil mr-1" />Modifier
-                  </button>
-                  {s.statut === 'actif' && (
-                    <button
-                      onClick={() => handlePrendreEnCharge(s)}
-                      className="rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-700 hover:bg-yellow-100"
-                    >
-                      <i className="fa fa-play mr-1" />Prendre en charge
-                    </button>
+                  
+                  {/* Boutons admin seulement */}
+                  {canEdit && (
+                    <>
+                      <button
+                        onClick={() => openEdit(s)}
+                        className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm text-indigo-700 hover:bg-indigo-100"
+                        title="Modifier et fixer le budget"
+                      >
+                        <i className="fa fa-pencil mr-1" />Modifier
+                      </button>
+                      {s.statut === 'actif' && (
+                        <button
+                          onClick={() => handlePrendreEnCharge(s)}
+                          className="rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-700 hover:bg-yellow-100"
+                        >
+                          <i className="fa fa-play mr-1" />Prendre en charge
+                        </button>
+                      )}
+                      {(s.statut === 'actif' || s.statut === 'en_cours') && (
+                        <button
+                          onClick={() => handleResoudre(s)}
+                          className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 hover:bg-green-100"
+                        >
+                          <i className="fa fa-check mr-1" />Résoudre
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDelete(s)}
+                        className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 hover:bg-red-100"
+                      >
+                        <i className="fa fa-trash mr-1" />
+                      </button>
+                    </>
                   )}
-                  {(s.statut === 'actif' || s.statut === 'en_cours') && (
-                    <button
-                      onClick={() => handleResoudre(s)}
-                      className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 hover:bg-green-100"
-                    >
-                      <i className="fa fa-check mr-1" />Résoudre
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleDelete(s)}
-                    className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 hover:bg-red-100"
-                  >
-                    <i className="fa fa-trash mr-1" />
-                  </button>
                 </div>
               </div>
             </div>

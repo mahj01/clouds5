@@ -1,0 +1,16 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "type": "entreprises",
+    "exportedAt": "2026-02-08T06:30:18.400Z"
+  },
+  "features": [],
+  "entreprises": [
+    {
+      "id": 1,
+      "nom": "Entreprise Test",
+      "contact": "contact@test.local",
+      "description": "Entreprise de démonstration"
+    }
+  ]
+}
