@@ -290,10 +290,70 @@ export class SignalementsService {
       .addGroupBy('t.couleur')
       .getRawMany();
 
+    // --- Délais de traitement ---
+    // 1) Délai moyen de résolution : dateResolution - dateSignalement pour les résolus
+    const delaiResolutionRaw = await this.repo
+      .createQueryBuilder('s')
+      .select('AVG(EXTRACT(EPOCH FROM (s.date_resolution - s.date_signalement)) / 86400)', 'moyenJours')
+      .addSelect('MIN(EXTRACT(EPOCH FROM (s.date_resolution - s.date_signalement)) / 86400)', 'minJours')
+      .addSelect('MAX(EXTRACT(EPOCH FROM (s.date_resolution - s.date_signalement)) / 86400)', 'maxJours')
+      .addSelect('COUNT(s.id_signalement)', 'nombre')
+      .where('s.statut = :statut', { statut: StatutSignalement.RESOLU })
+      .andWhere('s.date_resolution IS NOT NULL')
+      .getRawOne();
+
+    // 2) Délai moyen de prise en charge : premier passage actif → en_cours via historique
+    const delaiPriseEnChargeRaw = await this.repo
+      .createQueryBuilder('s')
+      .innerJoin(
+        'historique_signalement', 'h',
+        'h.id_signalement = s.id_signalement AND h.nouveau_statut = :enCours',
+        { enCours: StatutSignalement.EN_COURS },
+      )
+      .select('AVG(EXTRACT(EPOCH FROM (h.date_changement - s.date_signalement)) / 86400)', 'moyenJours')
+      .addSelect('MIN(EXTRACT(EPOCH FROM (h.date_changement - s.date_signalement)) / 86400)', 'minJours')
+      .addSelect('MAX(EXTRACT(EPOCH FROM (h.date_changement - s.date_signalement)) / 86400)', 'maxJours')
+      .addSelect('COUNT(DISTINCT s.id_signalement)', 'nombre')
+      .getRawOne();
+
+    // 3) Délai moyen en_cours → résolu via historique
+    const delaiTraitementRaw = await this.repo
+      .createQueryBuilder('s')
+      .innerJoin(
+        'historique_signalement', 'h_ec',
+        'h_ec.id_signalement = s.id_signalement AND h_ec.nouveau_statut = :enCours',
+        { enCours: StatutSignalement.EN_COURS },
+      )
+      .innerJoin(
+        'historique_signalement', 'h_res',
+        'h_res.id_signalement = s.id_signalement AND h_res.nouveau_statut = :resolu',
+        { resolu: StatutSignalement.RESOLU },
+      )
+      .select('AVG(EXTRACT(EPOCH FROM (h_res.date_changement - h_ec.date_changement)) / 86400)', 'moyenJours')
+      .addSelect('MIN(EXTRACT(EPOCH FROM (h_res.date_changement - h_ec.date_changement)) / 86400)', 'minJours')
+      .addSelect('MAX(EXTRACT(EPOCH FROM (h_res.date_changement - h_ec.date_changement)) / 86400)', 'maxJours')
+      .addSelect('COUNT(DISTINCT s.id_signalement)', 'nombre')
+      .getRawOne();
+
+    const parseDelai = (raw: any) => ({
+      moyenJours: raw?.moyenJours ? parseFloat(parseFloat(raw.moyenJours).toFixed(1)) : null,
+      minJours: raw?.minJours ? parseFloat(parseFloat(raw.minJours).toFixed(1)) : null,
+      maxJours: raw?.maxJours ? parseFloat(parseFloat(raw.maxJours).toFixed(1)) : null,
+      nombre: raw?.nombre ? parseInt(raw.nombre, 10) : 0,
+    });
+
+    const tauxResolution = total > 0 ? parseFloat(((resolus / total) * 100).toFixed(1)) : 0;
+
     return {
       total,
       parStatut: { actifs, enCours, resolus, rejetes },
       parType,
+      delais: {
+        resolution: parseDelai(delaiResolutionRaw),
+        priseEnCharge: parseDelai(delaiPriseEnChargeRaw),
+        traitement: parseDelai(delaiTraitementRaw),
+      },
+      tauxResolution,
     };
   }
 }
