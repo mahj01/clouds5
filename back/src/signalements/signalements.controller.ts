@@ -97,7 +97,7 @@ export class SignalementsController {
   async uploadPhoto(@Param('id', ParseIntPipe) id: number, @UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('Aucun fichier fourni.');
     const photoUrl = `/uploads/${file.filename}`;
-    await this.svc.update(id, { photoUrl } as UpdateSignalementDto);
+    await this.svc.updatePhoto(id, photoUrl);
     return { photoUrl };
   }
 

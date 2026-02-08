@@ -113,6 +113,13 @@ export class SignalementsService {
     return item;
   }
 
+  /** Met à jour uniquement la photo (requête légère, pas de chargement de relations) */
+  async updatePhoto(id: number, photoUrl: string) {
+    const result = await this.repo.update(id, { photoUrl });
+    if (result.affected === 0) throw new NotFoundException('Signalement non trouvé');
+    return { photoUrl };
+  }
+
   async update(id: number, dto: UpdateSignalementDto) {
     const entity = await this.findOne(id);
 
@@ -124,8 +131,8 @@ export class SignalementsService {
     if (dto.priorite !== undefined) entity.priorite = dto.priorite;
     if (dto.photoUrl !== undefined) entity.photoUrl = dto.photoUrl;
     if (dto.commentaireResolution !== undefined) entity.commentaireResolution = dto.commentaireResolution;
-    if (dto.surfaceM2 !== undefined) entity.surfaceM2 = String(dto.surfaceM2);
-    if (dto.budget !== undefined) entity.budget = String(dto.budget);
+    if (dto.surfaceM2 !== undefined) entity.surfaceM2 = dto.surfaceM2 != null ? String(dto.surfaceM2) : undefined;
+    if (dto.budget !== undefined) entity.budget = dto.budget != null ? String(dto.budget) : undefined;
 
     if (dto.statut !== undefined && dto.statut !== entity.statut) {
       const ancienStatut = entity.statut;

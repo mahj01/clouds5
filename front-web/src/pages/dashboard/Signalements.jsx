@@ -26,6 +26,13 @@ function formatDate(date) {
   })
 }
 
+/** Construit l'URL complète de la photo à partir du chemin relatif */
+function photoFullUrl(photoUrl) {
+  if (!photoUrl) return null
+  if (photoUrl.startsWith('http')) return photoUrl
+  return `${window.location.protocol}//${window.location.hostname}:3001${photoUrl}`
+}
+
 function avancementFromStatut(statut) {
   switch (statut) {
     case 'en_cours': return 50
@@ -146,23 +153,35 @@ export default function Signalements() {
     setSaving(true)
     setError(null)
     try {
-      // Upload photo if a new file was selected
+      // 1) Upload photo si une nouvelle a été sélectionnée
+      let uploadedPhotoUrl = null
       if (form._photoFile) {
-        await uploadPhotoSignalement(editing.id, form._photoFile)
+        try {
+          const res = await uploadPhotoSignalement(editing.id, form._photoFile)
+          uploadedPhotoUrl = res?.photoUrl || null
+        } catch (uploadErr) {
+          setError('Erreur upload photo: ' + (uploadErr?.message || String(uploadErr)))
+          setSaving(false)
+          return
+        }
       }
-      await updateSignalement(editing.id, {
-        titre: form.titre || null,
-        description: form.description || null,
+      // 2) Mettre à jour les autres champs du signalement
+      const payload = {
+        titre: form.titre || undefined,
+        description: form.description || undefined,
         statut: form.statut,
         priorite: parseInt(form.priorite),
-        adresse: form.adresse || null,
-        typeProblemeId: form.typeProblemeId ? parseInt(form.typeProblemeId) : null,
-        surfaceM2: form.surfaceM2 ? parseFloat(form.surfaceM2) : null,
-        budget: form.budget ? parseFloat(form.budget) : null,
-        entrepriseId: form.entrepriseId ? parseInt(form.entrepriseId) : null,
+        adresse: form.adresse || undefined,
         utilisateurId: parseInt(localStorage.getItem('auth_userId') || '1'),
-      })
-      setSuccess('Signalement mis à jour avec succès.')
+      }
+      // N'envoyer que les champs numériques non-vides (éviter null → "null" en BDD)
+      if (form.typeProblemeId) payload.typeProblemeId = parseInt(form.typeProblemeId)
+      if (form.surfaceM2) payload.surfaceM2 = parseFloat(form.surfaceM2)
+      if (form.budget) payload.budget = parseFloat(form.budget)
+      if (form.entrepriseId) payload.entrepriseId = parseInt(form.entrepriseId)
+
+      await updateSignalement(editing.id, payload)
+      setSuccess('Signalement mis à jour avec succès.' + (uploadedPhotoUrl ? ' Photo enregistrée.' : ''))
       closeModals()
       await refresh()
     } catch (e) {
@@ -476,10 +495,11 @@ export default function Signalements() {
                   <i className="fa fa-camera mr-1" />Photo du problème
                 </div>
                 <img
-                  src={viewing.photoUrl.startsWith('http') ? viewing.photoUrl : `${window.location.protocol}//${window.location.hostname}:3001${viewing.photoUrl}`}
+                  src={photoFullUrl(viewing.photoUrl)}
                   alt="Photo du signalement"
                   className="w-full max-h-64 object-cover rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:opacity-90 transition"
-                  onClick={() => window.open(viewing.photoUrl.startsWith('http') ? viewing.photoUrl : `${window.location.protocol}//${window.location.hostname}:3001${viewing.photoUrl}`, '_blank')}
+                  onClick={() => window.open(photoFullUrl(viewing.photoUrl), '_blank')}
+                  onError={(e) => { e.target.style.display = 'none' }}
                 />
               </div>
             )}
@@ -843,9 +863,10 @@ export default function Signalements() {
                 {editing.photoUrl && !form._photoPreview && (
                   <div className="mb-3">
                     <img
-                      src={editing.photoUrl.startsWith('http') ? editing.photoUrl : `${window.location.protocol}//${window.location.hostname}:3001${editing.photoUrl}`}
+                      src={photoFullUrl(editing.photoUrl)}
                       alt="Photo actuelle"
                       className="w-full max-h-40 object-cover rounded-lg border border-cyan-200"
+                      onError={(e) => { e.target.style.display = 'none' }}
                     />
                     <p className="text-xs text-cyan-600 mt-1">Photo actuelle</p>
                   </div>
