@@ -32,7 +32,7 @@ function osmRasterStyle() {
   };
 }
 
-export default function CarteProblemes({ selectedProbleme, onProblemeCreated }) {
+export default function CarteProblemes({ selectedProbleme, onProblemeCreated, onMarkerClick, selectedProblemeId }) {
   const navigate = useNavigate()
   const mapContainer = useRef(null)
   const mapRef = useRef(null)
@@ -147,23 +147,40 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated }) 
       const couleur = typeInfo?.couleur || '#FF5733'
       const opacity = props.statut === 'resolu' ? 0.5 : 1
 
+      // Vérifier si ce marqueur est sélectionné
+      const isSelected = selectedProblemeId && props.id === selectedProblemeId
+
       // Créer l'élément du marqueur
       const el = document.createElement('div')
       el.className = 'probleme-marker'
       el.style.cssText = `
-        width: 30px;
-        height: 30px;
+        width: ${isSelected ? '40px' : '30px'};
+        height: ${isSelected ? '40px' : '30px'};
         background-color: ${couleur};
-        border: 3px solid white;
+        border: ${isSelected ? '4px solid #4f46e5' : '3px solid white'};
         border-radius: 50%;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        box-shadow: ${isSelected ? '0 0 12px rgba(79,70,229,0.6)' : '0 2px 6px rgba(0,0,0,0.3)'};
         opacity: ${opacity};
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
+        transition: all 0.2s ease;
+        z-index: ${isSelected ? '100' : '1'};
       `
       el.innerHTML = '<i class="fa fa-warning" style="color: white; font-size: 12px;"></i>'
+
+      // Ajouter l'événement click pour la synchronisation avec le tableau
+      el.addEventListener('click', () => {
+        if (onMarkerClick) {
+          onMarkerClick({
+            id: props.id,
+            ...props,
+            longitude: coords[0],
+            latitude: coords[1]
+          })
+        }
+      })
 
       // Créer le popup
       const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
@@ -186,7 +203,7 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated }) 
 
       markersRef.current.push(marker)
     })
-  }, [problemes])
+  }, [problemes, selectedProblemeId, onMarkerClick])
 
   async function loadData() {
     setLoading(true)
