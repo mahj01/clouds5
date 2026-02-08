@@ -40,6 +40,7 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated }) 
   const [problemes, setProblemes] = useState([])
   const [types, setTypes] = useState([])
   const [loading, setLoading] = useState(true)
+  const [mapReady, setMapReady] = useState(false)
   const [filtreStatut, setFiltreStatut] = useState(null)
   const [isAddMode, setIsAddMode] = useState(false)
   const [mapError, setMapError] = useState(null)
@@ -79,7 +80,7 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated }) 
 
         mapRef.current.on('load', () => {
           console.log('Carte chargée')
-          setLoading(false)
+          setMapReady(true)
         })
 
         mapRef.current.on('error', (e) => {
@@ -131,49 +132,70 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated }) 
     }
   }, [selectedProbleme])
 
-  // Afficher les marqueurs des problèmes
+  // Afficher les marqueurs des problèmes — attend que la carte soit prête
   useEffect(() => {
-    if (!mapRef.current) return
+    if (!mapRef.current || !mapReady) return
 
     // Supprimer les anciens marqueurs
     markersRef.current.forEach(m => m.remove())
     markersRef.current = []
 
     // Ajouter les nouveaux marqueurs
+    // Couleurs par statut
+    const STATUT_COLORS = {
+      actif: '#ef4444',      // rouge
+      en_cours: '#f59e0b',   // jaune/orange
+      resolu: '#22c55e',     // vert
+      rejete: '#94a3b8',     // gris
+    }
+
     problemes.forEach((feature) => {
       const props = feature.properties
       const coords = feature.geometry.coordinates
       const typeInfo = props.typeProbleme
-      const couleur = typeInfo?.couleur || '#FF5733'
-      const opacity = props.statut === 'resolu' ? 0.5 : 1
+      const couleurStatut = STATUT_COLORS[props.statut] || '#38bdf8'
+      const opacity = props.statut === 'resolu' ? 0.6 : 1
 
-      // Créer l'élément du marqueur
+      // Créer l'élément du marqueur — couleur = statut
       const el = document.createElement('div')
       el.className = 'probleme-marker'
       el.style.cssText = `
-        width: 30px;
-        height: 30px;
-        background-color: ${couleur};
+        width: 32px;
+        height: 32px;
+        background-color: ${couleurStatut};
         border: 3px solid white;
         border-radius: 50%;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         opacity: ${opacity};
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
       `
-      el.innerHTML = '<i class="fa fa-warning" style="color: white; font-size: 12px;"></i>'
+      el.innerHTML = '<i class="fa fa-warning" style="color: white; font-size: 13px;"></i>'
+
+      // Calculer l'avancement depuis le statut
+      const avancement = props.avancement ?? (props.statut === 'resolu' ? 100 : props.statut === 'en_cours' ? 50 : 0)
+      const avancementColor = avancement >= 100 ? '#22c55e' : avancement >= 50 ? '#eab308' : '#d1d5db'
 
       // Créer le popup
       const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
-        <div style="min-width: 200px; padding: 8px;">
+        <div style="min-width: 220px; padding: 8px;">
           <div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">${props.titre}</div>
           ${typeInfo ? `<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; color: white; background-color: ${typeInfo.couleur}; margin-bottom: 8px;">${typeInfo.nom}</span>` : ''}
           ${props.description ? `<p style="font-size: 13px; color: #475569; margin: 8px 0;">${props.description}</p>` : ''}
           ${props.adresse ? `<p style="font-size: 12px; color: #64748b;"><i class="fa fa-map-marker" style="margin-right: 4px;"></i>${props.adresse}</p>` : ''}
           <div style="font-size: 12px; color: #64748b; margin-top: 8px;">
-            Statut: <span style="font-weight: 500;">${props.statut}</span>
+            Statut: <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;color:white;background-color:${couleurStatut};">${props.statut === 'actif' ? 'Actif' : props.statut === 'en_cours' ? 'En cours' : props.statut === 'resolu' ? 'Résolu' : props.statut === 'rejete' ? 'Rejeté' : props.statut}</span>
+          </div>
+          <div style="margin-top: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+              <span style="font-size: 11px; color: #64748b;">Avancement</span>
+              <span style="font-size: 12px; font-weight: 700; color: #1e293b;">${avancement}%</span>
+            </div>
+            <div style="height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
+              <div style="height: 100%; width: ${avancement}%; background: ${avancementColor}; border-radius: 3px; transition: width 0.3s;"></div>
+            </div>
           </div>
           ${props.priorite > 1 ? `<div style="font-size: 12px; color: #ea580c; margin-top: 4px;"><i class="fa fa-flag" style="margin-right: 4px;"></i>Priorité ${props.priorite}</div>` : ''}
         </div>
@@ -186,7 +208,7 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated }) 
 
       markersRef.current.push(marker)
     })
-  }, [problemes])
+  }, [problemes, mapReady])
 
   async function loadData() {
     setLoading(true)
@@ -418,19 +440,26 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated }) 
         </div>
       )}
 
-      {/* Légende */}
+      {/* Légende par statut */}
       <div className="hidden sm:block absolute bottom-4 left-4 z-[10] bg-white/95 rounded-lg p-3 text-xs text-gray-900 shadow-lg border border-gray-200">
-        <div className="font-medium mb-2 text-gray-700">Légende</div>
-        <div className="space-y-1">
-          {types.slice(0, 5).map((type) => (
-            <div key={type.id} className="flex items-center gap-2">
-              <div
-                className="w-3 h-3 rounded-full border border-gray-300"
-                style={{ backgroundColor: type.couleur }}
-              />
-              <span className="text-gray-600">{type.nom}</span>
-            </div>
-          ))}
+        <div className="font-medium mb-2 text-gray-700">Légende (statut)</div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <div className="w-3.5 h-3.5 rounded-full border-2 border-white shadow" style={{ backgroundColor: '#ef4444' }} />
+            <span className="text-gray-600">Actif</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3.5 h-3.5 rounded-full border-2 border-white shadow" style={{ backgroundColor: '#f59e0b' }} />
+            <span className="text-gray-600">En cours</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3.5 h-3.5 rounded-full border-2 border-white shadow" style={{ backgroundColor: '#22c55e' }} />
+            <span className="text-gray-600">Résolu</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3.5 h-3.5 rounded-full border-2 border-white shadow" style={{ backgroundColor: '#94a3b8' }} />
+            <span className="text-gray-600">Rejeté</span>
+          </div>
         </div>
       </div>
 

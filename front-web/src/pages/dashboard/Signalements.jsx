@@ -26,6 +26,22 @@ function formatDate(date) {
   })
 }
 
+function avancementFromStatut(statut) {
+  switch (statut) {
+    case 'en_cours': return 50
+    case 'resolu': return 100
+    case 'actif':
+    case 'rejete':
+    default: return 0
+  }
+}
+
+function avancementColor(pct) {
+  if (pct >= 100) return 'bg-green-500'
+  if (pct >= 50) return 'bg-yellow-500'
+  return 'bg-gray-300'
+}
+
 function formatMoney(amount) {
   if (!amount) return '—'
   return new Intl.NumberFormat('fr-MG', { style: 'currency', currency: 'MGA' }).format(amount)
@@ -334,6 +350,20 @@ export default function Signalements() {
                       </span>
                     )}
                   </div>
+
+                  {/* Barre d'avancement */}
+                  <div className="mt-3 flex items-center gap-3">
+                    <span className="text-xs font-medium text-gray-500 w-24">Avancement</span>
+                    <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${avancementColor(s.avancement ?? avancementFromStatut(s.statut))}`}
+                        style={{ width: `${s.avancement ?? avancementFromStatut(s.statut)}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-bold text-gray-700 w-10 text-right">
+                      {s.avancement ?? avancementFromStatut(s.statut)}%
+                    </span>
+                  </div>
                 </div>
 
                 {/* Actions */}
@@ -470,6 +500,22 @@ export default function Signalements() {
                   <div className="font-medium text-green-700">{formatDate(viewing.dateResolution)}</div>
                 </div>
               )}
+            </div>
+
+            {/* Avancement */}
+            <div className="mt-4 rounded-xl bg-slate-50 border border-slate-200 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-slate-600">Avancement</span>
+                <span className="text-sm font-bold text-slate-800">
+                  {viewing.avancement ?? avancementFromStatut(viewing.statut)}%
+                </span>
+              </div>
+              <div className="h-3 rounded-full bg-slate-200 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${avancementColor(viewing.avancement ?? avancementFromStatut(viewing.statut))}`}
+                  style={{ width: `${viewing.avancement ?? avancementFromStatut(viewing.statut)}%` }}
+                />
+              </div>
             </div>
 
             {viewing.commentaireResolution && (
@@ -642,6 +688,27 @@ export default function Signalements() {
                   rows={3}
                   className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
                 />
+              </div>
+
+              {/* Avancement auto-calculé */}
+              <div className="sm:col-span-2 rounded-xl border-2 border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-slate-700">
+                    <i className="fa fa-tasks mr-2" />Avancement (auto-calculé)
+                  </span>
+                  <span className="text-lg font-bold text-slate-800">
+                    {avancementFromStatut(form.statut)}%
+                  </span>
+                </div>
+                <div className="h-3 rounded-full bg-slate-200 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${avancementColor(avancementFromStatut(form.statut))}`}
+                    style={{ width: `${avancementFromStatut(form.statut)}%` }}
+                  />
+                </div>
+                <p className="text-xs text-slate-500 mt-2">
+                  Nouveau/Actif = 0% · En cours = 50% · Résolu = 100%
+                </p>
               </div>
 
               {/* Infos lecture seule */}

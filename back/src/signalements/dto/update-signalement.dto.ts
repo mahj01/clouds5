@@ -51,6 +51,12 @@ export class UpdateSignalementDto {
   @IsString()
   commentaireResolution?: string;
 
+  @ApiProperty({ required: false, description: 'Avancement auto-calculé (0, 50, 100). Ignoré si fourni, calculé depuis le statut.' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  avancement?: number;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @Type(() => Number)

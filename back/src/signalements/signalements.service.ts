@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Signalement, StatutSignalement } from './signalement.entity';
+import { Signalement, StatutSignalement, avancementFromStatut } from './signalement.entity';
 import { CreateSignalementDto } from './dto/create-signalement.dto';
 import { UpdateSignalementDto } from './dto/update-signalement.dto';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
@@ -48,17 +48,19 @@ export class SignalementsService {
       entreprise = ent;
     }
 
+    const statut = dto.statut ?? StatutSignalement.ACTIF;
     const entity = this.repo.create({
       titre: dto.titre,
       description: dto.description,
       latitude: String(dto.latitude),
       longitude: String(dto.longitude),
       adresse: dto.adresse,
-      statut: dto.statut ?? StatutSignalement.ACTIF,
+      statut,
       priorite: dto.priorite ?? 1,
       photoUrl: dto.photoUrl,
       surfaceM2: dto.surfaceM2 !== undefined ? String(dto.surfaceM2) : undefined,
       budget: dto.budget !== undefined ? String(dto.budget) : undefined,
+      avancement: avancementFromStatut(statut),
       utilisateur: user,
       typeProbleme,
       entreprise,
@@ -128,6 +130,7 @@ export class SignalementsService {
     if (dto.statut !== undefined && dto.statut !== entity.statut) {
       const ancienStatut = entity.statut;
       entity.statut = dto.statut;
+      entity.avancement = avancementFromStatut(dto.statut);
       if (dto.statut === StatutSignalement.RESOLU) {
         entity.dateResolution = new Date();
       }
@@ -198,6 +201,7 @@ export class SignalementsService {
 
     const ancienStatut = entity.statut;
     entity.statut = StatutSignalement.RESOLU;
+    entity.avancement = 100;
     entity.dateResolution = new Date();
     entity.utilisateurResolution = user;
     if (commentaire) entity.commentaireResolution = commentaire;
@@ -246,6 +250,7 @@ export class SignalementsService {
           titre: s.titre,
           description: s.description,
           statut: s.statut,
+          avancement: s.avancement,
           priorite: s.priorite,
           dateSignalement: s.dateSignalement,
           typeProbleme: s.typeProbleme ? {

@@ -14,6 +14,16 @@ const STATUTS = {
   rejete: { label: 'Rejeté', color: 'bg-gray-500', textColor: 'text-gray-600' },
 }
 
+function avancementFromStatut(statut) {
+  switch (statut) {
+    case 'en_cours': return 50
+    case 'resolu': return 100
+    case 'actif':
+    case 'rejete':
+    default: return 0
+  }
+}
+
 export default function ListeProblemes({ onSelectProbleme }) {
   const [problemes, setProblemes] = useState([])
   const [types, setTypes] = useState([])
@@ -225,6 +235,25 @@ export default function ListeProblemes({ onSelectProbleme }) {
                         <i className="fa fa-check mr-1" />Résolu le {formatDate(probleme.dateResolution)}
                       </span>
                     )}
+                  </div>
+                  {/* Barre d'avancement */}
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-xs text-gray-500 w-20">Avancement</span>
+                    <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          (probleme.avancement ?? avancementFromStatut(probleme.statut)) >= 100
+                            ? 'bg-green-500'
+                            : (probleme.avancement ?? avancementFromStatut(probleme.statut)) >= 50
+                              ? 'bg-yellow-500'
+                              : 'bg-gray-300'
+                        }`}
+                        style={{ width: `${probleme.avancement ?? avancementFromStatut(probleme.statut)}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-semibold text-gray-600 w-8 text-right">
+                      {probleme.avancement ?? avancementFromStatut(probleme.statut)}%
+                    </span>
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">

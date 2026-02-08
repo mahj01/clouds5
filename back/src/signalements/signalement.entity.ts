@@ -11,6 +11,20 @@ export enum StatutSignalement {
   REJETE = 'rejete',
 }
 
+/** Retourne le pourcentage d'avancement selon le statut */
+export function avancementFromStatut(statut: string): number {
+  switch (statut) {
+    case StatutSignalement.EN_COURS:
+      return 50;
+    case StatutSignalement.RESOLU:
+      return 100;
+    case StatutSignalement.ACTIF:
+    case StatutSignalement.REJETE:
+    default:
+      return 0;
+  }
+}
+
 @Entity('signalement')
 export class Signalement {
   @PrimaryGeneratedColumn({ name: 'id_signalement' })
@@ -59,6 +73,9 @@ export class Signalement {
 
   @Column({ name: 'budget', type: 'decimal', precision: 12, scale: 2, nullable: true })
   budget?: string;
+
+  @Column({ name: 'avancement', type: 'int', default: 0 })
+  avancement: number;
 
   // Type de problème (relation avec TypeProbleme)
   @ManyToOne(() => TypeProbleme, { nullable: true })
