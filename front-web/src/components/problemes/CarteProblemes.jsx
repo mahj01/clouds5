@@ -156,16 +156,6 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated, on
       const couleurStatut = STATUT_COLORS[props.statut] || '#38bdf8'
       const opacity = props.statut === 'resolu' ? 0.6 : 1
 
-      // Créer l'élément du marqueur — couleur = statut
-      const el = document.createElement('div')
-      el.className = 'probleme-marker'
-      el.style.cssText = `
-        width: 32px;
-        height: 32px;
-        background-color: ${couleurStatut};
-        border: 3px solid white;
-        border-radius: 50%;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
       // Vérifier si ce marqueur est sélectionné
       const isSelected = selectedProblemeId && props.id === selectedProblemeId
 
@@ -175,7 +165,7 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated, on
       el.style.cssText = `
         width: ${isSelected ? '40px' : '30px'};
         height: ${isSelected ? '40px' : '30px'};
-        background-color: ${couleur};
+        background-color: ${couleurStatut};
         border: ${isSelected ? '4px solid #4f46e5' : '3px solid white'};
         border-radius: 50%;
         box-shadow: ${isSelected ? '0 0 12px rgba(79,70,229,0.6)' : '0 2px 6px rgba(0,0,0,0.3)'};
