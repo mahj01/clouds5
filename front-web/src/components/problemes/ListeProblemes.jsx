@@ -24,7 +24,7 @@ function avancementFromStatut(statut) {
   }
 }
 
-export default function ListeProblemes({ onSelectProbleme }) {
+export default function ListeProblemes({ onSelectProbleme ,selectedProblemeId}) {
   const [problemes, setProblemes] = useState([])
   const [types, setTypes] = useState([])
   const [loading, setLoading] = useState(true)
@@ -187,7 +187,13 @@ export default function ListeProblemes({ onSelectProbleme }) {
           {problemesFiltres.map((probleme) => (
             <div
               key={probleme.id}
-              className="rounded-xl border border-gray-200 bg-white p-4 hover:bg-gray-50 transition shadow-sm"
+              id={`probleme-${probleme.id}`}
+              className={`rounded-xl border p-4 transition shadow-sm cursor-pointer ${
+                selectedProblemeId === probleme.id
+                  ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200'
+                  : 'border-gray-200 bg-white hover:bg-gray-50'
+              }`}
+              onClick={() => onSelectProbleme?.(probleme)}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">

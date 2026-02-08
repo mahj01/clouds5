@@ -19,6 +19,7 @@ import ValidationDonnees from '../pages/dashboard/ValidationDonnees.jsx'
 import HistoriqueSignalements from '../pages/dashboard/HistoriqueSignalements.jsx'
 import CarteProblemesFrontOffice from '../pages/frontoffice/CarteProblemesFrontOffice.jsx'
 import SignalerProblemeFrontOffice from '../pages/frontoffice/SignalerProblemeFrontOffice.jsx'
+import TableauSyntheseFrontOffice from '../pages/frontoffice/TableauSyntheseFrontOffice.jsx'
 
 function getStoredRoleName() {
   try {
@@ -123,6 +124,7 @@ export default function AppRoutes() {
         <Route path="/parametres" element={<Parametres />} />
         <Route path="/maplibre" element={<MapPage />} />
         {/* Pages front-office accessibles depuis le dashboard */}
+        <Route path="/tableau-synthese" element={<TableauSyntheseFrontOffice />} />
         <Route path="/carte-problemes" element={<CarteProblemesFrontOffice />} />
         <Route path="/signaler-probleme" element={<SignalerProblemeFrontOffice />} />
         {/* Nouvelles fonctionnalités admin */}
