@@ -4,6 +4,12 @@
       <IonToolbar>
         <IonTitle>Blank</IonTitle>
         <IonButtons slot="end">
+          <IonButton @click="goToNotifications" class="notification-btn">
+            <IonIcon :icon="notificationsOutline" />
+            <IonBadge v-if="unreadCount > 0" color="danger" class="notification-badge">
+              {{ unreadCount > 99 ? '99+' : unreadCount }}
+            </IonBadge>
+          </IonButton>
           <IonButton @click="$router.push('/map')">Map</IonButton>
           <IonButton color="medium" @click="onLogout">Logout</IonButton>
         </IonButtons>
@@ -25,6 +31,11 @@
           <IonButton expand="block" fill="outline" style="margin-top: 10px" @click="$router.push('/signalements')">
             Signalements (debug)
           </IonButton>
+          <IonButton expand="block" fill="outline" style="margin-top: 10px" @click="goToNotifications">
+            <IonIcon :icon="notificationsOutline" slot="start" />
+            Notifications
+            <IonBadge v-if="unreadCount > 0" color="danger" style="margin-left: 8px">{{ unreadCount }}</IonBadge>
+          </IonButton>
         </div>
       </div>
     </IonContent>
@@ -32,11 +43,44 @@
 </template>
 
 <script setup lang="ts">
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent } from '@ionic/vue';
+import { ref, onMounted, onUnmounted } from 'vue';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent, IonIcon, IonBadge } from '@ionic/vue';
+import { notificationsOutline } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
-import authService from '@/services/auth';
+import authService, { getCurrentUser } from '@/services/auth';
+import { getUnreadCount } from '@/services/push-notifications';
 
 const router = useRouter();
+const unreadCount = ref(0);
+
+async function loadUnreadCount() {
+  try {
+    const user = await getCurrentUser();
+    if (user?.uid) {
+      unreadCount.value = await getUnreadCount(user.uid);
+    }
+  } catch (e) {
+    console.warn('Erreur chargement badge notifications:', e);
+  }
+}
+
+function goToNotifications() {
+  router.push('/notifications');
+}
+
+// Écouter les notifications push reçues pour mettre à jour le badge
+function onPushReceived() {
+  loadUnreadCount();
+}
+
+onMounted(() => {
+  loadUnreadCount();
+  window.addEventListener('push-notification-received', onPushReceived);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('push-notification-received', onPushReceived);
+});
 
 async function onLogout() {
   // Best-effort sign out + session removal.
@@ -81,5 +125,19 @@ async function onLogout() {
 
 #container a {
   text-decoration: none;
+}
+
+.notification-btn {
+  position: relative;
+}
+
+.notification-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 10px;
+  padding: 2px 5px;
+  min-width: 16px;
+  border-radius: 10px;
 }
 </style>

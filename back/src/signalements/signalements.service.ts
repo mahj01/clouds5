@@ -9,6 +9,7 @@ import { Entreprise } from '../entreprises/entreprise.entity';
 import { TypeProbleme } from '../problemes/type-probleme.entity';
 import { JournalService } from '../journal/journal.service';
 import { HistoriqueSignalementService } from '../historique_signalement/historique-signalement.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class SignalementsService {
@@ -19,6 +20,7 @@ export class SignalementsService {
     @InjectRepository(TypeProbleme) private typeRepo: Repository<TypeProbleme>,
     private readonly journalService: JournalService,
     private readonly historiqueService: HistoriqueSignalementService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   private async logAction(action: string, ressource: string, utilisateurId?: number, niveau: string = 'info', details?: string) {
@@ -151,6 +153,16 @@ export class SignalementsService {
             signalementId: id,
             managerId,
           });
+          // Envoyer une notification push au créateur du signalement
+          if (entity.utilisateur?.id) {
+            await this.notificationsService.notifyStatusChange(
+              entity.utilisateur.id,
+              id,
+              ancienStatut,
+              dto.statut,
+              entity.titre,
+            );
+          }
         } catch (e) {
           console.error('Erreur enregistrement historique:', e);
         }
@@ -223,6 +235,16 @@ export class SignalementsService {
         signalementId: id,
         managerId: utilisateurResolutionId,
       });
+      // Envoyer une notification push au créateur du signalement
+      if (entity.utilisateur?.id) {
+        await this.notificationsService.notifyStatusChange(
+          entity.utilisateur.id,
+          id,
+          ancienStatut,
+          StatutSignalement.RESOLU,
+          entity.titre,
+        );
+      }
     } catch (e) {
       console.error('Erreur enregistrement historique:', e);
     }

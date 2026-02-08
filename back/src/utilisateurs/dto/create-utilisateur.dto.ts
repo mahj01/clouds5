@@ -38,4 +38,9 @@ export class CreateUtilisateurDto {
   @Type(() => Date)
   @IsDate()
   dateBlocage?: Date;
+
+  @ApiProperty({ required: false, description: 'FCM Token pour les notifications push' })
+  @IsOptional()
+  @IsString()
+  fcmToken?: string;
 }

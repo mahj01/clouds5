@@ -12,6 +12,7 @@ import { auth as firebaseAuth } from '@/firebase';
 import { getAccountStatus, markLoginFailure, markLoginSuccess } from './auth-attempts';
 import { getUidForEmail, upsertEmailUid } from './auth-identity';
 import { firebaseEmailExists } from './auth-email-exists';
+import { initPushNotifications, cleanupPushNotifications } from './push-notifications';
 
 export type NormalizedResult<T> =
   | { ok: true; data: T }
@@ -119,6 +120,13 @@ export async function loginOnline(
 
     // On success, reset attempts + ensure actif
     await markLoginSuccess(uid);
+
+    // Initialiser les notifications push
+    try {
+      await initPushNotifications(uid);
+    } catch (e) {
+      console.warn('[loginOnline] Failed to init push notifications:', e);
+    }
 
     // Persist a minimal session for app usage
     const expiresAt = new Date(Date.now() + sessionTtlMs).toISOString();
@@ -235,6 +243,7 @@ export async function loginOnline(
 }
 
 export async function firebaseLogout(): Promise<void> {
+  await cleanupPushNotifications();
   await signOut(firebaseAuth);
   await removeSession();
 }

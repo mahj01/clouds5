@@ -63,5 +63,6 @@ if (serviceAccount) {
 }
 
 export const firestore = admin.firestore();
+export const messaging = admin.messaging();
 
 

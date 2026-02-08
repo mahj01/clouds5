@@ -35,4 +35,8 @@ export class Utilisateur {
   // Firebase UID - null si pas encore synchronisé avec Firebase
   @Column({ name: 'firebase_uid', type: 'varchar', length: 128, nullable: true })
   firebaseUid?: string | null;
+
+  // FCM Token pour les notifications push mobiles
+  @Column({ name: 'fcm_token', type: 'varchar', length: 255, nullable: true })
+  fcmToken?: string | null;
 }

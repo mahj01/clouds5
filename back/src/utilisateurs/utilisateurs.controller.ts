@@ -93,4 +93,37 @@ export class UtilisateursController {
   async register(@Body() dto: CreateUtilisateurDto) {
     return this.svc.register(dto);
   }
+
+  @Put(':id/fcm-token')
+  @ApiTags('notifications')
+  @ApiOperation({ summary: 'Mettre à jour le FCM token pour les notifications push' })
+  @ApiParam({ name: 'id', description: 'ID utilisateur', type: Number })
+  @ApiOkResponse({ description: 'FCM token mis à jour.' })
+  updateFcmToken(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('fcmToken') fcmToken: string,
+  ) {
+    return this.svc.updateFcmToken(id, fcmToken);
+  }
+
+  @Put('firebase/:firebaseUid/fcm-token')
+  @ApiTags('notifications')
+  @ApiOperation({ summary: 'Mettre à jour le FCM token via Firebase UID' })
+  @ApiParam({ name: 'firebaseUid', description: 'Firebase UID de l\'utilisateur', type: String })
+  @ApiOkResponse({ description: 'FCM token mis à jour.' })
+  updateFcmTokenByFirebaseUid(
+    @Param('firebaseUid') firebaseUid: string,
+    @Body('fcmToken') fcmToken: string,
+  ) {
+    return this.svc.updateFcmTokenByFirebaseUid(firebaseUid, fcmToken);
+  }
+
+  @Get('firebase/:firebaseUid')
+  @ApiTags('notifications')
+  @ApiOperation({ summary: 'Récupérer un utilisateur par Firebase UID' })
+  @ApiParam({ name: 'firebaseUid', description: 'Firebase UID de l\'utilisateur', type: String })
+  @ApiOkResponse({ description: 'Utilisateur trouvé.' })
+  findByFirebaseUid(@Param('firebaseUid') firebaseUid: string) {
+    return this.svc.findOneByFirebaseUid(firebaseUid);
+  }
 }

@@ -82,11 +82,30 @@ export class UtilisateursService {
     if (dto.prenom !== undefined) user.prenom = dto.prenom;
     if (dto.nbTentatives !== undefined) user.nbTentatives = dto.nbTentatives;
     if (dto.dateBlocage !== undefined) user.dateBlocage = dto.dateBlocage;
+    if (dto.fcmToken !== undefined) user.fcmToken = dto.fcmToken;
     if (dto.roleId !== undefined) {
       const role = await this.roleRepo.findOne({ where: { id: dto.roleId } });
       if (!role) throw new NotFoundException('Role not found');
       user.role = role;
     }
+    return this.repo.save(user);
+  }
+
+  async updateFcmToken(id: number, fcmToken: string) {
+    const user = await this.findOne(id);
+    user.fcmToken = fcmToken;
+    return this.repo.save(user);
+  }
+
+  async findOneByFirebaseUid(firebaseUid: string) {
+    const user = await this.repo.findOne({ where: { firebaseUid }, relations: ['role'] });
+    if (!user) throw new NotFoundException('Utilisateur not found');
+    return user;
+  }
+
+  async updateFcmTokenByFirebaseUid(firebaseUid: string, fcmToken: string) {
+    const user = await this.findOneByFirebaseUid(firebaseUid);
+    user.fcmToken = fcmToken;
     return this.repo.save(user);
   }
 
