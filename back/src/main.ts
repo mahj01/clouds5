@@ -6,6 +6,9 @@ import { DataSource } from 'typeorm';
 import { Role } from './roles/role.entity';
 import { Utilisateur } from './utilisateurs/utilisateur.entity';
 import * as bcrypt from 'bcrypt';
+import * as express from 'express';
+import { join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -26,6 +29,12 @@ async function bootstrap() {
     allowedHeaders: 'Content-Type, Authorization',
     exposedHeaders: ['Content-Disposition'],
   });
+  // Create uploads directory if it doesn't exist
+  const uploadsDir = join(process.cwd(), 'uploads');
+  if (!existsSync(uploadsDir)) mkdirSync(uploadsDir, { recursive: true });
+  // Serve uploaded files statically at /uploads/
+  app.use('/uploads', express.static(uploadsDir));
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

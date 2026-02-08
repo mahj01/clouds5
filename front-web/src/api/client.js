@@ -179,6 +179,26 @@ export function createSignalement(payload) {
   })
 }
 
+// Upload photo pour un signalement (FormData, pas de Content-Type manuel)
+export async function uploadPhotoSignalement(signalementId, file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null
+  const headers = {}
+  if (token) headers.Authorization = `Bearer ${token}`
+  const res = await fetch(`${API_BASE}/signalements/${signalementId}/photo`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  })
+  if (!res.ok) {
+    let msg = `Erreur ${res.status}`
+    try { const d = await res.json(); if (d?.message) msg = Array.isArray(d.message) ? d.message.join(', ') : d.message } catch {}
+    throw new Error(msg)
+  }
+  return res.json()
+}
+
 export function updateSignalement(id, payload) {
   return apiFetch(`/signalements/${id}`, {
     method: 'PUT',

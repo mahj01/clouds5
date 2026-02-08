@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getTypesProblemeActifs } from '../../api/problemes.js'
-import { createSignalement } from '../../api/client.js'
+import { createSignalement, uploadPhotoSignalement } from '../../api/client.js'
 
 export default function SignalerProblemeFrontOffice() {
   const navigate = useNavigate()
@@ -25,6 +25,8 @@ export default function SignalerProblemeFrontOffice() {
     longitude: lngFromUrl ? parseFloat(lngFromUrl) : 47.5079,
     surfaceM2: '',
   })
+  const [photoFile, setPhotoFile] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState(null)
 
   useEffect(() => {
     loadTypes()
@@ -48,12 +50,16 @@ export default function SignalerProblemeFrontOffice() {
     setError(null)
     try {
       const userId = parseInt(localStorage.getItem('auth_userId') || localStorage.getItem('auth_user_id') || '1')
-      await createSignalement({
+      const created = await createSignalement({
         ...formData,
         typeProblemeId: parseInt(formData.typeProblemeId),
         utilisateurId: userId,
         surfaceM2: formData.surfaceM2 ? parseFloat(formData.surfaceM2) : null,
       })
+      // Upload photo if selected
+      if (photoFile && created?.id) {
+        try { await uploadPhotoSignalement(created.id, photoFile) } catch (e) { console.error('Upload photo:', e) }
+      }
       setSuccess(true)
       setTimeout(() => navigate('/carte-problemes'), 2000)
     } catch (e) {
@@ -279,6 +285,46 @@ export default function SignalerProblemeFrontOffice() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Photo du problème */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <i className="fa fa-camera mr-2 text-indigo-600" />Photo du problème
+            </label>
+            {photoPreview && (
+              <div className="mb-3 relative">
+                <img
+                  src={photoPreview}
+                  alt="Aperçu"
+                  className="w-full max-h-48 object-cover rounded-xl border border-gray-200"
+                />
+                <button
+                  type="button"
+                  onClick={() => { setPhotoFile(null); setPhotoPreview(null) }}
+                  className="absolute top-2 right-2 w-8 h-8 rounded-full bg-red-500 text-white text-sm flex items-center justify-center shadow hover:bg-red-600"
+                >
+                  <i className="fa fa-times" />
+                </button>
+              </div>
+            )}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) {
+                  setPhotoFile(file)
+                  const reader = new FileReader()
+                  reader.onload = (ev) => setPhotoPreview(ev.target.result)
+                  reader.readAsDataURL(file)
+                }
+              }}
+              className="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              JPEG, PNG, GIF ou WebP • 10 Mo max
+            </p>
           </div>
 
           {/* Surface estimée */}

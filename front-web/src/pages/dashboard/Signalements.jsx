@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getSignalements, updateSignalement, deleteSignalement, resoudreSignalement, getEntreprises, getHistoriqueBySignalement } from '../../api/client.js'
+import { getSignalements, updateSignalement, deleteSignalement, resoudreSignalement, getEntreprises, getHistoriqueBySignalement, uploadPhotoSignalement } from '../../api/client.js'
 import { getTypesProblemeActifs } from '../../api/problemes.js'
 
 const STATUTS = [
@@ -146,6 +146,10 @@ export default function Signalements() {
     setSaving(true)
     setError(null)
     try {
+      // Upload photo if a new file was selected
+      if (form._photoFile) {
+        await uploadPhotoSignalement(editing.id, form._photoFile)
+      }
       await updateSignalement(editing.id, {
         titre: form.titre || null,
         description: form.description || null,
@@ -464,6 +468,21 @@ export default function Signalements() {
                 <p className="mt-2 text-gray-600">{viewing.description}</p>
               )}
             </div>
+
+            {/* Photo */}
+            {viewing.photoUrl && (
+              <div className="mb-6">
+                <div className="text-xs font-medium text-gray-500 mb-2">
+                  <i className="fa fa-camera mr-1" />Photo du problème
+                </div>
+                <img
+                  src={viewing.photoUrl.startsWith('http') ? viewing.photoUrl : `${window.location.protocol}//${window.location.hostname}:3001${viewing.photoUrl}`}
+                  alt="Photo du signalement"
+                  className="w-full max-h-64 object-cover rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:opacity-90 transition"
+                  onClick={() => window.open(viewing.photoUrl.startsWith('http') ? viewing.photoUrl : `${window.location.protocol}//${window.location.hostname}:3001${viewing.photoUrl}`, '_blank')}
+                />
+              </div>
+            )}
 
             {/* Informations en grille */}
             <div className="grid grid-cols-2 gap-4 text-sm">
@@ -812,6 +831,51 @@ export default function Signalements() {
                 </select>
                 <p className="text-xs text-purple-600 mt-1">
                   Assignez une entreprise pour la résolution de ce signalement
+                </p>
+              </div>
+
+              {/* Upload Photo */}
+              <div className="sm:col-span-2 rounded-xl border-2 border-cyan-200 bg-cyan-50 p-4">
+                <label className="block text-sm font-semibold text-cyan-700 mb-2">
+                  <i className="fa fa-camera mr-2" />Photo du problème
+                </label>
+                {/* Photo actuelle */}
+                {editing.photoUrl && !form._photoPreview && (
+                  <div className="mb-3">
+                    <img
+                      src={editing.photoUrl.startsWith('http') ? editing.photoUrl : `${window.location.protocol}//${window.location.hostname}:3001${editing.photoUrl}`}
+                      alt="Photo actuelle"
+                      className="w-full max-h-40 object-cover rounded-lg border border-cyan-200"
+                    />
+                    <p className="text-xs text-cyan-600 mt-1">Photo actuelle</p>
+                  </div>
+                )}
+                {/* Preview nouvelle photo */}
+                {form._photoPreview && (
+                  <div className="mb-3">
+                    <img
+                      src={form._photoPreview}
+                      alt="Nouvelle photo"
+                      className="w-full max-h-40 object-cover rounded-lg border-2 border-cyan-400"
+                    />
+                    <p className="text-xs text-cyan-600 mt-1">Nouvelle photo (pas encore envoyée)</p>
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      const reader = new FileReader()
+                      reader.onload = (ev) => setForm(f => ({ ...f, _photoFile: file, _photoPreview: ev.target.result }))
+                      reader.readAsDataURL(file)
+                    }
+                  }}
+                  className="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-cyan-100 file:text-cyan-700 hover:file:bg-cyan-200"
+                />
+                <p className="text-xs text-cyan-600 mt-1">
+                  JPEG, PNG, GIF ou WebP • 10 Mo max
                 </p>
               </div>
 
