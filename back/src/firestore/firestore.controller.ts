@@ -14,4 +14,9 @@ export class FirestoreController {
   async syncSignalements() {
     return this.sync.syncSignalementsFromFirestore();
   }
+
+  @Post('full-sync')
+  async fullSync() {
+    return this.sync.fullBidirectionalSync();
+  }
 }

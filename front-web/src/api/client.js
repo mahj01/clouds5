@@ -228,6 +228,29 @@ export function getEntreprises() {
   })
 }
 
+export function createEntreprise(data) {
+  return apiFetch('/entreprises', {
+    method: 'POST',
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+}
+
+export function updateEntreprise(id, data) {
+  return apiFetch(`/entreprises/${id}`, {
+    method: 'PUT',
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+}
+
+export function deleteEntreprise(id) {
+  return apiFetch(`/entreprises/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
+}
+
 export function getHistoriqueBySignalement(signalementId) {
   return apiFetch(`/historique-signalement/signalement/${signalementId}`, {
     headers: authHeaders(),
@@ -307,6 +330,14 @@ export function syncFirestoreData() {
 // Récupération des signalements Firebase → base de données locale
 export function syncSignalementsFromFirestore() {
   return apiFetch('/firestore/sync-signalements', {
+    method: 'POST',
+    headers: authHeaders(),
+  })
+}
+
+// Synchronisation bidirectionnelle complète (toutes les tables)
+export function fullBidirectionalSync() {
+  return apiFetch('/firestore/full-sync', {
     method: 'POST',
     headers: authHeaders(),
   })

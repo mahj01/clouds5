@@ -3,6 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { DASHBOARD_NAV_ITEMS } from '../constants/dashboardNav.js'
 import SyncFirebaseButton from '../components/SyncFirebaseButton.jsx'
 import SyncSignalementsButton from '../components/SyncSignalementsButton.jsx'
+import SyncAllButton from '../components/SyncAllButton.jsx'
 
 function getStoredRoleName() {
   try {
@@ -46,6 +47,7 @@ export default function DashboardLayout({ onLogout }) {
           <div className="flex items-center gap-2">
             <SyncFirebaseButton />
             <SyncSignalementsButton />
+            <SyncAllButton />
           </div>
         )}
       </header>
@@ -100,6 +102,7 @@ export default function DashboardLayout({ onLogout }) {
           <div className="mb-4 flex flex-wrap justify-end gap-2">
             <SyncFirebaseButton />
             <SyncSignalementsButton />
+            <SyncAllButton />
           </div>
         )}
         <div className="mx-auto h-full w-full max-w-7xl">

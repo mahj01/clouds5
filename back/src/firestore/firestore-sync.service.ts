@@ -7,6 +7,13 @@ import { Entreprise } from '../entreprises/entreprise.entity';
 import { Signalement } from '../signalements/signalement.entity';
 import { Session } from '../sessions/session.entity';
 import { StatutCompte } from '../statut_compte/statut-compte.entity';
+import { HistoriqueSignalement } from '../historique_signalement/historique-signalement.entity';
+import { HistoriqueStatusUtilisateur } from '../historique_status_utilisateur/historique-status-utilisateur.entity';
+import { TypeProbleme } from '../problemes/type-probleme.entity';
+import { Validation } from '../validation/validation.entity';
+import { JournalAcces } from '../journal/journal.entity';
+import { TentativeConnexion } from '../tentative_connexion/tentative-connexion.entity';
+import { Synchronisation } from '../synchronisations/synchronisation.entity';
 
 @Injectable()
 export class FirestoreSyncService implements OnModuleInit {
@@ -237,5 +244,147 @@ export class FirestoreSyncService implements OnModuleInit {
 
     this.logger.log(`syncSignalementsFromFirestore: imported=${imported}, skipped=${skipped}, errors=${errors.length}`);
     return { imported, skipped, errors };
+  }
+
+  /**
+   * Push une entité PG → Firebase avec merge (crée + met à jour).
+   * Contrairement à syncEntity qui skip les existants, cette méthode écrase.
+   */
+  private async pushEntityFull(entity: any): Promise<{ collection: string; created: number; updated: number }> {
+    const repo = this.ds.getRepository(entity);
+    const rows = await repo.find({ relations: repo.metadata.relations.map((r) => r.propertyName) });
+    const collectionName = repo.metadata.tableName || entity.name;
+    const col = firestore.collection(collectionName);
+    let created = 0;
+    let updated = 0;
+    for (const row of rows) {
+      const id = (row as any).id ?? (row as any)[repo.metadata.primaryColumns[0].propertyName];
+      const docRef = col.doc(String(id));
+      const data = JSON.parse(JSON.stringify(row, (_k, v) => (v instanceof Date ? v.toISOString() : v)));
+      const existing = await docRef.get();
+      await docRef.set(data, { merge: true });
+      if (existing.exists) { updated++; } else { created++; }
+    }
+    this.logger.log(`FullPush '${collectionName}': ${created} créé(s), ${updated} mis à jour (total ${rows.length})`);
+    return { collection: collectionName, created, updated };
+  }
+
+  /**
+   * Pull générique Firebase → PG pour une entité simple (sans FK complexes).
+   * Compare par ID et insère les docs Firestore manquants en BDD.
+   */
+  private async pullEntityFromFirestore(entity: any): Promise<{ collection: string; imported: number; skipped: number }> {
+    const repo = this.ds.getRepository(entity);
+    const collectionName = repo.metadata.tableName || entity.name;
+    const col = firestore.collection(collectionName);
+    const snapshot = await col.get();
+    let imported = 0;
+    let skipped = 0;
+
+    for (const doc of snapshot.docs) {
+      // Ignorer les docs système (bootstrap)
+      const data = doc.data();
+      if (data.__system) { skipped++; continue; }
+
+      // Si le doc a un ID numérique, vérifier s'il existe en base
+      const numId = Number(doc.id);
+      if (!isNaN(numId) && numId > 0) {
+        const exists = await repo.findOne({ where: { id: numId } });
+        if (exists) { skipped++; continue; }
+      }
+
+      // Ne pas importer les docs non-numériques pour les tables PG (sauf signalements traités ailleurs)
+      if (isNaN(numId)) { skipped++; continue; }
+
+      try {
+        // Créer un objet simple sans les FK (on garde les colonnes simples)
+        const columns = repo.metadata.columns.map((c) => c.propertyName);
+        const simpleData: any = {};
+        for (const colName of columns) {
+          if (data[colName] !== undefined) {
+            simpleData[colName] = data[colName];
+          }
+        }
+        // Retirer l'ID auto-généré pour laisser PG l'attribuer
+        delete simpleData.id;
+
+        const created = repo.create(simpleData);
+        await repo.save(created);
+        imported++;
+      } catch {
+        skipped++; // Ignorer les erreurs (contraintes FK, etc.)
+      }
+    }
+
+    this.logger.log(`FullPull '${collectionName}': ${imported} importé(s), ${skipped} ignoré(s)`);
+    return { collection: collectionName, imported, skipped };
+  }
+
+  /**
+   * Synchronisation bidirectionnelle complète :
+   * 1) PG → Firebase (toutes les tables, avec merge = crée + met à jour)
+   * 2) Firebase → PG (signalements mobiles + entités simples manquantes)
+   */
+  async fullBidirectionalSync(): Promise<{
+    push: { totalCreated: number; totalUpdated: number; details: any[] };
+    pull: { totalImported: number; totalSkipped: number; details: any[]; errors: string[] };
+  }> {
+    // === PUSH : PG → Firebase (toutes les tables) ===
+    const allEntities = [
+      Role, Utilisateur, Entreprise, TypeProbleme, Signalement,
+      HistoriqueSignalement, HistoriqueStatusUtilisateur,
+      Session, StatutCompte, Validation, JournalAcces,
+      TentativeConnexion, Synchronisation,
+    ];
+
+    const pushDetails: any[] = [];
+    let totalCreated = 0;
+    let totalUpdated = 0;
+
+    for (const e of allEntities) {
+      try {
+        const result = await this.pushEntityFull(e);
+        pushDetails.push(result);
+        totalCreated += result.created;
+        totalUpdated += result.updated;
+      } catch (err) {
+        this.logger.warn(`FullPush failed for ${e.name}: ${String(err?.message ?? err)}`);
+        pushDetails.push({ collection: e.name, created: 0, updated: 0, error: String(err?.message ?? err) });
+      }
+    }
+
+    // === PULL : Firebase → PG ===
+    // 1) Signalements (logique spéciale avec résolution d'utilisateur)
+    const signalementPull = await this.syncSignalementsFromFirestore();
+
+    // 2) Autres collections simples
+    const pullEntities = [
+      Role, Utilisateur, Entreprise, TypeProbleme,
+      HistoriqueSignalement, StatutCompte, Session,
+    ];
+
+    const pullDetails: any[] = [
+      { collection: 'signalement', imported: signalementPull.imported, skipped: signalementPull.skipped },
+    ];
+    let totalImported = signalementPull.imported;
+    let totalSkipped = signalementPull.skipped;
+
+    for (const e of pullEntities) {
+      try {
+        const result = await this.pullEntityFromFirestore(e);
+        pullDetails.push(result);
+        totalImported += result.imported;
+        totalSkipped += result.skipped;
+      } catch (err) {
+        this.logger.warn(`FullPull failed for ${e.name}: ${String(err?.message ?? err)}`);
+      }
+    }
+
+    this.logger.log(`FullSync terminé — Push: ${totalCreated} créé(s), ${totalUpdated} mis à jour | Pull: ${totalImported} importé(s), ${totalSkipped} ignoré(s)`);
+
+    return {
+      push: { totalCreated, totalUpdated, details: pushDetails },
+      pull: { totalImported, totalSkipped, details: pullDetails, errors: signalementPull.errors },
+    };
   }
 }
