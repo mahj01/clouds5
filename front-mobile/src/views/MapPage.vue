@@ -4,6 +4,10 @@
       <IonToolbar>
         <IonTitle>Offline Map</IonTitle>
         <IonButtons slot="end">
+          <!-- Manual refresh: kept lightweight + guarded in script -->
+          <IonButton :disabled="isRefreshing" @click="onManualRefresh">
+            {{ isRefreshing ? '...' : 'Rafraîchir' }}
+          </IonButton>
           <IonButton @click="$router.push('/recap-signalements')">Récap</IonButton>
           <IonButton @click="$router.push('/home')">Home</IonButton>
         </IonButtons>
@@ -112,9 +116,11 @@ import {
   applySignalementDiffs,
   loadSignalementCache,
   subscribeSignalements,
+  fetchSignalementsFromServer,
   type FirestoreSignalement,
   type SignalementDiff,
 } from '@/services/signalementsFirestore'
+import { mapRefreshService } from '@/services/map-refresh'
 import { Geolocation } from '@capacitor/geolocation';
 
 
@@ -134,6 +140,9 @@ const pickingLocation = ref(false)
 
 const toastOpen = ref(false)
 const toastMessage = ref('')
+
+// Refresh state (manual + polling share the same function)
+const isRefreshing = ref(false)
 
 const detailsOpen = ref(false)
 const selected = ref<FirestoreSignalement | null>(null)
@@ -188,6 +197,61 @@ async function showUserLocation() {
 function showToast(message: string) {
   toastMessage.value = message
   toastOpen.value = true
+}
+
+async function refreshMapData(options?: { showSuccessToast?: boolean }) {
+  if (!map) return
+  if (isRefreshing.value) return
+
+  console.log('[MapPage] refreshMapData triggered', {
+    at: new Date().toISOString(),
+    via: options?.showSuccessToast ? 'manual' : 'auto',
+  })
+
+  isRefreshing.value = true
+  try {
+    // 1) Force a server snapshot (cheap enough at low frequency).
+    // This helps when Firestore listeners were interrupted or when returning from background.
+    const serverItems = await fetchSignalementsFromServer()
+
+    // Replace local state with server snapshot
+    signalementsById.clear()
+    for (const it of serverItems) {
+      signalementsById.set(it.id, it)
+    }
+
+    // Re-render markers from scratch (avoids duplicates / stale positions)
+    clearAllSignalementMarkers()
+    for (const it of serverItems) {
+      upsertMarker(it)
+    }
+
+    // 2) Re-subscribe to realtime diffs (if the previous subscription was dropped).
+    if (unsubscribeSignalements) {
+      unsubscribeSignalements()
+      unsubscribeSignalements = null
+    }
+    unsubscribeSignalements = subscribeSignalements(
+      (diffs) => {
+        applyDiffs(diffs)
+      },
+      (err) => {
+        const msg = err instanceof Error ? err.message : String(err)
+        showToast(`Firestore error: ${msg}`)
+      },
+    )
+
+    if (options?.showSuccessToast) showToast('Carte mise à jour')
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    showToast(`Rafraîchissement impossible: ${msg}`)
+  } finally {
+    isRefreshing.value = false
+  }
+}
+
+function onManualRefresh() {
+  void refreshMapData({ showSuccessToast: true })
 }
 
 function formatDate(ms: number | null) {
@@ -479,13 +543,22 @@ onIonViewDidEnter(() => {
       showToast(`Firestore error: ${msg}`)
     },
   )
+
+  // 3) Low-frequency refresh while the map is open.
+  // Uses a singleton service so we don't accidentally create multiple intervals.
+  mapRefreshService.start(
+    () => refreshMapData(),
+    { intervalMs: 90_000, runImmediately: false },
+  )
 });
 
 onIonViewWillLeave(() => {
+  mapRefreshService.stop()
   clearMapResources()
 })
 
 onBeforeUnmount(() => {
+  mapRefreshService.stop()
   clearMapResources()
 })
 </script>
