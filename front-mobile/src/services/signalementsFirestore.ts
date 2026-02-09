@@ -1,5 +1,6 @@
 import { collection, doc, getDocsFromServer, onSnapshot, setDoc } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
+import { createHistoriqueSignalementInFirestore } from '@/services/historiqueSignalementFirestore'
 
 export const SIGNALMENT_COLLECTION = 'signalement'
 
@@ -190,6 +191,20 @@ export async function createSignalementInFirestore(input: FirestoreSignalementCr
   }
 
   await setDoc(ref, docData)
+
+  // Create initial historique entry (user cannot change statut, but we track creation).
+  // If this fails, we still return the created signalement.
+  try {
+    await createHistoriqueSignalementInFirestore({
+      firebase_signalement_id: ref.id,
+      ancien_statut: null,
+      nouveau_statut: 'nouveau',
+      utilisateurUid: user.uid,
+      id_manager: null,
+    })
+  } catch {
+    // best-effort
+  }
 
   return { id: ref.id, ...docData }
 }

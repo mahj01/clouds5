@@ -10,4 +10,11 @@ export class FirestoreController {
     await this.sync.syncAll();
     return { status: 'ok' };
   }
+
+  @Post('import')
+  async importAll() {
+    const signalements = await this.sync.importSignalementsFromFirestore();
+    const historiques = await this.sync.importHistoriquesSignalementFromFirestore();
+    return { status: 'ok', imported: { signalements, historiques } };
+  }
 }

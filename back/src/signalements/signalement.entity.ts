@@ -1,15 +1,23 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany, Index } from 'typeorm';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { Entreprise } from '../entreprises/entreprise.entity';
 import { HistoriqueSignalement } from '../historique_signalement/historique-signalement.entity';
 
 @Entity('signalement')
+@Index('IDX_signalement_firebase_id', ['firebaseSignalementId'], { unique: true, where: 'firebase_signalement_id IS NOT NULL' })
 export class Signalement {
   @PrimaryGeneratedColumn({ name: 'id_signalement' })
   id: number;
 
+  /** Firestore document id for deduplication */
+  @Column({ name: 'firebase_signalement_id', length: 100, nullable: true, unique: true })
+  firebaseSignalementId?: string;
+
   @Column({ name: 'titre', length: 100, nullable: true })
   titre?: string;
+
+  @Column({ name: 'type_signalement', length: 100, nullable: true })
+  typeSignalement?: string;
 
   @Column({ name: 'description', type: 'text', nullable: true })
   description?: string;
@@ -32,9 +40,13 @@ export class Signalement {
   @Column({ name: 'budget', type: 'decimal', precision: 12, scale: 2, nullable: true })
   budget?: string;
 
-  @ManyToOne(() => Utilisateur, { nullable: false })
+  /** Firebase UID of the user who created the signalement (for notifications) */
+  @Column({ name: 'utilisateur_uid', length: 128, nullable: true })
+  utilisateurUid?: string;
+
+  @ManyToOne(() => Utilisateur, { nullable: true })
   @JoinColumn({ name: 'id_utilisateur' })
-  utilisateur: Utilisateur;
+  utilisateur?: Utilisateur;
 
   @ManyToOne(() => Entreprise, { nullable: true })
   @JoinColumn({ name: 'id_entreprise' })
