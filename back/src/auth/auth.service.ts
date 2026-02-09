@@ -1,4 +1,3 @@
-
 import { Injectable, NotFoundException, ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -11,6 +10,7 @@ import { RegisterDto } from './dto/register.dto';
 import { firestore } from '../firebase-admin';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
+import { JournalService } from '../journal/journal.service';
 
 import { DEFAULT_AUTH_SESSION_TTL_MINUTES, MAX_LOGIN_ATTEMPTS } from './auth.constants';
 @Injectable()
@@ -21,7 +21,23 @@ export class AuthService {
     @InjectRepository(Session) private sessions: Repository<Session>,
     @InjectRepository(TentativeConnexion) private attempts: Repository<TentativeConnexion>,
     private readonly config: ConfigService,
+    private readonly journalService: JournalService,
   ) {}
+
+  private async logAction(action: string, ressource: string, utilisateur?: Utilisateur, niveau: string = 'info', details?: string) {
+    try {
+      await this.journalService.create({
+        action,
+        ressource,
+        utilisateurId: utilisateur?.id,
+        niveau,
+        details,
+      });
+    } catch (e) {
+      // Best effort logging - don't fail the main operation
+      console.error('Failed to log action:', e);
+    }
+  }
 
   private getRemainingAttempts(user: Utilisateur) {
     const raw = Number(user.nbTentatives);
@@ -106,7 +122,14 @@ export class AuthService {
         if (remainingAfter <= 0) user.dateBlocage = new Date();
         await this.users.save(user);
         await this.recordAttempt(user, false);
-        if (remainingAfter <= 0) this.throwLocked();
+        
+        // Log failed login attempt
+        await this.logAction('LOGIN_FAILED', 'auth', user, 'warning', `Tentative de connexion échouée pour ${user.email}. Tentatives restantes: ${remainingAfter}`);
+        
+        if (remainingAfter <= 0) {
+          await this.logAction('ACCOUNT_LOCKED', 'auth', user, 'error', `Compte bloqué pour ${user.email} après trop de tentatives`);
+          this.throwLocked();
+        }
         this.throwInvalidCredentials(remainingAfter);
       }
 
@@ -115,6 +138,9 @@ export class AuthService {
       user.dateBlocage = null;
       await this.users.save(user);
       await this.recordAttempt(user, true);
+      
+      // Log successful login
+      await this.logAction('LOGIN', 'auth', user, 'info', `Connexion réussie pour ${user.email}`);
       
       // Authentification locale uniquement - pas de Firebase Auth
       return this.createSessionForUser(user);
@@ -155,7 +181,12 @@ export class AuthService {
       firebaseUid: null, // Non synchronisé au départ
       role,
     });
-    return this.users.save(user);
+    const savedUser = await this.users.save(user);
+    
+    // Log registration
+    await this.logAction('REGISTER', 'auth', savedUser, 'info', `Nouvel utilisateur inscrit: ${dto.email}`);
+    
+    return savedUser;
   }
 
 

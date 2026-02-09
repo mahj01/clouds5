@@ -253,7 +253,7 @@ export default function Utilisateurs() {
   })
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
       {actionMessage ? (
         <div
           className={`mb-4 rounded-xl border px-4 py-3 text-sm ${
@@ -271,7 +271,7 @@ export default function Utilisateurs() {
           Gestion des Utilisateurs
         </h2>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Filtre par statut */}
           <div className="flex items-center gap-2">
             <label className="text-sm text-slate-600">Statut:</label>
@@ -332,30 +332,30 @@ export default function Utilisateurs() {
                   <td className="py-3">{getStatusBadge(u)}</td>
                   <td className="py-3">{u.nbTentatives ?? '—'}</td>
 
-                  <td className="py-3 text-right space-x-2">
+                  <td className="py-3 text-right">
                     {roleName === 'manager' && (
-                      <>
+                      <div className="flex flex-wrap justify-end gap-1">
                         <button
                           onClick={() => openEditModal(u)}
-                          className="text-blue-600 hover:underline"
+                          className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 min-h-[36px]"
                         >
                           Modifier
                         </button>
 
                         <button
                           onClick={() => handleToggleBlocage(u)}
-                          className={u.dateBlocage ? 'text-emerald-600 hover:underline' : 'text-amber-600 hover:underline'}
+                          className={`rounded-lg px-3 py-1.5 text-xs font-medium min-h-[36px] ${u.dateBlocage ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'}`}
                         >
                           {u.dateBlocage ? 'Débloquer' : 'Bloquer'}
                         </button>
 
                         <button
                           onClick={() => handleDelete(u)}
-                          className="text-red-600 hover:underline"
+                          className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 min-h-[36px]"
                         >
                           Supprimer
                         </button>
-                      </>
+                      </div>
                     )}
                   </td>
                   </tr>
@@ -401,7 +401,7 @@ export default function Utilisateurs() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Nom</label>
                   <input

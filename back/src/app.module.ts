@@ -17,6 +17,9 @@ import { AuthModule } from './auth/auth.module';
 import { FirestoreModule } from './firestore/firestore.module';
 import { ParametresModule } from './parametres/parametres.module';
 import { ProblemesModule } from './problemes/problemes.module';
+import { JournalModule } from './journal/journal.module';
+import { SauvegardeModule } from './sauvegarde/sauvegarde.module';
+import { ValidationModule } from './validation/validation.module';
 
 @Module({
   imports: [
@@ -48,6 +51,12 @@ import { ProblemesModule } from './problemes/problemes.module';
     AuthModule,
     ParametresModule,
     ProblemesModule,
+    // Journal - Journalisation des accès (admin)
+    JournalModule,
+    // Sauvegarde - Sauvegarde des données cartographiques (admin)
+    SauvegardeModule,
+    // Validation - Validation des données cartographiques (admin)
+    ValidationModule,
     // Firestore sync module (syncs selected entities to Firestore at startup)
     FirestoreModule,
   ],

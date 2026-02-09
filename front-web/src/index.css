@@ -8,11 +8,11 @@
   }
 
   body {
-    @apply min-h-screen bg-slate-950 text-slate-100 antialiased;
+    @apply min-h-screen bg-gray-50 text-slate-800 antialiased;
   }
 
   button {
-    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white;
   }
 }
 

@@ -17,6 +17,12 @@ export class HistoriqueSignalementController {
     return this.svc.findAll();
   }
 
+  @Get('signalement/:signalementId')
+  @ApiOperation({ summary: 'Get historique by signalement ID' })
+  findBySignalement(@Param('signalementId', ParseIntPipe) signalementId: number) {
+    return this.svc.findBySignalement(signalementId);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.svc.findOne(id);

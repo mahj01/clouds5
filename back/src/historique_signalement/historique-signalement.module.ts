@@ -10,5 +10,6 @@ import { Utilisateur } from '../utilisateurs/utilisateur.entity';
   imports: [TypeOrmModule.forFeature([HistoriqueSignalement, Signalement, Utilisateur])],
   providers: [HistoriqueSignalementService],
   controllers: [HistoriqueSignalementController],
+  exports: [HistoriqueSignalementService],
 })
 export class HistoriqueSignalementModule {}

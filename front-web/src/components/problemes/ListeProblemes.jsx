@@ -14,7 +14,17 @@ const STATUTS = {
   rejete: { label: 'Rejeté', color: 'bg-gray-500', textColor: 'text-gray-600' },
 }
 
-export default function ListeProblemes({ onSelectProbleme }) {
+function avancementFromStatut(statut) {
+  switch (statut) {
+    case 'en_cours': return 50
+    case 'resolu': return 100
+    case 'actif':
+    case 'rejete':
+    default: return 0
+  }
+}
+
+export default function ListeProblemes({ onSelectProbleme ,selectedProblemeId}) {
   const [problemes, setProblemes] = useState([])
   const [types, setTypes] = useState([])
   const [loading, setLoading] = useState(true)
@@ -177,7 +187,13 @@ export default function ListeProblemes({ onSelectProbleme }) {
           {problemesFiltres.map((probleme) => (
             <div
               key={probleme.id}
-              className="rounded-xl border border-gray-200 bg-white p-4 hover:bg-gray-50 transition shadow-sm"
+              id={`probleme-${probleme.id}`}
+              className={`rounded-xl border p-4 transition shadow-sm cursor-pointer ${
+                selectedProblemeId === probleme.id
+                  ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200'
+                  : 'border-gray-200 bg-white hover:bg-gray-50'
+              }`}
+              onClick={() => onSelectProbleme?.(probleme)}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
@@ -225,6 +241,25 @@ export default function ListeProblemes({ onSelectProbleme }) {
                         <i className="fa fa-check mr-1" />Résolu le {formatDate(probleme.dateResolution)}
                       </span>
                     )}
+                  </div>
+                  {/* Barre d'avancement */}
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-xs text-gray-500 w-20">Avancement</span>
+                    <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          (probleme.avancement ?? avancementFromStatut(probleme.statut)) >= 100
+                            ? 'bg-green-500'
+                            : (probleme.avancement ?? avancementFromStatut(probleme.statut)) >= 50
+                              ? 'bg-yellow-500'
+                              : 'bg-gray-300'
+                        }`}
+                        style={{ width: `${probleme.avancement ?? avancementFromStatut(probleme.statut)}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-semibold text-gray-600 w-8 text-right">
+                      {probleme.avancement ?? avancementFromStatut(probleme.statut)}%
+                    </span>
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">

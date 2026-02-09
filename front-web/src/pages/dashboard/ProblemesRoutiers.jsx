@@ -38,12 +38,12 @@ export default function ProblemesRoutiers() {
       </div>
 
       {/* Onglets */}
-      <div className="mb-6 flex gap-2 border-b border-gray-200 pb-2">
+      <div className="mb-6 flex flex-wrap gap-2 border-b border-gray-200 pb-2">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 rounded-t-lg text-sm font-medium transition ${
+            className={`px-3 sm:px-4 py-2 rounded-t-lg text-sm font-medium transition ${
               activeTab === tab.id
                 ? 'bg-indigo-600 text-white'
                 : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
@@ -56,7 +56,7 @@ export default function ProblemesRoutiers() {
       </div>
 
       {/* Contenu */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-6 shadow-sm">
         {activeTab === 'carte' && (
           <CarteProblemes
             key={`carte-${refreshKey}`}

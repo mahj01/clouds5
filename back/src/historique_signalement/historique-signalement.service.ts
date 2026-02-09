@@ -29,7 +29,15 @@ export class HistoriqueSignalementService {
     return this.repo.save(entity);
   }
   findAll() {
-    return this.repo.find({ relations: ['signalement', 'manager'] });
+    return this.repo.find({ relations: ['signalement', 'manager'], order: { dateChangement: 'DESC' } });
+  }
+
+  findBySignalement(signalementId: number) {
+    return this.repo.find({
+      where: { signalement: { id: signalementId } },
+      relations: ['manager'],
+      order: { dateChangement: 'DESC' },
+    });
   }
   async findOne(id: number) {
     const item = await this.repo.findOne({ where: { id }, relations: ['signalement', 'manager'] });

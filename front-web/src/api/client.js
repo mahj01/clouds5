@@ -146,6 +146,31 @@ export function getSignalements() {
   })
 }
 
+export function getSignalementsActifs() {
+  return apiFetch('/signalements/actifs', {
+    headers: authHeaders(),
+  })
+}
+
+export function getSignalementsByStatut(statut) {
+  return apiFetch(`/signalements/statut/${statut}`, {
+    headers: authHeaders(),
+  })
+}
+
+export function getSignalementsGeoJSON(statut = null) {
+  const query = statut ? `?statut=${statut}` : ''
+  return apiFetch(`/signalements/geojson${query}`, {
+    headers: authHeaders(),
+  })
+}
+
+export function getSignalementsStatistiques() {
+  return apiFetch('/signalements/statistiques', {
+    headers: authHeaders(),
+  })
+}
+
 export function createSignalement(payload) {
   return apiFetch('/signalements', {
     method: 'POST',
@@ -154,8 +179,63 @@ export function createSignalement(payload) {
   })
 }
 
+// Upload photo pour un signalement (FormData, pas de Content-Type manuel)
+export async function uploadPhotoSignalement(signalementId, file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null
+  const headers = {}
+  if (token) headers.Authorization = `Bearer ${token}`
+  const res = await fetch(`${API_BASE}/signalements/${signalementId}/photo`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  })
+  if (!res.ok) {
+    let msg = `Erreur ${res.status}`
+    try { const d = await res.json(); if (d?.message) msg = Array.isArray(d.message) ? d.message.join(', ') : d.message } catch {}
+    throw new Error(msg)
+  }
+  return res.json()
+}
+
+export function updateSignalement(id, payload) {
+  return apiFetch(`/signalements/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  })
+}
+
+export function resoudreSignalement(id, utilisateurResolutionId, commentaire = null) {
+  return apiFetch(`/signalements/${id}/resoudre`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ utilisateurResolutionId, commentaire }),
+  })
+}
+
+export function deleteSignalement(id) {
+  return apiFetch(`/signalements/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
+}
+
 export function getEntreprises() {
   return apiFetch('/entreprises', {
+    headers: authHeaders(),
+  })
+}
+
+export function getHistoriqueBySignalement(signalementId) {
+  return apiFetch(`/historique-signalement/signalement/${signalementId}`, {
+    headers: authHeaders(),
+  })
+}
+
+export function getAllHistoriqueSignalements() {
+  return apiFetch('/historique-signalement', {
     headers: authHeaders(),
   })
 }
@@ -194,21 +274,11 @@ export function createHistoriqueStatusUtilisateur(payload) {
   })
 }
 
-export function updateSignalement(id, payload) {
-  return apiFetch(`/signalements/${id}`, {
-    method: 'PUT',
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  })
-}
-// --------------------------
-
 export function getAllUtilisateurs() {
   return apiFetch('/utilisateurs', {
     headers: authHeaders(),
   })
 }
-
 
 export function supprimerUtilisateur(id) {
   return apiFetch(`/utilisateurs/${id}`, {
@@ -227,6 +297,153 @@ export function syncUsersToFirebase() {
 
 export function getUnsyncedUsersCount() {
   return apiFetch('/auth/unsynced-count', {
+    headers: authHeaders(),
+  })
+}
+
+// ==================== JOURNAL ====================
+
+export function getJournal(filter = {}) {
+  const params = new URLSearchParams()
+  if (filter.action) params.append('action', filter.action)
+  if (filter.ressource) params.append('ressource', filter.ressource)
+  if (filter.niveau) params.append('niveau', filter.niveau)
+  if (filter.utilisateurId) params.append('utilisateurId', filter.utilisateurId)
+  if (filter.dateDebut) params.append('dateDebut', filter.dateDebut)
+  if (filter.dateFin) params.append('dateFin', filter.dateFin)
+  if (filter.limit) params.append('limit', filter.limit)
+  if (filter.offset) params.append('offset', filter.offset)
+  const query = params.toString()
+  return apiFetch(`/journal${query ? `?${query}` : ''}`, {
+    headers: authHeaders(),
+  })
+}
+
+export function getJournalStatistiques() {
+  return apiFetch('/journal/statistiques', {
+    headers: authHeaders(),
+  })
+}
+
+export function createJournalEntry(payload) {
+  return apiFetch('/journal', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  })
+}
+
+// ==================== SAUVEGARDE ====================
+
+export function getSauvegardes() {
+  return apiFetch('/sauvegarde', {
+    headers: authHeaders(),
+  })
+}
+
+export function getSauvegardeStatistiques() {
+  return apiFetch('/sauvegarde/statistiques', {
+    headers: authHeaders(),
+  })
+}
+
+export function creerSauvegarde(payload) {
+  return apiFetch('/sauvegarde', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  })
+}
+
+export function supprimerSauvegarde(id) {
+  return apiFetch(`/sauvegarde/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
+}
+
+export async function telechargerSauvegarde(id) {
+  const url = `${API_BASE}/sauvegarde/${id}/telecharger`
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: authHeaders(),
+    })
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `Erreur ${response.status}`)
+    }
+    // Récupérer le blob et créer un lien de téléchargement
+    const blob = await response.blob()
+    const contentDisposition = response.headers.get('Content-Disposition')
+    let fileName = `sauvegarde_${id}.geojson`
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="?([^"]+)"?/)
+      if (match) fileName = match[1]
+    }
+    // Créer un lien temporaire pour télécharger
+    const downloadUrl = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = downloadUrl
+    a.download = fileName
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(downloadUrl)
+    return { success: true, fileName }
+  } catch (error) {
+    console.error('Erreur téléchargement:', error)
+    throw error
+  }
+}
+
+// ==================== VALIDATION ====================
+
+export function getValidations() {
+  return apiFetch('/validation', {
+    headers: authHeaders(),
+  })
+}
+
+export function getValidationStatistiques() {
+  return apiFetch('/validation/statistiques', {
+    headers: authHeaders(),
+  })
+}
+
+export function getSignalementsNonValides() {
+  return apiFetch('/validation/non-valides', {
+    headers: authHeaders(),
+  })
+}
+
+export function getValidationsByStatut(statut) {
+  return apiFetch(`/validation/statut/${statut}`, {
+    headers: authHeaders(),
+  })
+}
+
+export function validerSignalement(signalementId, payload) {
+  return apiFetch(`/validation/${signalementId}`, {
+    method: 'POST',
+    headers: {
+      ...authHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+}
+
+export function validerSignalementAuto(signalementId) {
+  return apiFetch(`/validation/auto/${signalementId}`, {
+    method: 'POST',
+    headers: authHeaders(),
+  })
+}
+
+export function validerTousSignalementsAuto() {
+  return apiFetch('/validation/auto-tous', {
+    method: 'POST',
     headers: authHeaders(),
   })
 }

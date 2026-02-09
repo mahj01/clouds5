@@ -5,10 +5,18 @@ import { SignalementsService } from './signalements.service';
 import { SignalementsController } from './signalements.controller';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { Entreprise } from '../entreprises/entreprise.entity';
+import { TypeProbleme } from '../problemes/type-probleme.entity';
+import { JournalModule } from '../journal/journal.module';
+import { HistoriqueSignalementModule } from '../historique_signalement/historique-signalement.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Signalement, Utilisateur, Entreprise])],
+  imports: [
+    TypeOrmModule.forFeature([Signalement, Utilisateur, Entreprise, TypeProbleme]),
+    JournalModule,
+    HistoriqueSignalementModule,
+  ],
   providers: [SignalementsService],
   controllers: [SignalementsController],
+  exports: [SignalementsService],
 })
 export class SignalementsModule {}

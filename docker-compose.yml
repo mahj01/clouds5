@@ -26,6 +26,7 @@ services:
     volumes:
       - ./back:/app
       - /app/node_modules
+      - back_uploads:/app/uploads
     environment:
       NODE_ENV: development
       DB_HOST: db
@@ -62,3 +63,4 @@ services:
 
 volumes:
   db_data:
+  back_uploads:
