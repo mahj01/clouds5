@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 
 @Entity('synchronisation')
@@ -9,7 +15,11 @@ export class Synchronisation {
   @Column({ name: 'type_sync', length: 30 })
   typeSync: string;
 
-  @Column({ name: 'date_sync', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'date_sync',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   dateSync: Date;
 
   @Column({ name: 'statut', length: 20 })

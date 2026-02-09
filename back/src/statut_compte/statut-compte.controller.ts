@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Delete,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
 import { StatutCompteService } from './statut-compte.service';
 import { CreateStatutCompteDto } from './dto/create-statut-compte.dto';
@@ -25,7 +34,10 @@ export class StatutCompteController {
     return this.svc.create(dto);
   }
   @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateStatutCompteDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateStatutCompteDto,
+  ) {
     return this.svc.update(id, dto);
   }
   @Delete(':id')

@@ -1,5 +1,21 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, ParseIntPipe, Query } from '@nestjs/common';
-import { ApiTags, ApiResponse, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Delete,
+  ParseIntPipe,
+  Query,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiResponse,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { ProblemesRoutiersService } from './problemes-routiers.service';
 import { CreateProblemeRoutierDto } from './dto/create-probleme-routier.dto';
 import { UpdateProblemeRoutierDto } from './dto/update-probleme-routier.dto';
@@ -64,7 +80,10 @@ export class ProblemesRoutiersController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Met à jour un problème routier' })
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateProblemeRoutierDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateProblemeRoutierDto,
+  ) {
     return this.svc.update(id, dto);
   }
 
@@ -74,7 +93,11 @@ export class ProblemesRoutiersController {
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { utilisateurResolutionId: number; commentaire?: string },
   ) {
-    return this.svc.resoudre(id, body.utilisateurResolutionId, body.commentaire);
+    return this.svc.resoudre(
+      id,
+      body.utilisateurResolutionId,
+      body.commentaire,
+    );
   }
 
   @Delete(':id')

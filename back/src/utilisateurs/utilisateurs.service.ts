@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, UnauthorizedException, ConflictException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Not, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -32,12 +38,22 @@ export class UtilisateursService {
   async create(dto: CreateUtilisateurDto, actorUserId?: number) {
     // If requesting creation of a client, require manager authentication
     if (dto.roleId) {
-      const roleCheck = await this.roleRepo.findOne({ where: { id: dto.roleId } });
+      const roleCheck = await this.roleRepo.findOne({
+        where: { id: dto.roleId },
+      });
       if (roleCheck && roleCheck.nom === 'client') {
-        if (!actorUserId) throw new UnauthorizedException('Authentication required to create client');
-        const actor = await this.repo.findOne({ where: { id: actorUserId }, relations: ['role'] });
+        if (!actorUserId)
+          throw new UnauthorizedException(
+            'Authentication required to create client',
+          );
+        const actor = await this.repo.findOne({
+          where: { id: actorUserId },
+          relations: ['role'],
+        });
         if (!actor || !actor.role || actor.role.nom !== 'manager') {
-          throw new ForbiddenException('Only manager can create client accounts');
+          throw new ForbiddenException(
+            'Only manager can create client accounts',
+          );
         }
       }
     }
@@ -63,13 +79,19 @@ export class UtilisateursService {
   }
 
   async findOne(id: number) {
-    const item = await this.repo.findOne({ where: { id }, relations: ['role'] });
+    const item = await this.repo.findOne({
+      where: { id },
+      relations: ['role'],
+    });
     if (!item) throw new NotFoundException('Utilisateur not found');
     return item;
   }
 
   async findOneByEmail(email: string) {
-    const user = await this.repo.findOne({ where: { email }, relations: ['role'] });
+    const user = await this.repo.findOne({
+      where: { email },
+      relations: ['role'],
+    });
     if (!user) throw new NotFoundException('Utilisateur not found');
     return user;
   }
@@ -92,44 +114,61 @@ export class UtilisateursService {
 
   async remove(id: number) {
     const item = await this.findOne(id);
-    
+
     // Vérifier si l'utilisateur a des signalements
     const signalementCount = await this.repo.query(
       'SELECT COUNT(*) as count FROM signalement WHERE id_utilisateur = $1',
-      [id]
+      [id],
     );
     if (signalementCount[0]?.count > 0) {
       throw new ConflictException(
         'Impossible de supprimer cet utilisateur car il a des signalements associés. ' +
-        'Veuillez d\'abord supprimer ou réassigner ses signalements.'
+          "Veuillez d'abord supprimer ou réassigner ses signalements.",
       );
     }
-    
+
     // Supprimer les données liées (sessions, tentatives de connexion, etc.)
     try {
       // Supprimer les sessions de l'utilisateur
-      await this.repo.query('DELETE FROM session WHERE id_utilisateur = $1', [id]);
+      await this.repo.query('DELETE FROM session WHERE id_utilisateur = $1', [
+        id,
+      ]);
       // Supprimer les tentatives de connexion
-      await this.repo.query('DELETE FROM tentative_connexion WHERE id_utilisateur = $1', [id]);
+      await this.repo.query(
+        'DELETE FROM tentative_connexion WHERE id_utilisateur = $1',
+        [id],
+      );
       // Supprimer l'historique de statut utilisateur
-      await this.repo.query('DELETE FROM historique_status_utilisateur WHERE id_utilisateur = $1', [id]);
+      await this.repo.query(
+        'DELETE FROM historique_status_utilisateur WHERE id_utilisateur = $1',
+        [id],
+      );
       // Supprimer les synchronisations (en tant que manager)
-      await this.repo.query('DELETE FROM synchronisation WHERE id_manager = $1', [id]);
+      await this.repo.query(
+        'DELETE FROM synchronisation WHERE id_manager = $1',
+        [id],
+      );
       // Supprimer l'historique des signalements (en tant que manager)
-      await this.repo.query('DELETE FROM historique_signalement WHERE id_manager = $1', [id]);
-      
+      await this.repo.query(
+        'DELETE FROM historique_signalement WHERE id_manager = $1',
+        [id],
+      );
+
       // Maintenant supprimer l'utilisateur
       await this.repo.remove(item);
     } catch (error) {
       throw new ConflictException(
-        'Impossible de supprimer cet utilisateur car il est lié à des données existantes.'
+        'Impossible de supprimer cet utilisateur car il est lié à des données existantes.',
       );
     }
   }
 
   async unlockUser(targetUserId: number, actorUserId?: number) {
     if (!actorUserId) throw new UnauthorizedException('Missing session user');
-    const actor = await this.repo.findOne({ where: { id: actorUserId }, relations: ['role'] });
+    const actor = await this.repo.findOne({
+      where: { id: actorUserId },
+      relations: ['role'],
+    });
     if (!actor) throw new UnauthorizedException('Invalid session user');
     if (!actor.role || actor.role.nom !== 'manager') {
       throw new ForbiddenException('Only manager can unlock accounts');
@@ -144,7 +183,10 @@ export class UtilisateursService {
 
   async listLockedUsers(actorUserId?: number) {
     if (!actorUserId) throw new UnauthorizedException('Missing session user');
-    const actor = await this.repo.findOne({ where: { id: actorUserId }, relations: ['role'] });
+    const actor = await this.repo.findOne({
+      where: { id: actorUserId },
+      relations: ['role'],
+    });
     if (!actor) throw new UnauthorizedException('Invalid session user');
     if (!actor.role || actor.role.nom !== 'manager') {
       throw new ForbiddenException('Only manager can list locked accounts');
@@ -160,19 +202,22 @@ export class UtilisateursService {
 
   async lockUser(targetUserId: number, actorUserId?: number) {
     if (!actorUserId) throw new UnauthorizedException('Missing session user');
-    const actor = await this.repo.findOne({ where: { id: actorUserId }, relations: ['role'] });
+    const actor = await this.repo.findOne({
+      where: { id: actorUserId },
+      relations: ['role'],
+    });
     if (!actor) throw new UnauthorizedException('Invalid session user');
     if (!actor.role || actor.role.nom !== 'manager') {
       throw new ForbiddenException('Only manager can lock accounts');
     }
 
     const target = await this.findOne(targetUserId);
-    
+
     // Ne pas permettre de bloquer un autre manager
     if (target.role && target.role.nom === 'manager') {
       throw new ForbiddenException('Cannot lock a manager account');
     }
-    
+
     target.dateBlocage = new Date();
     target.nbTentatives = 0;
     const saved = await this.repo.save(target);

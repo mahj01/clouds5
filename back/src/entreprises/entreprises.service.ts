@@ -7,7 +7,9 @@ import { UpdateEntrepriseDto } from './dto/update-entreprise.dto';
 
 @Injectable()
 export class EntreprisesService {
-  constructor(@InjectRepository(Entreprise) private repo: Repository<Entreprise>) {}
+  constructor(
+    @InjectRepository(Entreprise) private repo: Repository<Entreprise>,
+  ) {}
 
   create(dto: CreateEntrepriseDto) {
     return this.repo.save(this.repo.create(dto));

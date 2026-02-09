@@ -16,8 +16,10 @@ export class SauvegardeService {
   constructor(
     @InjectRepository(Sauvegarde) private repo: Repository<Sauvegarde>,
     @InjectRepository(Utilisateur) private userRepo: Repository<Utilisateur>,
-    @InjectRepository(Signalement) private signalementRepo: Repository<Signalement>,
-    @InjectRepository(Entreprise) private entrepriseRepo: Repository<Entreprise>,
+    @InjectRepository(Signalement)
+    private signalementRepo: Repository<Signalement>,
+    @InjectRepository(Entreprise)
+    private entrepriseRepo: Repository<Entreprise>,
   ) {
     // Créer le dossier de backup s'il n'existe pas
     if (!fs.existsSync(this.backupDir)) {
@@ -28,7 +30,9 @@ export class SauvegardeService {
   async create(dto: CreateSauvegardeDto): Promise<Sauvegarde> {
     let creePar: Utilisateur | undefined;
     if (dto.utilisateurId) {
-      const user = await this.userRepo.findOne({ where: { id: dto.utilisateurId } });
+      const user = await this.userRepo.findOne({
+        where: { id: dto.utilisateurId },
+      });
       if (user) creePar = user;
     }
 
@@ -50,14 +54,19 @@ export class SauvegardeService {
     return saved;
   }
 
-  private async executerSauvegarde(sauvegardeId: number, type: string): Promise<void> {
+  private async executerSauvegarde(
+    sauvegardeId: number,
+    type: string,
+  ): Promise<void> {
     try {
       let data: any;
       let count = 0;
 
       switch (type) {
         case 'signalements':
-          data = await this.signalementRepo.find({ relations: ['utilisateur', 'entreprise'] });
+          data = await this.signalementRepo.find({
+            relations: ['utilisateur', 'entreprise'],
+          });
           count = data.length;
           break;
         case 'entreprises':
@@ -65,7 +74,9 @@ export class SauvegardeService {
           count = data.length;
           break;
         case 'complete':
-          const signalements = await this.signalementRepo.find({ relations: ['utilisateur', 'entreprise'] });
+          const signalements = await this.signalementRepo.find({
+            relations: ['utilisateur', 'entreprise'],
+          });
           const entreprises = await this.entrepriseRepo.find();
           data = { signalements, entreprises };
           count = signalements.length + entreprises.length;
@@ -76,7 +87,7 @@ export class SauvegardeService {
 
       // Convertir en GeoJSON pour les données cartographiques
       const geojsonData = this.convertToGeoJSON(data, type);
-      
+
       const fileName = `backup_${type}_${sauvegardeId}_${Date.now()}.geojson`;
       const filePath = path.join(this.backupDir, fileName);
 
@@ -114,9 +125,7 @@ export class SauvegardeService {
           type: 'complete_backup',
           exportedAt: new Date().toISOString(),
         },
-        features: [
-          ...this.signalementToFeatures(data.signalements || []),
-        ],
+        features: [...this.signalementToFeatures(data.signalements || [])],
         entreprises: data.entreprises || [],
       };
     }
@@ -148,11 +157,14 @@ export class SauvegardeService {
   }
 
   private signalementToFeatures(signalements: Signalement[]): any[] {
-    return signalements.map(s => ({
+    return signalements.map((s) => ({
       type: 'Feature',
       geometry: {
         type: 'Point',
-        coordinates: [parseFloat(s.longitude) || 0, parseFloat(s.latitude) || 0],
+        coordinates: [
+          parseFloat(s.longitude) || 0,
+          parseFloat(s.latitude) || 0,
+        ],
       },
       properties: {
         id: s.id,
@@ -185,13 +197,17 @@ export class SauvegardeService {
     return item;
   }
 
-  async telecharger(id: number): Promise<{ filePath: string; fileName: string }> {
+  async telecharger(
+    id: number,
+  ): Promise<{ filePath: string; fileName: string }> {
     const sauvegarde = await this.findOne(id);
     if (!sauvegarde.cheminFichier || sauvegarde.statut !== 'termine') {
       throw new NotFoundException('Fichier de sauvegarde non disponible');
     }
     if (!fs.existsSync(sauvegarde.cheminFichier)) {
-      throw new NotFoundException('Fichier de sauvegarde introuvable sur le disque');
+      throw new NotFoundException(
+        'Fichier de sauvegarde introuvable sur le disque',
+      );
     }
     return {
       filePath: sauvegarde.cheminFichier,
@@ -213,7 +229,7 @@ export class SauvegardeService {
     dernieresSauvegardes: Sauvegarde[];
   }> {
     const totalSauvegardes = await this.repo.count();
-    
+
     const result = await this.repo
       .createQueryBuilder('s')
       .select('SUM(s.tailleFichier)', 'total')

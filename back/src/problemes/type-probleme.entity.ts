@@ -21,7 +21,11 @@ export class TypeProbleme {
   @Column({ name: 'actif', default: true })
   actif: boolean;
 
-  @Column({ name: 'date_creation', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'date_creation',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   dateCreation: Date;
 
   @OneToMany(() => ProblemeRoutier, (p) => p.typeProbleme)

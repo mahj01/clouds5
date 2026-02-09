@@ -9,21 +9,31 @@ import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 @Injectable()
 export class TentativeConnexionService {
   constructor(
-    @InjectRepository(TentativeConnexion) private repo: Repository<TentativeConnexion>,
+    @InjectRepository(TentativeConnexion)
+    private repo: Repository<TentativeConnexion>,
     @InjectRepository(Utilisateur) private userRepo: Repository<Utilisateur>,
   ) {}
 
   async create(dto: CreateTentativeConnexionDto) {
-    const user = await this.userRepo.findOne({ where: { id: dto.utilisateurId } });
+    const user = await this.userRepo.findOne({
+      where: { id: dto.utilisateurId },
+    });
     if (!user) throw new NotFoundException('Utilisateur not found');
-    const entity = this.repo.create({ succes: dto.succes, ip: dto.ip, utilisateur: user });
+    const entity = this.repo.create({
+      succes: dto.succes,
+      ip: dto.ip,
+      utilisateur: user,
+    });
     return this.repo.save(entity);
   }
   findAll() {
     return this.repo.find({ relations: ['utilisateur'] });
   }
   async findOne(id: number) {
-    const item = await this.repo.findOne({ where: { id }, relations: ['utilisateur'] });
+    const item = await this.repo.findOne({
+      where: { id },
+      relations: ['utilisateur'],
+    });
     if (!item) throw new NotFoundException('TentativeConnexion not found');
     return item;
   }
@@ -32,7 +42,9 @@ export class TentativeConnexionService {
     if (dto.succes !== undefined) entity.succes = dto.succes;
     if (dto.ip !== undefined) entity.ip = dto.ip;
     if (dto.utilisateurId !== undefined) {
-      const user = await this.userRepo.findOne({ where: { id: dto.utilisateurId } });
+      const user = await this.userRepo.findOne({
+        where: { id: dto.utilisateurId },
+      });
       if (!user) throw new NotFoundException('Utilisateur not found');
       entity.utilisateur = user;
     }

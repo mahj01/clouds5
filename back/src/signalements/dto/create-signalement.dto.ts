@@ -61,7 +61,7 @@ export class CreateSignalementDto {
   @IsInt()
   typeProblemeId?: number;
 
-  @ApiProperty({ example: 1, description: 'ID de l\'utilisateur qui signale' })
+  @ApiProperty({ example: 1, description: "ID de l'utilisateur qui signale" })
   @Type(() => Number)
   @IsInt()
   utilisateurId: number;

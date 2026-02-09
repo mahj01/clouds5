@@ -7,7 +7,9 @@ import { Signalement } from '../signalements/signalement.entity';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([HistoriqueSignalement, Signalement, Utilisateur])],
+  imports: [
+    TypeOrmModule.forFeature([HistoriqueSignalement, Signalement, Utilisateur]),
+  ],
   providers: [HistoriqueSignalementService],
   controllers: [HistoriqueSignalementController],
   exports: [HistoriqueSignalementService],

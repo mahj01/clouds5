@@ -9,21 +9,22 @@ import { Signalement } from '../signalements/signalement.entity';
 import { Session } from '../sessions/session.entity';
 import { StatutCompte } from '../statut_compte/statut-compte.entity';
 import { HistoriqueSignalement } from '../historique_signalement/historique-signalement.entity';
-import { HistoriqueStatusUtilisateur } from '../historique_status_utilisateur/historique-status-utilisateur.entity';
-import { TypeProbleme } from '../problemes/type-probleme.entity';
-import { Validation } from '../validation/validation.entity';
-import { JournalAcces } from '../journal/journal.entity';
-import { TentativeConnexion } from '../tentative_connexion/tentative-connexion.entity';
-import { Synchronisation } from '../synchronisations/synchronisation.entity';
+import { FirestoreDiffSyncService } from './firestore-diff-sync.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([
-    Role, Utilisateur, Entreprise, Signalement, Session, StatutCompte,
-    HistoriqueSignalement, HistoriqueStatusUtilisateur, TypeProbleme,
-    Validation, JournalAcces, TentativeConnexion, Synchronisation,
-  ])],
-  providers: [FirestoreSyncService],
+  imports: [
+    TypeOrmModule.forFeature([
+      Role,
+      Utilisateur,
+      Entreprise,
+      Signalement,
+      Session,
+      StatutCompte,
+      HistoriqueSignalement,
+    ]),
+  ],
+  providers: [FirestoreSyncService, FirestoreDiffSyncService],
   controllers: [FirestoreController],
-  exports: [FirestoreSyncService],
+  exports: [FirestoreSyncService, FirestoreDiffSyncService],
 })
 export class FirestoreModule {}

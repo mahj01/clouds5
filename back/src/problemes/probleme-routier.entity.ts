@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  OneToOne,
+} from 'typeorm';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { TypeProbleme } from './type-probleme.entity';
 import type { Signalement } from '../signalements/signalement.entity';
@@ -41,7 +48,11 @@ export class ProblemeRoutier {
   @Column({ name: 'priorite', type: 'int', default: 1 })
   priorite: number;
 
-  @Column({ name: 'date_signalement', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'date_signalement',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   dateSignalement: Date;
 
   @Column({ name: 'date_resolution', type: 'timestamp', nullable: true })

@@ -17,24 +17,30 @@ export interface ValidationResult {
 export class ValidationService {
   constructor(
     @InjectRepository(Validation) private repo: Repository<Validation>,
-    @InjectRepository(Signalement) private signalementRepo: Repository<Signalement>,
+    @InjectRepository(Signalement)
+    private signalementRepo: Repository<Signalement>,
     @InjectRepository(Utilisateur) private userRepo: Repository<Utilisateur>,
   ) {}
 
   // Validation automatique des données cartographiques
   private validerDonnees(signalement: Signalement): ValidationResult {
     const erreurs: string[] = [];
-    
+
     // Validation des coordonnées
     const lat = parseFloat(signalement.latitude);
     const lng = parseFloat(signalement.longitude);
-    const coordonneesValides = 
-      !isNaN(lat) && !isNaN(lng) &&
-      lat >= -90 && lat <= 90 &&
-      lng >= -180 && lng <= 180 &&
+    const coordonneesValides =
+      !isNaN(lat) &&
+      !isNaN(lng) &&
+      lat >= -90 &&
+      lat <= 90 &&
+      lng >= -180 &&
+      lng <= 180 &&
       // Vérification que les coordonnées sont dans la zone d'Antananarivo (approximativement)
-      lat >= -19.5 && lat <= -18.5 &&
-      lng >= 47 && lng <= 48;
+      lat >= -19.5 &&
+      lat <= -18.5 &&
+      lng >= 47 &&
+      lng <= 48;
 
     if (!coordonneesValides) {
       if (isNaN(lat) || isNaN(lng)) {
@@ -47,7 +53,7 @@ export class ValidationService {
     }
 
     // Validation de la complétude des données
-    const donneesCompletes = 
+    const donneesCompletes =
       !!signalement.titre &&
       signalement.titre.trim().length >= 3 &&
       !!signalement.statut;
@@ -61,7 +67,7 @@ export class ValidationService {
 
     // Validation de la cohérence des données
     let coherenceDonnees = true;
-    
+
     if (signalement.surfaceM2) {
       const surface = parseFloat(signalement.surfaceM2);
       if (isNaN(surface) || surface < 0 || surface > 100000) {
@@ -78,8 +84,17 @@ export class ValidationService {
       }
     }
 
-    const statutsValides = ['nouveau', 'en cours', 'terminé', 'termine', 'encours'];
-    if (signalement.statut && !statutsValides.includes(signalement.statut.toLowerCase())) {
+    const statutsValides = [
+      'nouveau',
+      'en cours',
+      'terminé',
+      'termine',
+      'encours',
+    ];
+    if (
+      signalement.statut &&
+      !statutsValides.includes(signalement.statut.toLowerCase())
+    ) {
       coherenceDonnees = false;
       erreurs.push(`Statut non reconnu: ${signalement.statut}`);
     }
@@ -92,7 +107,10 @@ export class ValidationService {
     };
   }
 
-  async validerSignalement(signalementId: number, dto: ValiderSignalementDto): Promise<Validation> {
+  async validerSignalement(
+    signalementId: number,
+    dto: ValiderSignalementDto,
+  ): Promise<Validation> {
     const signalement = await this.signalementRepo.findOne({
       where: { id: signalementId },
       relations: ['utilisateur', 'entreprise'],
@@ -101,7 +119,9 @@ export class ValidationService {
 
     let validePar: Utilisateur | undefined;
     if (dto.validePar) {
-      const user = await this.userRepo.findOne({ where: { id: dto.validePar } });
+      const user = await this.userRepo.findOne({
+        where: { id: dto.validePar },
+      });
       if (user) validePar = user;
     }
 
@@ -119,7 +139,10 @@ export class ValidationService {
       validation.coordonneesValides = resultAuto.coordonneesValides;
       validation.donneesCompletes = resultAuto.donneesCompletes;
       validation.coherenceDonnees = resultAuto.coherenceDonnees;
-      validation.erreursDetectees = resultAuto.erreurs.length > 0 ? JSON.stringify(resultAuto.erreurs) : undefined;
+      validation.erreursDetectees =
+        resultAuto.erreurs.length > 0
+          ? JSON.stringify(resultAuto.erreurs)
+          : undefined;
     } else {
       validation = this.repo.create({
         signalement,
@@ -129,7 +152,10 @@ export class ValidationService {
         coordonneesValides: resultAuto.coordonneesValides,
         donneesCompletes: resultAuto.donneesCompletes,
         coherenceDonnees: resultAuto.coherenceDonnees,
-        erreursDetectees: resultAuto.erreurs.length > 0 ? JSON.stringify(resultAuto.erreurs) : undefined,
+        erreursDetectees:
+          resultAuto.erreurs.length > 0
+            ? JSON.stringify(resultAuto.erreurs)
+            : undefined,
       });
     }
 
@@ -147,10 +173,13 @@ export class ValidationService {
     if (!signalement) throw new NotFoundException('Signalement non trouvé');
 
     const resultat = this.validerDonnees(signalement);
-    
+
     let statutSuggere = 'valide';
     if (resultat.erreurs.length > 0) {
-      statutSuggere = resultat.coordonneesValides && resultat.donneesCompletes ? 'a_corriger' : 'rejete';
+      statutSuggere =
+        resultat.coordonneesValides && resultat.donneesCompletes
+          ? 'a_corriger'
+          : 'rejete';
     }
 
     return {
@@ -168,15 +197,16 @@ export class ValidationService {
     details: Array<{ id: number; statut: string; erreurs: string[] }>;
   }> {
     const signalements = await this.signalementRepo.find();
-    
+
     let valides = 0;
     let aVerifier = 0;
     let rejetes = 0;
-    const details: Array<{ id: number; statut: string; erreurs: string[] }> = [];
+    const details: Array<{ id: number; statut: string; erreurs: string[] }> =
+      [];
 
     for (const signalement of signalements) {
       const resultat = this.validerDonnees(signalement);
-      
+
       let statut = 'valide';
       if (resultat.erreurs.length > 0) {
         if (!resultat.coordonneesValides || !resultat.donneesCompletes) {
@@ -206,7 +236,10 @@ export class ValidationService {
         validation.coordonneesValides = resultat.coordonneesValides;
         validation.donneesCompletes = resultat.donneesCompletes;
         validation.coherenceDonnees = resultat.coherenceDonnees;
-        validation.erreursDetectees = resultat.erreurs.length > 0 ? JSON.stringify(resultat.erreurs) : undefined;
+        validation.erreursDetectees =
+          resultat.erreurs.length > 0
+            ? JSON.stringify(resultat.erreurs)
+            : undefined;
       } else {
         validation = this.repo.create({
           signalement,
@@ -214,7 +247,10 @@ export class ValidationService {
           coordonneesValides: resultat.coordonneesValides,
           donneesCompletes: resultat.donneesCompletes,
           coherenceDonnees: resultat.coherenceDonnees,
-          erreursDetectees: resultat.erreurs.length > 0 ? JSON.stringify(resultat.erreurs) : undefined,
+          erreursDetectees:
+            resultat.erreurs.length > 0
+              ? JSON.stringify(resultat.erreurs)
+              : undefined,
         });
       }
 
@@ -232,7 +268,12 @@ export class ValidationService {
 
   async findAll(): Promise<Validation[]> {
     return this.repo.find({
-      relations: ['signalement', 'signalement.utilisateur', 'signalement.entreprise', 'validePar'],
+      relations: [
+        'signalement',
+        'signalement.utilisateur',
+        'signalement.entreprise',
+        'validePar',
+      ],
       order: { dateValidation: 'DESC' },
     });
   }
@@ -240,7 +281,12 @@ export class ValidationService {
   async findByStatut(statut: string): Promise<Validation[]> {
     return this.repo.find({
       where: { statut },
-      relations: ['signalement', 'signalement.utilisateur', 'signalement.entreprise', 'validePar'],
+      relations: [
+        'signalement',
+        'signalement.utilisateur',
+        'signalement.entreprise',
+        'validePar',
+      ],
       order: { dateValidation: 'DESC' },
     });
   }
@@ -248,7 +294,12 @@ export class ValidationService {
   async findOne(id: number): Promise<Validation> {
     const item = await this.repo.findOne({
       where: { id },
-      relations: ['signalement', 'signalement.utilisateur', 'signalement.entreprise', 'validePar'],
+      relations: [
+        'signalement',
+        'signalement.utilisateur',
+        'signalement.entreprise',
+        'validePar',
+      ],
     });
     if (!item) throw new NotFoundException('Validation non trouvée');
     return item;
@@ -263,10 +314,14 @@ export class ValidationService {
     tauxValidation: number;
   }> {
     const total = await this.repo.count();
-    const enAttente = await this.repo.count({ where: { statut: 'en_attente' } });
+    const enAttente = await this.repo.count({
+      where: { statut: 'en_attente' },
+    });
     const valides = await this.repo.count({ where: { statut: 'valide' } });
     const rejetes = await this.repo.count({ where: { statut: 'rejete' } });
-    const aCorreiger = await this.repo.count({ where: { statut: 'a_corriger' } });
+    const aCorreiger = await this.repo.count({
+      where: { statut: 'a_corriger' },
+    });
 
     const tauxValidation = total > 0 ? Math.round((valides / total) * 100) : 0;
 
@@ -285,10 +340,14 @@ export class ValidationService {
     const validations = await this.repo.find({
       relations: ['signalement'],
     });
-    const idsValides = validations.map(v => v.signalement?.id).filter(Boolean);
+    const idsValides = validations
+      .map((v) => v.signalement?.id)
+      .filter(Boolean);
 
     if (idsValides.length === 0) {
-      return this.signalementRepo.find({ relations: ['utilisateur', 'entreprise'] });
+      return this.signalementRepo.find({
+        relations: ['utilisateur', 'entreprise'],
+      });
     }
 
     return this.signalementRepo

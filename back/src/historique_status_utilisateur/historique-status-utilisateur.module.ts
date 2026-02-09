@@ -7,7 +7,13 @@ import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { StatutCompte } from '../statut_compte/statut-compte.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([HistoriqueStatusUtilisateur, Utilisateur, StatutCompte])],
+  imports: [
+    TypeOrmModule.forFeature([
+      HistoriqueStatusUtilisateur,
+      Utilisateur,
+      StatutCompte,
+    ]),
+  ],
   providers: [HistoriqueStatusUtilisateurService],
   controllers: [HistoriqueStatusUtilisateurController],
 })

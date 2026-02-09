@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 
 @Entity('tentative_connexion')
@@ -6,7 +12,11 @@ export class TentativeConnexion {
   @PrimaryGeneratedColumn({ name: 'id_tentative' })
   id: number;
 
-  @Column({ name: 'date_tentative', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'date_tentative',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   dateTentative: Date;
 
   @Column({ name: 'succes', type: 'boolean' })

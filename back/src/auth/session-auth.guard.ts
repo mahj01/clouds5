@@ -1,11 +1,18 @@
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Session } from '../sessions/session.entity';
 
 @Injectable()
 export class SessionAuthGuard implements CanActivate {
-  constructor(@InjectRepository(Session) private readonly sessions: Repository<Session>) {}
+  constructor(
+    @InjectRepository(Session) private readonly sessions: Repository<Session>,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest();
@@ -16,13 +23,21 @@ export class SessionAuthGuard implements CanActivate {
       return true;
     }
 
-    const authHeader: string | undefined = req.headers['authorization'] || req.headers['Authorization'];
-    if (!authHeader || typeof authHeader !== 'string' || !authHeader.startsWith('Bearer ')) {
+    const authHeader: string | undefined =
+      req.headers['authorization'] || req.headers['Authorization'];
+    if (
+      !authHeader ||
+      typeof authHeader !== 'string' ||
+      !authHeader.startsWith('Bearer ')
+    ) {
       throw new UnauthorizedException('Missing Authorization Bearer token');
     }
 
     const token = authHeader.substring('Bearer '.length).trim();
-    const session = await this.sessions.findOne({ where: { token, actif: true }, relations: ['utilisateur'] });
+    const session = await this.sessions.findOne({
+      where: { token, actif: true },
+      relations: ['utilisateur'],
+    });
     if (!session) {
       throw new UnauthorizedException('Invalid session');
     }

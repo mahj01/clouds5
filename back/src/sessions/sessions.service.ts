@@ -14,7 +14,9 @@ export class SessionsService {
   ) {}
 
   async create(dto: CreateSessionDto) {
-    const user = await this.userRepo.findOne({ where: { id: dto.utilisateurId } });
+    const user = await this.userRepo.findOne({
+      where: { id: dto.utilisateurId },
+    });
     if (!user) throw new NotFoundException('Utilisateur not found');
     const entity = this.repo.create({
       token: dto.token,
@@ -28,17 +30,23 @@ export class SessionsService {
     return this.repo.find({ relations: ['utilisateur'] });
   }
   async findOne(id: number) {
-    const item = await this.repo.findOne({ where: { id }, relations: ['utilisateur'] });
+    const item = await this.repo.findOne({
+      where: { id },
+      relations: ['utilisateur'],
+    });
     if (!item) throw new NotFoundException('Session not found');
     return item;
   }
   async update(id: number, dto: UpdateSessionDto) {
     const entity = await this.findOne(id);
     if (dto.token !== undefined) entity.token = dto.token;
-    if (dto.dateExpiration !== undefined) entity.dateExpiration = dto.dateExpiration;
+    if (dto.dateExpiration !== undefined)
+      entity.dateExpiration = dto.dateExpiration;
     if (dto.actif !== undefined) entity.actif = dto.actif;
     if (dto.utilisateurId !== undefined) {
-      const user = await this.userRepo.findOne({ where: { id: dto.utilisateurId } });
+      const user = await this.userRepo.findOne({
+        where: { id: dto.utilisateurId },
+      });
       if (!user) throw new NotFoundException('Utilisateur not found');
       entity.utilisateur = user;
     }

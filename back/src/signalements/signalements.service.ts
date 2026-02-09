@@ -1,7 +1,15 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Signalement, StatutSignalement, avancementFromStatut } from './signalement.entity';
+import {
+  Signalement,
+  StatutSignalement,
+  avancementFromStatut,
+} from './signalement.entity';
 import { CreateSignalementDto } from './dto/create-signalement.dto';
 import { UpdateSignalementDto } from './dto/update-signalement.dto';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
@@ -9,6 +17,7 @@ import { Entreprise } from '../entreprises/entreprise.entity';
 import { TypeProbleme } from '../problemes/type-probleme.entity';
 import { JournalService } from '../journal/journal.service';
 import { HistoriqueSignalementService } from '../historique_signalement/historique-signalement.service';
+import { FirestoreDiffSyncService } from '../firestore/firestore-diff-sync.service';
 
 @Injectable()
 export class SignalementsService {
@@ -19,31 +28,51 @@ export class SignalementsService {
     @InjectRepository(TypeProbleme) private typeRepo: Repository<TypeProbleme>,
     private readonly journalService: JournalService,
     private readonly historiqueService: HistoriqueSignalementService,
+    private readonly firestoreDiffSync: FirestoreDiffSyncService,
   ) {}
 
-  private async logAction(action: string, ressource: string, utilisateurId?: number, niveau: string = 'info', details?: string) {
+  private async logAction(
+    action: string,
+    ressource: string,
+    utilisateurId?: number,
+    niveau: string = 'info',
+    details?: string,
+  ) {
     try {
-      await this.journalService.create({ action, ressource, utilisateurId, niveau, details });
+      await this.journalService.create({
+        action,
+        ressource,
+        utilisateurId,
+        niveau,
+        details,
+      });
     } catch (e) {
       console.error('Failed to log action:', e);
     }
   }
 
   async create(dto: CreateSignalementDto) {
-    const user = await this.userRepo.findOne({ where: { id: dto.utilisateurId } });
+    const user = await this.userRepo.findOne({
+      where: { id: dto.utilisateurId },
+    });
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
 
     let typeProbleme: TypeProbleme | undefined;
     if (dto.typeProblemeId) {
-      const type = await this.typeRepo.findOne({ where: { id: dto.typeProblemeId } });
+      const type = await this.typeRepo.findOne({
+        where: { id: dto.typeProblemeId },
+      });
       if (!type) throw new NotFoundException('Type de problème non trouvé');
-      if (!type.actif) throw new BadRequestException('Ce type de problème n\'est plus actif');
+      if (!type.actif)
+        throw new BadRequestException("Ce type de problème n'est plus actif");
       typeProbleme = type;
     }
 
     let entreprise: Entreprise | undefined;
     if (dto.entrepriseId) {
-      const ent = await this.entRepo.findOne({ where: { id: dto.entrepriseId } });
+      const ent = await this.entRepo.findOne({
+        where: { id: dto.entrepriseId },
+      });
       if (!ent) throw new NotFoundException('Entreprise non trouvée');
       entreprise = ent;
     }
@@ -58,7 +87,8 @@ export class SignalementsService {
       statut,
       priorite: dto.priorite ?? 1,
       photoUrl: dto.photoUrl,
-      surfaceM2: dto.surfaceM2 !== undefined ? String(dto.surfaceM2) : undefined,
+      surfaceM2:
+        dto.surfaceM2 !== undefined ? String(dto.surfaceM2) : undefined,
       budget: dto.budget !== undefined ? String(dto.budget) : undefined,
       avancement: avancementFromStatut(statut),
       utilisateur: user,
@@ -66,16 +96,27 @@ export class SignalementsService {
       entreprise,
     });
     const saved = await this.repo.save(entity);
-    
+
     // Log creation
-    await this.logAction('CREATE_SIGNALEMENT', 'signalements', dto.utilisateurId, 'info', `Nouveau signalement créé: ${dto.titre} (ID: ${saved.id})`);
-    
+    await this.logAction(
+      'CREATE_SIGNALEMENT',
+      'signalements',
+      dto.utilisateurId,
+      'info',
+      `Nouveau signalement créé: ${dto.titre} (ID: ${saved.id})`,
+    );
+
     return saved;
   }
 
   findAll() {
     return this.repo.find({
-      relations: ['utilisateur', 'entreprise', 'typeProbleme', 'utilisateurResolution'],
+      relations: [
+        'utilisateur',
+        'entreprise',
+        'typeProbleme',
+        'utilisateurResolution',
+      ],
       order: { dateSignalement: 'DESC' },
     });
   }
@@ -107,7 +148,12 @@ export class SignalementsService {
   async findOne(id: number) {
     const item = await this.repo.findOne({
       where: { id },
-      relations: ['utilisateur', 'entreprise', 'typeProbleme', 'utilisateurResolution'],
+      relations: [
+        'utilisateur',
+        'entreprise',
+        'typeProbleme',
+        'utilisateurResolution',
+      ],
     });
     if (!item) throw new NotFoundException('Signalement non trouvé');
     return item;
@@ -116,7 +162,8 @@ export class SignalementsService {
   /** Met à jour uniquement la photo (requête légère, pas de chargement de relations) */
   async updatePhoto(id: number, photoUrl: string) {
     const result = await this.repo.update(id, { photoUrl });
-    if (result.affected === 0) throw new NotFoundException('Signalement non trouvé');
+    if (result.affected === 0)
+      throw new NotFoundException('Signalement non trouvé');
     return { photoUrl };
   }
 
@@ -130,9 +177,13 @@ export class SignalementsService {
     if (dto.adresse !== undefined) entity.adresse = dto.adresse;
     if (dto.priorite !== undefined) entity.priorite = dto.priorite;
     if (dto.photoUrl !== undefined) entity.photoUrl = dto.photoUrl;
-    if (dto.commentaireResolution !== undefined) entity.commentaireResolution = dto.commentaireResolution;
-    if (dto.surfaceM2 !== undefined) entity.surfaceM2 = dto.surfaceM2 != null ? String(dto.surfaceM2) : undefined;
-    if (dto.budget !== undefined) entity.budget = dto.budget != null ? String(dto.budget) : undefined;
+    if (dto.commentaireResolution !== undefined)
+      entity.commentaireResolution = dto.commentaireResolution;
+    if (dto.surfaceM2 !== undefined)
+      entity.surfaceM2 =
+        dto.surfaceM2 != null ? String(dto.surfaceM2) : undefined;
+    if (dto.budget !== undefined)
+      entity.budget = dto.budget != null ? String(dto.budget) : undefined;
 
     if (dto.statut !== undefined && dto.statut !== entity.statut) {
       const ancienStatut = entity.statut;
@@ -157,53 +208,39 @@ export class SignalementsService {
       }
     }
 
-    if (dto.typeProblemeId !== undefined) {
-      if (dto.typeProblemeId === null) {
-        entity.typeProbleme = undefined;
-      } else {
-        const type = await this.typeRepo.findOne({ where: { id: dto.typeProblemeId } });
-        if (!type) throw new NotFoundException('Type de problème non trouvé');
-        entity.typeProbleme = type;
-      }
-    }
-
-    if (dto.utilisateurId !== undefined) {
-      const user = await this.userRepo.findOne({ where: { id: dto.utilisateurId } });
-      if (!user) throw new NotFoundException('Utilisateur non trouvé');
-      entity.utilisateur = user;
-    }
-
-    if (dto.utilisateurResolutionId !== undefined) {
-      if (dto.utilisateurResolutionId === null) {
-        entity.utilisateurResolution = undefined;
-      } else {
-        const user = await this.userRepo.findOne({ where: { id: dto.utilisateurResolutionId } });
-        if (!user) throw new NotFoundException('Utilisateur de résolution non trouvé');
-        entity.utilisateurResolution = user;
-      }
-    }
-
-    if (dto.entrepriseId !== undefined) {
-      if (dto.entrepriseId === null) {
-        entity.entreprise = undefined;
-      } else {
-        const ent = await this.entRepo.findOne({ where: { id: dto.entrepriseId } });
-        if (!ent) throw new NotFoundException('Entreprise non trouvée');
-        entity.entreprise = ent;
-      }
-    }
-
     const saved = await this.repo.save(entity);
-    
+
+    // If we changed status, push pending diffs to Firestore (no Firestore reads)
+    if (dto.statut !== undefined) {
+      try {
+        await this.firestoreDiffSync.flushPendingStatusDiffs(25);
+      } catch (e) {
+        // Don't fail the API request if Firestore is unreachable
+        console.warn('Firestore diff sync failed:', e?.message ?? e);
+      }
+    }
+
     // Log update
-    await this.logAction('UPDATE_SIGNALEMENT', 'signalements', dto.utilisateurId || entity.utilisateur?.id, 'info', `Signalement modifié: ${entity.titre} (ID: ${id})`);
-    
+    await this.logAction(
+      'UPDATE_SIGNALEMENT',
+      'signalements',
+      dto.utilisateurId || entity.utilisateur?.id,
+      'info',
+      `Signalement modifié: ${entity.titre} (ID: ${id})`,
+    );
+
     return saved;
   }
 
-  async resoudre(id: number, utilisateurResolutionId: number, commentaire?: string) {
+  async resoudre(
+    id: number,
+    utilisateurResolutionId: number,
+    commentaire?: string,
+  ) {
     const entity = await this.findOne(id);
-    const user = await this.userRepo.findOne({ where: { id: utilisateurResolutionId } });
+    const user = await this.userRepo.findOne({
+      where: { id: utilisateurResolutionId },
+    });
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
 
     const ancienStatut = entity.statut;
@@ -226,19 +263,38 @@ export class SignalementsService {
     } catch (e) {
       console.error('Erreur enregistrement historique:', e);
     }
-    
+
+    // Push pending diffs to Firestore
+    try {
+      await this.firestoreDiffSync.flushPendingStatusDiffs(25);
+    } catch (e) {
+      console.warn('Firestore diff sync failed:', e?.message ?? e);
+    }
+
     // Log resolution
-    await this.logAction('RESOLVE_SIGNALEMENT', 'signalements', utilisateurResolutionId, 'info', `Signalement résolu: ${entity.titre} (ID: ${id})`);
-    
+    await this.logAction(
+      'RESOLVE_SIGNALEMENT',
+      'signalements',
+      utilisateurResolutionId,
+      'info',
+      `Signalement résolu: ${entity.titre} (ID: ${id})`,
+    );
+
     return saved;
   }
 
   async remove(id: number) {
     const item = await this.findOne(id);
-    
+
     // Log deletion
-    await this.logAction('DELETE_SIGNALEMENT', 'signalements', item.utilisateur?.id, 'warning', `Signalement supprimé: ${item.titre} (ID: ${id})`);
-    
+    await this.logAction(
+      'DELETE_SIGNALEMENT',
+      'signalements',
+      item.utilisateur?.id,
+      'warning',
+      `Signalement supprimé: ${item.titre} (ID: ${id})`,
+    );
+
     await this.repo.remove(item);
   }
 
@@ -260,12 +316,14 @@ export class SignalementsService {
           avancement: s.avancement,
           priorite: s.priorite,
           dateSignalement: s.dateSignalement,
-          typeProbleme: s.typeProbleme ? {
-            id: s.typeProbleme.id,
-            nom: s.typeProbleme.nom,
-            icone: s.typeProbleme.icone,
-            couleur: s.typeProbleme.couleur,
-          } : null,
+          typeProbleme: s.typeProbleme
+            ? {
+                id: s.typeProbleme.id,
+                nom: s.typeProbleme.nom,
+                icone: s.typeProbleme.icone,
+                couleur: s.typeProbleme.couleur,
+              }
+            : null,
           adresse: s.adresse,
           photoUrl: s.photoUrl,
         },
@@ -274,17 +332,27 @@ export class SignalementsService {
   }
 
   async getGeoJSON(statut?: string) {
-    const signalements = statut ? await this.findByStatut(statut) : await this.findAll();
+    const signalements = statut
+      ? await this.findByStatut(statut)
+      : await this.findAll();
     return this.formatGeoJSON(signalements);
   }
 
   // Statistiques
   async getStatistiques() {
     const total = await this.repo.count();
-    const actifs = await this.repo.count({ where: { statut: StatutSignalement.ACTIF } });
-    const enCours = await this.repo.count({ where: { statut: StatutSignalement.EN_COURS } });
-    const resolus = await this.repo.count({ where: { statut: StatutSignalement.RESOLU } });
-    const rejetes = await this.repo.count({ where: { statut: StatutSignalement.REJETE } });
+    const actifs = await this.repo.count({
+      where: { statut: StatutSignalement.ACTIF },
+    });
+    const enCours = await this.repo.count({
+      where: { statut: StatutSignalement.EN_COURS },
+    });
+    const resolus = await this.repo.count({
+      where: { statut: StatutSignalement.RESOLU },
+    });
+    const rejetes = await this.repo.count({
+      where: { statut: StatutSignalement.REJETE },
+    });
 
     const parType = await this.repo
       .createQueryBuilder('s')
@@ -301,9 +369,18 @@ export class SignalementsService {
     // 1) Délai moyen de résolution : dateResolution - dateSignalement pour les résolus
     const delaiResolutionRaw = await this.repo
       .createQueryBuilder('s')
-      .select('AVG(EXTRACT(EPOCH FROM (s.date_resolution - s.date_signalement)) / 86400)', 'moyenJours')
-      .addSelect('MIN(EXTRACT(EPOCH FROM (s.date_resolution - s.date_signalement)) / 86400)', 'minJours')
-      .addSelect('MAX(EXTRACT(EPOCH FROM (s.date_resolution - s.date_signalement)) / 86400)', 'maxJours')
+      .select(
+        'AVG(EXTRACT(EPOCH FROM (s.date_resolution - s.date_signalement)) / 86400)',
+        'moyenJours',
+      )
+      .addSelect(
+        'MIN(EXTRACT(EPOCH FROM (s.date_resolution - s.date_signalement)) / 86400)',
+        'minJours',
+      )
+      .addSelect(
+        'MAX(EXTRACT(EPOCH FROM (s.date_resolution - s.date_signalement)) / 86400)',
+        'maxJours',
+      )
       .addSelect('COUNT(s.id_signalement)', 'nombre')
       .where('s.statut = :statut', { statut: StatutSignalement.RESOLU })
       .andWhere('s.date_resolution IS NOT NULL')
@@ -313,13 +390,23 @@ export class SignalementsService {
     const delaiPriseEnChargeRaw = await this.repo
       .createQueryBuilder('s')
       .innerJoin(
-        'historique_signalement', 'h',
+        'historique_signalement',
+        'h',
         'h.id_signalement = s.id_signalement AND h.nouveau_statut = :enCours',
         { enCours: StatutSignalement.EN_COURS },
       )
-      .select('AVG(EXTRACT(EPOCH FROM (h.date_changement - s.date_signalement)) / 86400)', 'moyenJours')
-      .addSelect('MIN(EXTRACT(EPOCH FROM (h.date_changement - s.date_signalement)) / 86400)', 'minJours')
-      .addSelect('MAX(EXTRACT(EPOCH FROM (h.date_changement - s.date_signalement)) / 86400)', 'maxJours')
+      .select(
+        'AVG(EXTRACT(EPOCH FROM (h.date_changement - s.date_signalement)) / 86400)',
+        'moyenJours',
+      )
+      .addSelect(
+        'MIN(EXTRACT(EPOCH FROM (h.date_changement - s.date_signalement)) / 86400)',
+        'minJours',
+      )
+      .addSelect(
+        'MAX(EXTRACT(EPOCH FROM (h.date_changement - s.date_signalement)) / 86400)',
+        'maxJours',
+      )
       .addSelect('COUNT(DISTINCT s.id_signalement)', 'nombre')
       .getRawOne();
 
@@ -327,29 +414,47 @@ export class SignalementsService {
     const delaiTraitementRaw = await this.repo
       .createQueryBuilder('s')
       .innerJoin(
-        'historique_signalement', 'h_ec',
+        'historique_signalement',
+        'h_ec',
         'h_ec.id_signalement = s.id_signalement AND h_ec.nouveau_statut = :enCours',
         { enCours: StatutSignalement.EN_COURS },
       )
       .innerJoin(
-        'historique_signalement', 'h_res',
+        'historique_signalement',
+        'h_res',
         'h_res.id_signalement = s.id_signalement AND h_res.nouveau_statut = :resolu',
         { resolu: StatutSignalement.RESOLU },
       )
-      .select('AVG(EXTRACT(EPOCH FROM (h_res.date_changement - h_ec.date_changement)) / 86400)', 'moyenJours')
-      .addSelect('MIN(EXTRACT(EPOCH FROM (h_res.date_changement - h_ec.date_changement)) / 86400)', 'minJours')
-      .addSelect('MAX(EXTRACT(EPOCH FROM (h_res.date_changement - h_ec.date_changement)) / 86400)', 'maxJours')
+      .select(
+        'AVG(EXTRACT(EPOCH FROM (h_res.date_changement - h_ec.date_changement)) / 86400)',
+        'moyenJours',
+      )
+      .addSelect(
+        'MIN(EXTRACT(EPOCH FROM (h_res.date_changement - h_ec.date_changement)) / 86400)',
+        'minJours',
+      )
+      .addSelect(
+        'MAX(EXTRACT(EPOCH FROM (h_res.date_changement - h_ec.date_changement)) / 86400)',
+        'maxJours',
+      )
       .addSelect('COUNT(DISTINCT s.id_signalement)', 'nombre')
       .getRawOne();
 
     const parseDelai = (raw: any) => ({
-      moyenJours: raw?.moyenJours ? parseFloat(parseFloat(raw.moyenJours).toFixed(1)) : null,
-      minJours: raw?.minJours ? parseFloat(parseFloat(raw.minJours).toFixed(1)) : null,
-      maxJours: raw?.maxJours ? parseFloat(parseFloat(raw.maxJours).toFixed(1)) : null,
+      moyenJours: raw?.moyenJours
+        ? parseFloat(parseFloat(raw.moyenJours).toFixed(1))
+        : null,
+      minJours: raw?.minJours
+        ? parseFloat(parseFloat(raw.minJours).toFixed(1))
+        : null,
+      maxJours: raw?.maxJours
+        ? parseFloat(parseFloat(raw.maxJours).toFixed(1))
+        : null,
       nombre: raw?.nombre ? parseInt(raw.nombre, 10) : 0,
     });
 
-    const tauxResolution = total > 0 ? parseFloat(((resolus / total) * 100).toFixed(1)) : 0;
+    const tauxResolution =
+      total > 0 ? parseFloat(((resolus / total) * 100).toFixed(1)) : 0;
 
     return {
       total,

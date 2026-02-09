@@ -8,7 +8,14 @@ import { Signalement } from '../signalements/signalement.entity';
 import { Entreprise } from '../entreprises/entreprise.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Sauvegarde, Utilisateur, Signalement, Entreprise])],
+  imports: [
+    TypeOrmModule.forFeature([
+      Sauvegarde,
+      Utilisateur,
+      Signalement,
+      Entreprise,
+    ]),
+  ],
   controllers: [SauvegardeController],
   providers: [SauvegardeService],
   exports: [SauvegardeService],

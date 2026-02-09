@@ -1,15 +1,22 @@
-var admin = require('firebase-admin');
-var fs = require('fs');
-var path = require('path');
+import admin from 'firebase-admin';
+import type { ServiceAccount } from 'firebase-admin';
+import fs from 'node:fs';
+import path from 'node:path';
 
-function loadServiceAccount() {
+function getProjectId(sa: ServiceAccount): string | undefined {
+  const maybe = sa as unknown as { project_id?: unknown; projectId?: unknown };
+  const v = maybe.project_id ?? maybe.projectId;
+  return typeof v === 'string' ? v : undefined;
+}
+
+function loadServiceAccount(): ServiceAccount | null {
   // 1) If GOOGLE_APPLICATION_CREDENTIALS env var points to a file, try to read it
   const envPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
   if (envPath) {
     try {
       const raw = fs.readFileSync(envPath, 'utf8');
-      return JSON.parse(raw);
-    } catch (e) {
+      return JSON.parse(raw) as ServiceAccount;
+    } catch {
       // continue to next attempts
     }
   }
@@ -18,34 +25,31 @@ function loadServiceAccount() {
   try {
     const p = path.resolve(process.cwd(), 'src', 'serviceAccountKey.json');
     if (fs.existsSync(p)) {
-      return JSON.parse(fs.readFileSync(p, 'utf8'));
+      return JSON.parse(fs.readFileSync(p, 'utf8')) as ServiceAccount;
     }
-  } catch (e) {
+  } catch {
     // ignore
   }
 
   // 3) Try a dist-aware path relative to this file (works when running built code in dist/)
   try {
     // __dirname at runtime will be dist/src when compiled; go up to project root then src
-    const alt = path.resolve(__dirname, '..', '..', 'src', 'serviceAccountKey.json');
+    const alt = path.resolve(
+      __dirname,
+      '..',
+      '..',
+      'src',
+      'serviceAccountKey.json',
+    );
     if (fs.existsSync(alt)) {
-      return JSON.parse(fs.readFileSync(alt, 'utf8'));
+      return JSON.parse(fs.readFileSync(alt, 'utf8')) as ServiceAccount;
     }
-  } catch (e) {
+  } catch {
     // ignore
   }
 
-  // 4) Fallback: try require relative to this file (legacy)
-  try {
-    // This may work when running from TS via ts-node
-    return require('./serviceAccountKey.json');
-  } catch (e) {
-    try {
-      return require('../src/serviceAccountKey.json');
-    } catch (e2) {
-      return null;
-    }
-  }
+  // 4) No service account found
+  return null;
 }
 
 const serviceAccount = loadServiceAccount();
@@ -53,12 +57,14 @@ const serviceAccount = loadServiceAccount();
 if (serviceAccount) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    projectId: serviceAccount.project_id || serviceAccount.projectId,
+    projectId: getProjectId(serviceAccount),
   });
 } else {
   // If no service account is provided, initialize with default credentials
   // which will use the environment (e.g., GCE service account) if available.
-  console.warn('[firebase-admin] serviceAccount not found; initializing with default credentials (may fail)');
+  console.warn(
+    '[firebase-admin] serviceAccount not found; initializing with default credentials (may fail)',
+  );
   admin.initializeApp();
 }
 

@@ -10,7 +10,14 @@ import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { Signalement } from '../signalements/signalement.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([TypeProbleme, ProblemeRoutier, Utilisateur, Signalement])],
+  imports: [
+    TypeOrmModule.forFeature([
+      TypeProbleme,
+      ProblemeRoutier,
+      Utilisateur,
+      Signalement,
+    ]),
+  ],
   providers: [TypesProblemesService, ProblemesRoutiersService],
   controllers: [TypesProblemesController, ProblemesRoutiersController],
   exports: [TypesProblemesService, ProblemesRoutiersService],
