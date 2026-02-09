@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+} from 'typeorm';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { Entreprise } from '../entreprises/entreprise.entity';
 import { HistoriqueSignalement } from '../historique_signalement/historique-signalement.entity';
@@ -13,16 +20,14 @@ export enum StatutSignalement {
 
 /** Retourne le pourcentage d'avancement selon le statut */
 export function avancementFromStatut(statut: string): number {
-  switch (statut) {
-    case StatutSignalement.EN_COURS:
-      return 50;
-    case StatutSignalement.RESOLU:
-      return 100;
-    case StatutSignalement.ACTIF:
-    case StatutSignalement.REJETE:
-    default:
-      return 0;
-  }
+  const map: Record<string, number> = {
+    [StatutSignalement.EN_COURS]: 50,
+    [StatutSignalement.RESOLU]: 100,
+    [StatutSignalement.ACTIF]: 0,
+    [StatutSignalement.REJETE]: 0,
+  };
+
+  return map[statut] ?? 0;
 }
 
 @Entity('signalement')
@@ -45,7 +50,11 @@ export class Signalement {
   @Column({ name: 'adresse', length: 255, nullable: true })
   adresse?: string;
 
-  @Column({ name: 'date_signalement', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'date_signalement',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   dateSignalement: Date;
 
   @Column({
@@ -68,14 +77,38 @@ export class Signalement {
   @Column({ name: 'commentaire_resolution', type: 'text', nullable: true })
   commentaireResolution?: string;
 
-  @Column({ name: 'surface_m2', type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({
+    name: 'surface_m2',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
   surfaceM2?: string;
 
-  @Column({ name: 'budget', type: 'decimal', precision: 12, scale: 2, nullable: true })
+  @Column({
+    name: 'budget',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    nullable: true,
+  })
   budget?: string;
 
   @Column({ name: 'avancement', type: 'int', default: 0 })
   avancement: number;
+
+  /**
+   * Firestore document id of the mobile-created signalement (when imported from Firebase).
+   * Used to update the canonical mobile doc and avoid updating multiple docs by pg_id.
+   */
+  @Column({
+    name: 'firestore_doc_id',
+    type: 'varchar',
+    length: 150,
+    nullable: true,
+  })
+  firestoreDocId?: string;
 
   // Type de problème (relation avec TypeProbleme)
   @ManyToOne(() => TypeProbleme, { nullable: true })

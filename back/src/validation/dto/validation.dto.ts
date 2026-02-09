@@ -1,4 +1,10 @@
-import { IsNumber, IsOptional, IsString, IsIn, IsBoolean } from 'class-validator';
+import {
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsIn,
+  IsBoolean,
+} from 'class-validator';
 
 export class CreateValidationDto {
   @IsNumber()

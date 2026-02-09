@@ -1,4 +1,10 @@
-import { IsEmail, IsOptional, IsString, MinLength, IsInt } from 'class-validator';
+import {
+  IsEmail,
+  IsOptional,
+  IsString,
+  MinLength,
+  IsInt,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -7,7 +13,7 @@ export class RegisterDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: 'StrongPassw0rd!'})
+  @ApiProperty({ example: 'StrongPassw0rd!' })
   @IsString()
   motDePasse: string;
 
@@ -21,7 +27,7 @@ export class RegisterDto {
   @IsString()
   prenom?: string;
 
-  @ApiProperty({ example: 1, description: 'Role ID'})
+  @ApiProperty({ example: 1, description: 'Role ID' })
   @Type(() => Number)
   @IsInt()
   idRole: number;

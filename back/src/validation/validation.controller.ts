@@ -1,4 +1,11 @@
-import { Controller, Get, Post, Body, Param, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { ValidationService, ValidationResult } from './validation.service';
 import { ValiderSignalementDto } from './dto/validation.dto';
 
@@ -32,7 +39,9 @@ export class ValidationController {
   }
 
   @Post('auto/:signalementId')
-  validerAuto(@Param('signalementId', ParseIntPipe) signalementId: number): Promise<{
+  validerAuto(
+    @Param('signalementId', ParseIntPipe) signalementId: number,
+  ): Promise<{
     signalementId: number;
     resultat: ValidationResult;
     statutSuggere: string;

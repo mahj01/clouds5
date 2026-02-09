@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { ProblemeRoutier, StatutProbleme } from './probleme-routier.entity';
@@ -11,18 +15,26 @@ import { Signalement } from '../signalements/signalement.entity';
 @Injectable()
 export class ProblemesRoutiersService {
   constructor(
-    @InjectRepository(ProblemeRoutier) private repo: Repository<ProblemeRoutier>,
+    @InjectRepository(ProblemeRoutier)
+    private repo: Repository<ProblemeRoutier>,
     @InjectRepository(TypeProbleme) private typeRepo: Repository<TypeProbleme>,
     @InjectRepository(Utilisateur) private userRepo: Repository<Utilisateur>,
-    @InjectRepository(Signalement) private signalementRepo: Repository<Signalement>,
+    @InjectRepository(Signalement)
+    private signalementRepo: Repository<Signalement>,
   ) {}
 
   async create(dto: CreateProblemeRoutierDto) {
-    const typeProbleme = await this.typeRepo.findOne({ where: { id: dto.typeProblemeId } });
-    if (!typeProbleme) throw new NotFoundException('Type de problème non trouvé');
-    if (!typeProbleme.actif) throw new BadRequestException('Ce type de problème n\'est plus actif');
+    const typeProbleme = await this.typeRepo.findOne({
+      where: { id: dto.typeProblemeId },
+    });
+    if (!typeProbleme)
+      throw new NotFoundException('Type de problème non trouvé');
+    if (!typeProbleme.actif)
+      throw new BadRequestException("Ce type de problème n'est plus actif");
 
-    const utilisateur = await this.userRepo.findOne({ where: { id: dto.utilisateurSignaleurId } });
+    const utilisateur = await this.userRepo.findOne({
+      where: { id: dto.utilisateurSignaleurId },
+    });
     if (!utilisateur) throw new NotFoundException('Utilisateur non trouvé');
 
     // Créer d'abord un signalement dans la table signalement
@@ -56,17 +68,27 @@ export class ProblemesRoutiersService {
   // Convertir le statut probleme vers statut signalement
   private mapStatutToSignalement(statut: StatutProbleme): string {
     switch (statut) {
-      case StatutProbleme.ACTIF: return 'nouveau';
-      case StatutProbleme.EN_COURS: return 'en_cours';
-      case StatutProbleme.RESOLU: return 'termine';
-      case StatutProbleme.REJETE: return 'rejete';
-      default: return 'nouveau';
+      case StatutProbleme.ACTIF:
+        return 'nouveau';
+      case StatutProbleme.EN_COURS:
+        return 'en_cours';
+      case StatutProbleme.RESOLU:
+        return 'termine';
+      case StatutProbleme.REJETE:
+        return 'rejete';
+      default:
+        return 'nouveau';
     }
   }
 
   findAll() {
     return this.repo.find({
-      relations: ['typeProbleme', 'utilisateurSignaleur', 'utilisateurResolution', 'signalement'],
+      relations: [
+        'typeProbleme',
+        'utilisateurSignaleur',
+        'utilisateurResolution',
+        'signalement',
+      ],
       order: { dateSignalement: 'DESC' },
     });
   }
@@ -82,7 +104,12 @@ export class ProblemesRoutiersService {
   findByStatut(statut: StatutProbleme) {
     return this.repo.find({
       where: { statut },
-      relations: ['typeProbleme', 'utilisateurSignaleur', 'utilisateurResolution', 'signalement'],
+      relations: [
+        'typeProbleme',
+        'utilisateurSignaleur',
+        'utilisateurResolution',
+        'signalement',
+      ],
       order: { dateSignalement: 'DESC' },
     });
   }
@@ -98,7 +125,12 @@ export class ProblemesRoutiersService {
   async findOne(id: number) {
     const item = await this.repo.findOne({
       where: { id },
-      relations: ['typeProbleme', 'utilisateurSignaleur', 'utilisateurResolution', 'signalement'],
+      relations: [
+        'typeProbleme',
+        'utilisateurSignaleur',
+        'utilisateurResolution',
+        'signalement',
+      ],
     });
     if (!item) throw new NotFoundException('Problème routier non trouvé');
     return item;
@@ -114,7 +146,8 @@ export class ProblemesRoutiersService {
     if (dto.adresse !== undefined) entity.adresse = dto.adresse;
     if (dto.priorite !== undefined) entity.priorite = dto.priorite;
     if (dto.photoUrl !== undefined) entity.photoUrl = dto.photoUrl;
-    if (dto.commentaireResolution !== undefined) entity.commentaireResolution = dto.commentaireResolution;
+    if (dto.commentaireResolution !== undefined)
+      entity.commentaireResolution = dto.commentaireResolution;
 
     if (dto.statut !== undefined) {
       entity.statut = dto.statut;
@@ -129,7 +162,9 @@ export class ProblemesRoutiersService {
     }
 
     if (dto.typeProblemeId !== undefined) {
-      const type = await this.typeRepo.findOne({ where: { id: dto.typeProblemeId } });
+      const type = await this.typeRepo.findOne({
+        where: { id: dto.typeProblemeId },
+      });
       if (!type) throw new NotFoundException('Type de problème non trouvé');
       entity.typeProbleme = type;
     }
@@ -138,25 +173,38 @@ export class ProblemesRoutiersService {
       if (dto.utilisateurResolutionId === null) {
         entity.utilisateurResolution = undefined;
       } else {
-        const user = await this.userRepo.findOne({ where: { id: dto.utilisateurResolutionId } });
-        if (!user) throw new NotFoundException('Utilisateur de résolution non trouvé');
+        const user = await this.userRepo.findOne({
+          where: { id: dto.utilisateurResolutionId },
+        });
+        if (!user)
+          throw new NotFoundException('Utilisateur de résolution non trouvé');
         entity.utilisateurResolution = user;
       }
     }
 
     // Synchroniser titre et description avec le signalement lié
-    if (entity.signalement && (dto.titre !== undefined || dto.description !== undefined)) {
+    if (
+      entity.signalement &&
+      (dto.titre !== undefined || dto.description !== undefined)
+    ) {
       if (dto.titre !== undefined) entity.signalement.titre = dto.titre;
-      if (dto.description !== undefined) entity.signalement.description = dto.description;
+      if (dto.description !== undefined)
+        entity.signalement.description = dto.description;
       await this.signalementRepo.save(entity.signalement);
     }
 
     return this.repo.save(entity);
   }
 
-  async resoudre(id: number, utilisateurResolutionId: number, commentaire?: string) {
+  async resoudre(
+    id: number,
+    utilisateurResolutionId: number,
+    commentaire?: string,
+  ) {
     const entity = await this.findOne(id);
-    const user = await this.userRepo.findOne({ where: { id: utilisateurResolutionId } });
+    const user = await this.userRepo.findOne({
+      where: { id: utilisateurResolutionId },
+    });
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
 
     entity.statut = StatutProbleme.RESOLU;
@@ -199,12 +247,14 @@ export class ProblemesRoutiersService {
           statut: p.statut,
           priorite: p.priorite,
           dateSignalement: p.dateSignalement,
-          typeProbleme: p.typeProbleme ? {
-            id: p.typeProbleme.id,
-            nom: p.typeProbleme.nom,
-            icone: p.typeProbleme.icone,
-            couleur: p.typeProbleme.couleur,
-          } : null,
+          typeProbleme: p.typeProbleme
+            ? {
+                id: p.typeProbleme.id,
+                nom: p.typeProbleme.nom,
+                icone: p.typeProbleme.icone,
+                couleur: p.typeProbleme.couleur,
+              }
+            : null,
           adresse: p.adresse,
           photoUrl: p.photoUrl,
         },
@@ -213,17 +263,27 @@ export class ProblemesRoutiersService {
   }
 
   async getGeoJSON(statut?: StatutProbleme) {
-    const problemes = statut ? await this.findByStatut(statut) : await this.findAll();
+    const problemes = statut
+      ? await this.findByStatut(statut)
+      : await this.findAll();
     return this.formatGeoJSON(problemes);
   }
 
   // Statistiques
   async getStatistiques() {
     const total = await this.repo.count();
-    const actifs = await this.repo.count({ where: { statut: StatutProbleme.ACTIF } });
-    const enCours = await this.repo.count({ where: { statut: StatutProbleme.EN_COURS } });
-    const resolus = await this.repo.count({ where: { statut: StatutProbleme.RESOLU } });
-    const rejetes = await this.repo.count({ where: { statut: StatutProbleme.REJETE } });
+    const actifs = await this.repo.count({
+      where: { statut: StatutProbleme.ACTIF },
+    });
+    const enCours = await this.repo.count({
+      where: { statut: StatutProbleme.EN_COURS },
+    });
+    const resolus = await this.repo.count({
+      where: { statut: StatutProbleme.RESOLU },
+    });
+    const rejetes = await this.repo.count({
+      where: { statut: StatutProbleme.REJETE },
+    });
 
     const parType = await this.repo
       .createQueryBuilder('p')

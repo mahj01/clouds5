@@ -8,12 +8,19 @@ import { Entreprise } from '../entreprises/entreprise.entity';
 import { TypeProbleme } from '../problemes/type-probleme.entity';
 import { JournalModule } from '../journal/journal.module';
 import { HistoriqueSignalementModule } from '../historique_signalement/historique-signalement.module';
+import { FirestoreModule } from '../firestore/firestore.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Signalement, Utilisateur, Entreprise, TypeProbleme]),
+    TypeOrmModule.forFeature([
+      Signalement,
+      Utilisateur,
+      Entreprise,
+      TypeProbleme,
+    ]),
     JournalModule,
     HistoriqueSignalementModule,
+    FirestoreModule,
   ],
   providers: [SignalementsService],
   controllers: [SignalementsController],

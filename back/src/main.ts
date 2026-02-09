@@ -73,10 +73,19 @@ async function bootstrap() {
 
     // default manager
     const adminEmail = 'admin@mail.com';
-    let admin = await userRepo.findOne({ where: { email: adminEmail }, relations: ['role'] });
+    let admin = await userRepo.findOne({
+      where: { email: adminEmail },
+      relations: ['role'],
+    });
     if (!admin) {
       const hash = await bcrypt.hash('admin', 10);
-      admin = userRepo.create({ email: adminEmail, motDePasse: hash, role: roles['manager'], nbTentatives: 3, dateBlocage: null });
+      admin = userRepo.create({
+        email: adminEmail,
+        motDePasse: hash,
+        role: roles['manager'],
+        nbTentatives: 3,
+        dateBlocage: null,
+      });
       await userRepo.save(admin);
     } else {
       // If legacy seed stored plaintext, upgrade to bcrypt so /auth/login works.
@@ -91,9 +100,18 @@ async function bootstrap() {
 
     // default visiteur (no credentials required to use public login)
     const visiteurEmail = 'visiteur@mail.com';
-    let visiteur = await userRepo.findOne({ where: { email: visiteurEmail }, relations: ['role'] });
+    let visiteur = await userRepo.findOne({
+      where: { email: visiteurEmail },
+      relations: ['role'],
+    });
     if (!visiteur) {
-      visiteur = userRepo.create({ email: visiteurEmail, motDePasse: '', role: roles['visiteur'], nbTentatives: 3, dateBlocage: null });
+      visiteur = userRepo.create({
+        email: visiteurEmail,
+        motDePasse: '',
+        role: roles['visiteur'],
+        nbTentatives: 3,
+        dateBlocage: null,
+      });
       await userRepo.save(visiteur);
     }
   } catch (e) {
@@ -104,4 +122,3 @@ async function bootstrap() {
   await app.listen(3001);
 }
 bootstrap();
-

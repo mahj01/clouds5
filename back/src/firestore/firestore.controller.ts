@@ -1,9 +1,13 @@
-import { Controller, Post } from '@nestjs/common';
+import { Controller, Post, Query } from '@nestjs/common';
 import { FirestoreSyncService } from './firestore-sync.service';
+import { FirestoreDiffSyncService } from './firestore-diff-sync.service';
 
 @Controller('firestore')
 export class FirestoreController {
-  constructor(private readonly sync: FirestoreSyncService) {}
+  constructor(
+    private readonly sync: FirestoreSyncService,
+    private readonly diffSync: FirestoreDiffSyncService,
+  ) {}
 
   @Post('sync')
   async syncAll() {
@@ -13,5 +17,12 @@ export class FirestoreController {
   @Post('sync-signalements')
   async syncSignalements() {
     return this.sync.syncSignalementsFromFirestore();
+  }
+
+  /** Push status diffs (HistoriqueSignalement) to Firestore with minimal reads/writes */
+  @Post('flush-status-diffs')
+  async flushStatusDiffs(@Query('limit') limit?: string) {
+    const n = limit ? Number(limit) : 50;
+    return this.diffSync.flushPendingStatusDiffs(Number.isFinite(n) ? n : 50);
   }
 }

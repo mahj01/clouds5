@@ -8,11 +8,23 @@ import { Entreprise } from '../entreprises/entreprise.entity';
 import { Signalement } from '../signalements/signalement.entity';
 import { Session } from '../sessions/session.entity';
 import { StatutCompte } from '../statut_compte/statut-compte.entity';
+import { HistoriqueSignalement } from '../historique_signalement/historique-signalement.entity';
+import { FirestoreDiffSyncService } from './firestore-diff-sync.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Role, Utilisateur, Entreprise, Signalement, Session, StatutCompte])],
-  providers: [FirestoreSyncService],
+  imports: [
+    TypeOrmModule.forFeature([
+      Role,
+      Utilisateur,
+      Entreprise,
+      Signalement,
+      Session,
+      StatutCompte,
+      HistoriqueSignalement,
+    ]),
+  ],
+  providers: [FirestoreSyncService, FirestoreDiffSyncService],
   controllers: [FirestoreController],
-  exports: [FirestoreSyncService],
+  exports: [FirestoreSyncService, FirestoreDiffSyncService],
 })
 export class FirestoreModule {}

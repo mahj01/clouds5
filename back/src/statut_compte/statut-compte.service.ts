@@ -7,7 +7,9 @@ import { UpdateStatutCompteDto } from './dto/update-statut-compte.dto';
 
 @Injectable()
 export class StatutCompteService {
-  constructor(@InjectRepository(StatutCompte) private repo: Repository<StatutCompte>) {}
+  constructor(
+    @InjectRepository(StatutCompte) private repo: Repository<StatutCompte>,
+  ) {}
 
   create(dto: CreateStatutCompteDto) {
     return this.repo.save(this.repo.create(dto));

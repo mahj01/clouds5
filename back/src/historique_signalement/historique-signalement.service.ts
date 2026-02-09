@@ -10,16 +10,22 @@ import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 @Injectable()
 export class HistoriqueSignalementService {
   constructor(
-    @InjectRepository(HistoriqueSignalement) private repo: Repository<HistoriqueSignalement>,
+    @InjectRepository(HistoriqueSignalement)
+    private repo: Repository<HistoriqueSignalement>,
     @InjectRepository(Signalement) private sigRepo: Repository<Signalement>,
     @InjectRepository(Utilisateur) private userRepo: Repository<Utilisateur>,
   ) {}
 
   async create(dto: CreateHistoriqueSignalementDto) {
-    const signalement = await this.sigRepo.findOne({ where: { id: dto.signalementId } });
+    const signalement = await this.sigRepo.findOne({
+      where: { id: dto.signalementId },
+    });
     if (!signalement) throw new NotFoundException('Signalement not found');
-    const manager = await this.userRepo.findOne({ where: { id: dto.managerId } });
-    if (!manager) throw new NotFoundException('Manager (Utilisateur) not found');
+    const manager = await this.userRepo.findOne({
+      where: { id: dto.managerId },
+    });
+    if (!manager)
+      throw new NotFoundException('Manager (Utilisateur) not found');
     const entity = this.repo.create({
       ancienStatut: dto.ancienStatut,
       nouveauStatut: dto.nouveauStatut,
@@ -29,7 +35,10 @@ export class HistoriqueSignalementService {
     return this.repo.save(entity);
   }
   findAll() {
-    return this.repo.find({ relations: ['signalement', 'manager'], order: { dateChangement: 'DESC' } });
+    return this.repo.find({
+      relations: ['signalement', 'manager'],
+      order: { dateChangement: 'DESC' },
+    });
   }
 
   findBySignalement(signalementId: number) {
@@ -40,16 +49,22 @@ export class HistoriqueSignalementService {
     });
   }
   async findOne(id: number) {
-    const item = await this.repo.findOne({ where: { id }, relations: ['signalement', 'manager'] });
+    const item = await this.repo.findOne({
+      where: { id },
+      relations: ['signalement', 'manager'],
+    });
     if (!item) throw new NotFoundException('HistoriqueSignalement not found');
     return item;
   }
   async update(id: number, dto: UpdateHistoriqueSignalementDto) {
     const entity = await this.findOne(id);
     if (dto.ancienStatut !== undefined) entity.ancienStatut = dto.ancienStatut;
-    if (dto.nouveauStatut !== undefined) entity.nouveauStatut = dto.nouveauStatut;
+    if (dto.nouveauStatut !== undefined)
+      entity.nouveauStatut = dto.nouveauStatut;
     if (dto.signalementId !== undefined) {
-      const s = await this.sigRepo.findOne({ where: { id: dto.signalementId } });
+      const s = await this.sigRepo.findOne({
+        where: { id: dto.signalementId },
+      });
       if (!s) throw new NotFoundException('Signalement not found');
       entity.signalement = s;
     }

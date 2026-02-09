@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Delete, Body, Param, Res, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Body,
+  Param,
+  Res,
+  ParseIntPipe,
+} from '@nestjs/common';
 import type { Response } from 'express';
 import { SauvegardeService } from './sauvegarde.service';
 import { CreateSauvegardeDto } from './dto/create-sauvegarde.dto';
@@ -28,7 +37,10 @@ export class SauvegardeController {
   }
 
   @Get(':id/telecharger')
-  async telecharger(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
+  async telecharger(
+    @Param('id', ParseIntPipe) id: number,
+    @Res() res: Response,
+  ) {
     const { filePath, fileName } = await this.sauvegardeService.telecharger(id);
     res.download(filePath, fileName);
   }

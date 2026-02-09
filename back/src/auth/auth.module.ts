@@ -15,10 +15,7 @@ import { JournalModule } from '../journal/journal.module';
     TypeOrmModule.forFeature([Utilisateur, Role, Session, TentativeConnexion]),
     JournalModule,
   ],
-  providers: [
-    AuthService,
-    { provide: APP_GUARD, useClass: SessionAuthGuard },
-  ],
+  providers: [AuthService, { provide: APP_GUARD, useClass: SessionAuthGuard }],
   controllers: [AuthController],
   exports: [AuthService],
 })

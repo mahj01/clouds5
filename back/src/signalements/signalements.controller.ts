@@ -1,6 +1,27 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, ParseIntPipe, Query, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Delete,
+  ParseIntPipe,
+  Query,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiResponse, ApiOperation, ApiBearerAuth, ApiQuery, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiResponse,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiQuery,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { SignalementsService } from './signalements.service';
@@ -69,32 +90,50 @@ export class SignalementsController {
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { utilisateurResolutionId: number; commentaire?: string },
   ) {
-    return this.svc.resoudre(id, body.utilisateurResolutionId, body.commentaire);
+    return this.svc.resoudre(
+      id,
+      body.utilisateurResolutionId,
+      body.commentaire,
+    );
   }
 
   @Post(':id/photo')
   @ApiOperation({ summary: 'Upload photo for a signalement' })
   @ApiConsumes('multipart/form-data')
-  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { file: { type: 'string', format: 'binary' } },
+    },
+  })
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
         destination: './uploads',
         filename: (_req, file, cb) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
           cb(null, `signalement-${uniqueSuffix}${extname(file.originalname)}`);
         },
       }),
       limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB max
       fileFilter: (_req, file, cb) => {
         if (!file.mimetype.match(/^image\/(jpeg|png|gif|webp)$/)) {
-          return cb(new BadRequestException('Seuls les fichiers image (JPEG, PNG, GIF, WebP) sont autorisés.'), false);
+          return cb(
+            new BadRequestException(
+              'Seuls les fichiers image (JPEG, PNG, GIF, WebP) sont autorisés.',
+            ),
+            false,
+          );
         }
         cb(null, true);
       },
     }),
   )
-  async uploadPhoto(@Param('id', ParseIntPipe) id: number, @UploadedFile() file: Express.Multer.File) {
+  async uploadPhoto(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
     if (!file) throw new BadRequestException('Aucun fichier fourni.');
     const photoUrl = `/uploads/${file.filename}`;
     await this.svc.updatePhoto(id, photoUrl);
@@ -103,7 +142,10 @@ export class SignalementsController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Update signalement' })
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateSignalementDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateSignalementDto,
+  ) {
     return this.svc.update(id, dto);
   }
 

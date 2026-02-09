@@ -1,5 +1,19 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, ParseIntPipe } from '@nestjs/common';
-import { ApiTags, ApiResponse, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Delete,
+  ParseIntPipe,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiResponse,
+  ApiOperation,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { TentativeConnexionService } from './tentative-connexion.service';
 import { CreateTentativeConnexionDto } from './dto/create-tentative-connexion.dto';
 import { UpdateTentativeConnexionDto } from './dto/update-tentative-connexion.dto';
@@ -26,7 +40,10 @@ export class TentativeConnexionController {
     return this.svc.create(dto);
   }
   @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateTentativeConnexionDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateTentativeConnexionDto,
+  ) {
     return this.svc.update(id, dto);
   }
   @Delete(':id')

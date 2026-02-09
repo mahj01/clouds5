@@ -7,11 +7,15 @@ import { Entreprise } from '../entreprises/entreprise.entity';
 import { Signalement } from '../signalements/signalement.entity';
 import { Session } from '../sessions/session.entity';
 import { StatutCompte } from '../statut_compte/statut-compte.entity';
+import { FirestoreDiffSyncService } from './firestore-diff-sync.service';
 
 @Injectable()
 export class FirestoreSyncService implements OnModuleInit {
   private readonly logger = new Logger(FirestoreSyncService.name);
-  constructor(private readonly ds: DataSource) {}
+  constructor(
+    private readonly ds: DataSource,
+    private readonly diffSync: FirestoreDiffSyncService,
+  ) {}
 
   async onModuleInit() {
     // Run sync in background - don't block app startup
@@ -23,10 +27,16 @@ export class FirestoreSyncService implements OnModuleInit {
     // Run sync asynchronously without awaiting - non-blocking
     this.syncAll()
       .then(() => this.logger.log('Initial Firestore sync completed'))
-      .catch((e) => this.logger.warn('Firestore sync failed (no internet?): ' + String(e?.message ?? e)));
+      .catch((e) =>
+        this.logger.warn(
+          'Firestore sync failed (no internet?): ' + String(e?.message ?? e),
+        ),
+      );
   }
 
-  private async syncEntity(entity: any): Promise<{ collection: string; sent: number; skipped: number }> {
+  private async syncEntity(
+    entity: any,
+  ): Promise<{ collection: string; sent: number; skipped: number }> {
     const repo = this.ds.getRepository(entity);
     const rows = await repo.find();
     const collectionName = repo.metadata.tableName || entity.name;
@@ -34,23 +44,42 @@ export class FirestoreSyncService implements OnModuleInit {
     let sent = 0;
     let skipped = 0;
     for (const row of rows) {
-      const id = (row as any).id ?? (row as any)[repo.metadata.primaryColumns[0].propertyName];
+      const id =
+        (row as any).id ??
+        (row as any)[repo.metadata.primaryColumns[0].propertyName];
       const docRef = col.doc(String(id));
       const existing = await docRef.get();
       if (existing.exists) {
         skipped++;
         continue;
       }
-      const data = JSON.parse(JSON.stringify(row, (_k, v) => (v instanceof Date ? v.toISOString() : v)));
+      const data = JSON.parse(
+        JSON.stringify(row, (_k, v) =>
+          v instanceof Date ? v.toISOString() : v,
+        ),
+      );
       await docRef.set(data, { merge: true });
       sent++;
     }
-    this.logger.log(`Synced '${collectionName}': ${sent} envoyé(s), ${skipped} déjà existant(s) (total ${rows.length})`);
+    this.logger.log(
+      `Synced '${collectionName}': ${sent} envoyé(s), ${skipped} déjà existant(s) (total ${rows.length})`,
+    );
     return { collection: collectionName, sent, skipped };
   }
 
-  async syncAll(): Promise<{ totalSent: number; totalSkipped: number; details: { collection: string; sent: number; skipped: number }[] }> {
-    const entities = [Role, Utilisateur, Entreprise, Signalement, Session, StatutCompte];
+  async syncAll(): Promise<{
+    totalSent: number;
+    totalSkipped: number;
+    details: { collection: string; sent: number; skipped: number }[];
+  }> {
+    const entities = [
+      Role,
+      Utilisateur,
+      Entreprise,
+      Signalement,
+      Session,
+      StatutCompte,
+    ];
     const details: { collection: string; sent: number; skipped: number }[] = [];
     let totalSent = 0;
     let totalSkipped = 0;
@@ -61,7 +90,9 @@ export class FirestoreSyncService implements OnModuleInit {
         totalSent += result.sent;
         totalSkipped += result.skipped;
       } catch (err) {
-        this.logger.warn(`Failed to sync entity ${e.name}: ${String(err?.message ?? err)}`);
+        this.logger.warn(
+          `Failed to sync entity ${e.name}: ${String(err?.message ?? err)}`,
+        );
       }
     }
     return { totalSent, totalSkipped, details };
@@ -72,7 +103,11 @@ export class FirestoreSyncService implements OnModuleInit {
    * et les insère dans la base de données PostgreSQL locale.
    * Les docs déjà synchronisés (synced_to_pg === true) sont ignorés.
    */
-  async syncSignalementsFromFirestore(): Promise<{ imported: number; skipped: number; errors: string[] }> {
+  async syncSignalementsFromFirestore(): Promise<{
+    imported: number;
+    skipped: number;
+    errors: string[];
+  }> {
     const col = firestore.collection('signalement');
     const snapshot = await col.get();
 
@@ -101,7 +136,20 @@ export class FirestoreSyncService implements OnModuleInit {
       });
       if (existingDuplicate) {
         // Mettre à jour le pg_id dans Firestore pour cohérence
-        await col.doc(doc.id).update({ synced_to_pg: true, pg_id: existingDuplicate.id });
+        await col
+          .doc(doc.id)
+          .update({ synced_to_pg: true, pg_id: existingDuplicate.id });
+
+        // Keep a canonical mapping to the mobile Firestore doc id on the PG row
+        try {
+          (existingDuplicate as any).firestoreDocId = doc.id;
+          await signalementRepo.save(existingDuplicate);
+        } catch (mapErr) {
+          this.logger.warn(
+            `Failed to persist firestoreDocId mapping for PG ${existingDuplicate.id}: ${String(mapErr)}`,
+          );
+        }
+
         skipped++;
         continue;
       }
@@ -111,29 +159,39 @@ export class FirestoreSyncService implements OnModuleInit {
         let utilisateur: Utilisateur | null = null;
 
         if (data.id_utilisateur) {
-          utilisateur = await utilisateurRepo.findOne({ where: { id: Number(data.id_utilisateur) } });
+          utilisateur = await utilisateurRepo.findOne({
+            where: { id: Number(data.id_utilisateur) },
+          });
         }
 
         if (!utilisateur && data.utilisateurUid) {
-          utilisateur = await utilisateurRepo.findOne({ where: { firebaseUid: data.utilisateurUid } });
+          utilisateur = await utilisateurRepo.findOne({
+            where: { firebaseUid: data.utilisateurUid },
+          });
         }
 
         // Chercher par email (le champ utilisateurEmail est stocké par l'appli mobile)
         if (!utilisateur && data.utilisateurEmail) {
-          utilisateur = await utilisateurRepo.findOne({ where: { email: data.utilisateurEmail } });
+          utilisateur = await utilisateurRepo.findOne({
+            where: { email: data.utilisateurEmail },
+          });
 
           // Si trouvé par email, lier le firebase_uid pour les prochaines fois
           if (utilisateur && data.utilisateurUid && !utilisateur.firebaseUid) {
             utilisateur.firebaseUid = data.utilisateurUid;
             await utilisateurRepo.save(utilisateur);
-            this.logger.log(`Linked firebase UID ${data.utilisateurUid} to PG user ${utilisateur.id} (${data.utilisateurEmail})`);
+            this.logger.log(
+              `Linked firebase UID ${data.utilisateurUid} to PG user ${utilisateur.id} (${data.utilisateurEmail})`,
+            );
           }
         }
 
         // Dernier recours : auto-créer l'utilisateur PG à partir des infos du doc Firestore
         if (!utilisateur && data.utilisateurEmail) {
           const roleRepo = this.ds.getRepository(Role);
-          const defaultRole = await roleRepo.findOne({ where: { nom: 'citoyen' } });
+          const defaultRole = await roleRepo.findOne({
+            where: { nom: 'citoyen' },
+          });
 
           const newUser = utilisateurRepo.create({
             email: data.utilisateurEmail,
@@ -142,31 +200,42 @@ export class FirestoreSyncService implements OnModuleInit {
             role: defaultRole || undefined,
           });
           utilisateur = await utilisateurRepo.save(newUser);
-          this.logger.log(`Auto-created PG user ${utilisateur.id} for ${data.utilisateurEmail} (uid=${data.utilisateurUid})`);
+          this.logger.log(
+            `Auto-created PG user ${utilisateur.id} for ${data.utilisateurEmail} (uid=${data.utilisateurUid})`,
+          );
         }
 
         // Si toujours pas trouvé et qu'on a un UID, chercher l'email dans la collection email_uid de Firestore
         if (!utilisateur && data.utilisateurUid) {
           try {
             const emailUidCol = firestore.collection('email_uid');
-            const emailSnap = await emailUidCol.where('uid', '==', data.utilisateurUid).limit(1).get();
+            const emailSnap = await emailUidCol
+              .where('uid', '==', data.utilisateurUid)
+              .limit(1)
+              .get();
             if (!emailSnap.empty) {
               const emailDoc = emailSnap.docs[0].data();
               const resolvedEmail = emailDoc?.email;
               if (resolvedEmail) {
                 // Chercher l'utilisateur par cet email
-                utilisateur = await utilisateurRepo.findOne({ where: { email: resolvedEmail } });
+                utilisateur = await utilisateurRepo.findOne({
+                  where: { email: resolvedEmail },
+                });
 
                 if (utilisateur && !utilisateur.firebaseUid) {
                   utilisateur.firebaseUid = data.utilisateurUid;
                   await utilisateurRepo.save(utilisateur);
-                  this.logger.log(`Linked firebase UID ${data.utilisateurUid} to PG user ${utilisateur.id} via email_uid (${resolvedEmail})`);
+                  this.logger.log(
+                    `Linked firebase UID ${data.utilisateurUid} to PG user ${utilisateur.id} via email_uid (${resolvedEmail})`,
+                  );
                 }
 
                 // Si toujours pas trouvé : auto-créer
                 if (!utilisateur) {
                   const roleRepo = this.ds.getRepository(Role);
-                  const defaultRole = await roleRepo.findOne({ where: { nom: 'citoyen' } });
+                  const defaultRole = await roleRepo.findOne({
+                    where: { nom: 'citoyen' },
+                  });
 
                   const newUser = utilisateurRepo.create({
                     email: resolvedEmail,
@@ -175,17 +244,23 @@ export class FirestoreSyncService implements OnModuleInit {
                     role: defaultRole || undefined,
                   });
                   utilisateur = await utilisateurRepo.save(newUser);
-                  this.logger.log(`Auto-created PG user ${utilisateur.id} via email_uid for ${resolvedEmail} (uid=${data.utilisateurUid})`);
+                  this.logger.log(
+                    `Auto-created PG user ${utilisateur.id} via email_uid for ${resolvedEmail} (uid=${data.utilisateurUid})`,
+                  );
                 }
               }
             }
           } catch (emailUidErr) {
-            this.logger.warn(`email_uid lookup failed for UID ${data.utilisateurUid}: ${String(emailUidErr?.message ?? emailUidErr)}`);
+            this.logger.warn(
+              `email_uid lookup failed for UID ${data.utilisateurUid}: ${String(emailUidErr?.message ?? emailUidErr)}`,
+            );
           }
         }
 
         if (!utilisateur) {
-          errors.push(`Doc ${doc.id}: utilisateur introuvable (id=${data.id_utilisateur}, uid=${data.utilisateurUid}, email=${data.utilisateurEmail})`);
+          errors.push(
+            `Doc ${doc.id}: utilisateur introuvable (id=${data.id_utilisateur}, uid=${data.utilisateurUid}, email=${data.utilisateurEmail})`,
+          );
           continue;
         }
 
@@ -216,9 +291,11 @@ export class FirestoreSyncService implements OnModuleInit {
           longitude: String(data.longitude),
           statut,
           priorite: 1,
-          surfaceM2: data.surface_m2 != null ? String(data.surface_m2) : undefined,
+          surfaceM2:
+            data.surface_m2 != null ? String(data.surface_m2) : undefined,
           budget: data.budget != null ? String(data.budget) : undefined,
-          avancement: statut === 'resolu' ? 100 : statut === 'en_cours' ? 50 : 0,
+          avancement:
+            statut === 'resolu' ? 100 : statut === 'en_cours' ? 50 : 0,
           dateSignalement,
           utilisateur,
         });
@@ -228,14 +305,46 @@ export class FirestoreSyncService implements OnModuleInit {
         // Marquer le doc Firestore comme synchronisé (évite les doublons)
         await col.doc(doc.id).update({ synced_to_pg: true, pg_id: saved.id });
 
+        // Persist mapping PG -> Firestore doc id
+        try {
+          (saved as any).firestoreDocId = doc.id;
+          await signalementRepo.save(saved);
+        } catch (mapErr) {
+          this.logger.warn(
+            `Failed to persist firestoreDocId mapping for imported PG ${saved.id}: ${String(mapErr)}`,
+          );
+        }
+
+        // Also immediately mirror current PG status to the original mobile-created doc
+        // and ensure the pg mirror doc exists.
+        try {
+          await col.doc(doc.id).set(
+            {
+              statut: saved.statut,
+              avancement: saved.avancement,
+              updated_from: 'pg',
+            },
+            { merge: true },
+          );
+          await this.diffSync.ensurePgSignalementMirror(saved.id);
+        } catch (mirrorErr) {
+          this.logger.warn(
+            `Firestore mirror update failed for imported doc ${doc.id}: ${String(mirrorErr?.message ?? mirrorErr)}`,
+          );
+        }
+
         imported++;
-        this.logger.log(`Imported Firestore signalement ${doc.id} → PG id ${saved.id}`);
+        this.logger.log(
+          `Imported Firestore signalement ${doc.id} → PG id ${saved.id}`,
+        );
       } catch (err) {
         errors.push(`Doc ${doc.id}: ${String(err?.message ?? err)}`);
       }
     }
 
-    this.logger.log(`syncSignalementsFromFirestore: imported=${imported}, skipped=${skipped}, errors=${errors.length}`);
+    this.logger.log(
+      `syncSignalementsFromFirestore: imported=${imported}, skipped=${skipped}, errors=${errors.length}`,
+    );
     return { imported, skipped, errors };
   }
 }

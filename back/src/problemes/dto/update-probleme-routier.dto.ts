@@ -1,4 +1,12 @@
-import { IsString, IsOptional, IsNumber, IsInt, IsEnum, MaxLength, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsInt,
+  IsEnum,
+  MaxLength,
+  IsDateString,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { StatutProbleme } from '../probleme-routier.entity';

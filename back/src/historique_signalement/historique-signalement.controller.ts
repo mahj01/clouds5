@@ -1,5 +1,19 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, ParseIntPipe } from '@nestjs/common';
-import { ApiTags, ApiResponse, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Delete,
+  ParseIntPipe,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiResponse,
+  ApiOperation,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { HistoriqueSignalementService } from './historique-signalement.service';
 import { CreateHistoriqueSignalementDto } from './dto/create-historique-signalement.dto';
 import { UpdateHistoriqueSignalementDto } from './dto/update-historique-signalement.dto';
@@ -19,7 +33,9 @@ export class HistoriqueSignalementController {
 
   @Get('signalement/:signalementId')
   @ApiOperation({ summary: 'Get historique by signalement ID' })
-  findBySignalement(@Param('signalementId', ParseIntPipe) signalementId: number) {
+  findBySignalement(
+    @Param('signalementId', ParseIntPipe) signalementId: number,
+  ) {
     return this.svc.findBySignalement(signalementId);
   }
 
@@ -32,7 +48,10 @@ export class HistoriqueSignalementController {
     return this.svc.create(dto);
   }
   @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateHistoriqueSignalementDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateHistoriqueSignalementDto,
+  ) {
     return this.svc.update(id, dto);
   }
   @Delete(':id')

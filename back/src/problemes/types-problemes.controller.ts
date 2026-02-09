@@ -1,5 +1,19 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, ParseIntPipe } from '@nestjs/common';
-import { ApiTags, ApiResponse, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Delete,
+  ParseIntPipe,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiResponse,
+  ApiOperation,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { TypesProblemesService } from './types-problemes.service';
 import { CreateTypeProblemeDto } from './dto/create-type-probleme.dto';
 import { UpdateTypeProblemeDto } from './dto/update-type-probleme.dto';
@@ -38,7 +52,10 @@ export class TypesProblemesController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Met à jour un type de problème' })
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateTypeProblemeDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateTypeProblemeDto,
+  ) {
     return this.svc.update(id, dto);
   }
 

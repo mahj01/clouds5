@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 
 @Entity('session')
@@ -9,7 +15,11 @@ export class Session {
   @Column({ name: 'token', type: 'text' })
   token: string;
 
-  @Column({ name: 'date_creation', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'date_creation',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   dateCreation: Date;
 
   @Column({ name: 'date_expiration', type: 'timestamp' })

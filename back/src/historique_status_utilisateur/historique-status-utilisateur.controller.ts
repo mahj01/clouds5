@@ -1,5 +1,19 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, ParseIntPipe } from '@nestjs/common';
-import { ApiTags, ApiResponse, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Delete,
+  ParseIntPipe,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiResponse,
+  ApiOperation,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { HistoriqueStatusUtilisateurService } from './historique-status-utilisateur.service';
 import { CreateHistoriqueStatusUtilisateurDto } from './dto/create-historique-status-utilisateur.dto';
 import { UpdateHistoriqueStatusUtilisateurDto } from './dto/update-historique-status-utilisateur.dto';
@@ -26,7 +40,10 @@ export class HistoriqueStatusUtilisateurController {
     return this.svc.create(dto);
   }
   @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateHistoriqueStatusUtilisateurDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateHistoriqueStatusUtilisateurDto,
+  ) {
     return this.svc.update(id, dto);
   }
   @Delete(':id')

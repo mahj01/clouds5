@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
@@ -12,19 +18,29 @@ import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import { JournalService } from '../journal/journal.service';
 
-import { DEFAULT_AUTH_SESSION_TTL_MINUTES, MAX_LOGIN_ATTEMPTS } from './auth.constants';
+import {
+  DEFAULT_AUTH_SESSION_TTL_MINUTES,
+  MAX_LOGIN_ATTEMPTS,
+} from './auth.constants';
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(Utilisateur) private users: Repository<Utilisateur>,
     @InjectRepository(Role) private role: Repository<Role>,
     @InjectRepository(Session) private sessions: Repository<Session>,
-    @InjectRepository(TentativeConnexion) private attempts: Repository<TentativeConnexion>,
+    @InjectRepository(TentativeConnexion)
+    private attempts: Repository<TentativeConnexion>,
     private readonly config: ConfigService,
     private readonly journalService: JournalService,
   ) {}
 
-  private async logAction(action: string, ressource: string, utilisateur?: Utilisateur, niveau: string = 'info', details?: string) {
+  private async logAction(
+    action: string,
+    ressource: string,
+    utilisateur?: Utilisateur,
+    niveau: string = 'info',
+    details?: string,
+  ) {
     try {
       await this.journalService.create({
         action,
@@ -77,7 +93,10 @@ export class AuthService {
 
   private async createSessionForUser(user: Utilisateur) {
     const ttlMinutes = parseInt(
-      this.config.get('AUTH_SESSION_TTL_MINUTES', String(DEFAULT_AUTH_SESSION_TTL_MINUTES)),
+      this.config.get(
+        'AUTH_SESSION_TTL_MINUTES',
+        String(DEFAULT_AUTH_SESSION_TTL_MINUTES),
+      ),
       10,
     );
     const expires = new Date(Date.now() + ttlMinutes * 60 * 1000);
@@ -99,7 +118,10 @@ export class AuthService {
   async login(email?: string, motDePasse?: string) {
     // If credentials provided, try to find matching user
     if (email && motDePasse) {
-      const user = await this.users.findOne({ where: { email }, relations: ['role'] });
+      const user = await this.users.findOne({
+        where: { email },
+        relations: ['role'],
+      });
 
       if (!user) throw new NotFoundException('Utilisateur not found');
 
@@ -122,12 +144,24 @@ export class AuthService {
         if (remainingAfter <= 0) user.dateBlocage = new Date();
         await this.users.save(user);
         await this.recordAttempt(user, false);
-        
+
         // Log failed login attempt
-        await this.logAction('LOGIN_FAILED', 'auth', user, 'warning', `Tentative de connexion échouée pour ${user.email}. Tentatives restantes: ${remainingAfter}`);
-        
+        await this.logAction(
+          'LOGIN_FAILED',
+          'auth',
+          user,
+          'warning',
+          `Tentative de connexion échouée pour ${user.email}. Tentatives restantes: ${remainingAfter}`,
+        );
+
         if (remainingAfter <= 0) {
-          await this.logAction('ACCOUNT_LOCKED', 'auth', user, 'error', `Compte bloqué pour ${user.email} après trop de tentatives`);
+          await this.logAction(
+            'ACCOUNT_LOCKED',
+            'auth',
+            user,
+            'error',
+            `Compte bloqué pour ${user.email} après trop de tentatives`,
+          );
           this.throwLocked();
         }
         this.throwInvalidCredentials(remainingAfter);
@@ -138,27 +172,42 @@ export class AuthService {
       user.dateBlocage = null;
       await this.users.save(user);
       await this.recordAttempt(user, true);
-      
+
       // Log successful login
-      await this.logAction('LOGIN', 'auth', user, 'info', `Connexion réussie pour ${user.email}`);
-      
+      await this.logAction(
+        'LOGIN',
+        'auth',
+        user,
+        'info',
+        `Connexion réussie pour ${user.email}`,
+      );
+
       // Authentification locale uniquement - pas de Firebase Auth
       return this.createSessionForUser(user);
     }
-    
 
     // No credentials -> return default visiteur account if exists
-    const visiteurRole = await this.role.findOne({ where: { nom: 'visiteur' } });
+    const visiteurRole = await this.role.findOne({
+      where: { nom: 'visiteur' },
+    });
     if (!visiteurRole) throw new NotFoundException('Visiteur role not found');
-    const visiteur = await this.users.findOne({ where: { role: { id: visiteurRole.id } }, relations: ['role'] });
+    const visiteur = await this.users.findOne({
+      where: { role: { id: visiteurRole.id } },
+      relations: ['role'],
+    });
     if (!visiteur) throw new NotFoundException('Visiteur account not found');
     return this.createSessionForUser(visiteur);
   }
 
   async visiteur() {
-    const visiteurRole = await this.role.findOne({ where: { nom: 'visiteur' } });
+    const visiteurRole = await this.role.findOne({
+      where: { nom: 'visiteur' },
+    });
     if (!visiteurRole) throw new NotFoundException('Visiteur role not found');
-    const visiteur = await this.users.findOne({ where: { role: { id: visiteurRole.id } }, relations: ['role'] });
+    const visiteur = await this.users.findOne({
+      where: { role: { id: visiteurRole.id } },
+      relations: ['role'],
+    });
     if (!visiteur) throw new NotFoundException('Visiteur account not found');
     return this.createSessionForUser(visiteur);
   }
@@ -182,21 +231,29 @@ export class AuthService {
       role,
     });
     const savedUser = await this.users.save(user);
-    
+
     // Log registration
-    await this.logAction('REGISTER', 'auth', savedUser, 'info', `Nouvel utilisateur inscrit: ${dto.email}`);
-    
+    await this.logAction(
+      'REGISTER',
+      'auth',
+      savedUser,
+      'info',
+      `Nouvel utilisateur inscrit: ${dto.email}`,
+    );
+
     return savedUser;
   }
-
-
 
   /**
    * Synchronise les utilisateurs non synchronisés vers Firestore.
    * Seuls les utilisateurs sans firebaseUid sont envoyés.
    * Retourne le nombre d'utilisateurs synchronisés et les erreurs éventuelles.
    */
-  async syncToFirebase(): Promise<{ synced: number; errors: string[]; total: number }> {
+  async syncToFirebase(): Promise<{
+    synced: number;
+    errors: string[];
+    total: number;
+  }> {
     // Récupérer les utilisateurs non synchronisés (firebaseUid est null ou vide)
     const unsyncedUsers = await this.users.find({
       where: { firebaseUid: null as any },
@@ -216,7 +273,7 @@ export class AuthService {
         // Générer le firebaseUid
         const syncedUid = `synced_${Date.now()}`;
         const docId = String(user.id);
-        
+
         // Écrire dans Firestore collection 'utilisateur' avec le firebaseUid
         const userData = {
           id: user.id,
@@ -226,18 +283,25 @@ export class AuthService {
           motDePasse: user.motDePasse,
           nbTentatives: user.nbTentatives,
           dateBlocage: user.dateBlocage ? user.dateBlocage.toISOString() : null,
-          dateCreation: user.dateCreation ? user.dateCreation.toISOString() : new Date().toISOString(),
+          dateCreation: user.dateCreation
+            ? user.dateCreation.toISOString()
+            : new Date().toISOString(),
           firebaseUid: syncedUid,
         };
 
-        await firestore.collection('utilisateur').doc(docId).set(userData, { merge: true });
-        
+        await firestore
+          .collection('utilisateur')
+          .doc(docId)
+          .set(userData, { merge: true });
+
         // Marquer comme synchronisé dans PostgreSQL
         user.firebaseUid = syncedUid;
         await this.users.save(user);
         synced++;
       } catch (e) {
-        errors.push(`${user.email}: ${e instanceof Error ? e.message : 'Firestore error'}`);
+        errors.push(
+          `${user.email}: ${e instanceof Error ? e.message : 'Firestore error'}`,
+        );
       }
     }
 
@@ -250,15 +314,20 @@ export class AuthService {
   async getUnsyncedCount(): Promise<{ count: number }> {
     // Compter les utilisateurs non synchronisés (firebaseUid IS NULL)
     // en excluant les visiteurs
-    const visiteurRole = await this.role.findOne({ where: { nom: 'visiteur' } });
-    
-    const qb = this.users.createQueryBuilder('u')
+    const visiteurRole = await this.role.findOne({
+      where: { nom: 'visiteur' },
+    });
+
+    const qb = this.users
+      .createQueryBuilder('u')
       .where('u.firebase_uid IS NULL');
-    
+
     if (visiteurRole) {
-      qb.andWhere('(u.id_role IS NULL OR u.id_role != :visiteurRoleId)', { visiteurRoleId: visiteurRole.id });
+      qb.andWhere('(u.id_role IS NULL OR u.id_role != :visiteurRoleId)', {
+        visiteurRoleId: visiteurRole.id,
+      });
     }
-    
+
     const count = await qb.getCount();
     return { count };
   }

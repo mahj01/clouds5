@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Role } from '../roles/role.entity';
 
 @Entity('utilisateur')
@@ -29,10 +35,19 @@ export class Utilisateur {
   @Column({ name: 'date_blocage', type: 'timestamp', nullable: true })
   dateBlocage?: Date | null;
 
-  @Column({ name: 'date_creation', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'date_creation',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   dateCreation: Date;
 
   // Firebase UID - null si pas encore synchronisé avec Firebase
-  @Column({ name: 'firebase_uid', type: 'varchar', length: 128, nullable: true })
+  @Column({
+    name: 'firebase_uid',
+    type: 'varchar',
+    length: 128,
+    nullable: true,
+  })
   firebaseUid?: string | null;
 }

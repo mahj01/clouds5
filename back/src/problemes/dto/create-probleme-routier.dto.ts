@@ -1,4 +1,11 @@
-import { IsString, IsOptional, IsNumber, IsInt, IsEnum, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsInt,
+  IsEnum,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { StatutProbleme } from '../probleme-routier.entity';
@@ -9,7 +16,10 @@ export class CreateProblemeRoutierDto {
   @MaxLength(150)
   titre: string;
 
-  @ApiProperty({ required: false, example: 'Grand trou au niveau du carrefour' })
+  @ApiProperty({
+    required: false,
+    example: 'Grand trou au niveau du carrefour',
+  })
   @IsOptional()
   @IsString()
   description?: string;
@@ -24,13 +34,20 @@ export class CreateProblemeRoutierDto {
   @IsNumber()
   longitude: number;
 
-  @ApiProperty({ required: false, example: 'Avenue de la Liberté, Antananarivo' })
+  @ApiProperty({
+    required: false,
+    example: 'Avenue de la Liberté, Antananarivo',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(255)
   adresse?: string;
 
-  @ApiProperty({ required: false, enum: StatutProbleme, default: StatutProbleme.ACTIF })
+  @ApiProperty({
+    required: false,
+    enum: StatutProbleme,
+    default: StatutProbleme.ACTIF,
+  })
   @IsOptional()
   @IsEnum(StatutProbleme)
   statut?: StatutProbleme;

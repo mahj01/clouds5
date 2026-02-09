@@ -16,7 +16,9 @@ export class JournalService {
   async create(dto: CreateJournalDto): Promise<JournalAcces> {
     let utilisateur: Utilisateur | undefined;
     if (dto.utilisateurId) {
-      const user = await this.userRepo.findOne({ where: { id: dto.utilisateurId } });
+      const user = await this.userRepo.findOne({
+        where: { id: dto.utilisateurId },
+      });
       if (user) utilisateur = user;
     }
 
@@ -33,8 +35,11 @@ export class JournalService {
     return this.repo.save(entry);
   }
 
-  async findAll(filter?: FilterJournalDto): Promise<{ data: JournalAcces[]; total: number }> {
-    const qb = this.repo.createQueryBuilder('journal')
+  async findAll(
+    filter?: FilterJournalDto,
+  ): Promise<{ data: JournalAcces[]; total: number }> {
+    const qb = this.repo
+      .createQueryBuilder('journal')
       .leftJoinAndSelect('journal.utilisateur', 'utilisateur')
       .orderBy('journal.dateAction', 'DESC');
 
@@ -42,19 +47,27 @@ export class JournalService {
       qb.andWhere('journal.action = :action', { action: filter.action });
     }
     if (filter?.ressource) {
-      qb.andWhere('journal.ressource ILIKE :ressource', { ressource: `%${filter.ressource}%` });
+      qb.andWhere('journal.ressource ILIKE :ressource', {
+        ressource: `%${filter.ressource}%`,
+      });
     }
     if (filter?.niveau) {
       qb.andWhere('journal.niveau = :niveau', { niveau: filter.niveau });
     }
     if (filter?.utilisateurId) {
-      qb.andWhere('journal.utilisateur.id = :userId', { userId: filter.utilisateurId });
+      qb.andWhere('journal.utilisateur.id = :userId', {
+        userId: filter.utilisateurId,
+      });
     }
     if (filter?.dateDebut) {
-      qb.andWhere('journal.dateAction >= :dateDebut', { dateDebut: new Date(filter.dateDebut) });
+      qb.andWhere('journal.dateAction >= :dateDebut', {
+        dateDebut: new Date(filter.dateDebut),
+      });
     }
     if (filter?.dateFin) {
-      qb.andWhere('journal.dateAction <= :dateFin', { dateFin: new Date(filter.dateFin) });
+      qb.andWhere('journal.dateAction <= :dateFin', {
+        dateFin: new Date(filter.dateFin),
+      });
     }
 
     const total = await qb.getCount();
@@ -110,8 +123,14 @@ export class JournalService {
 
     return {
       totalEntries,
-      parAction: parAction.map(r => ({ action: r.action, count: Number(r.count) })),
-      parNiveau: parNiveau.map(r => ({ niveau: r.niveau, count: Number(r.count) })),
+      parAction: parAction.map((r) => ({
+        action: r.action,
+        count: Number(r.count),
+      })),
+      parNiveau: parNiveau.map((r) => ({
+        niveau: r.niveau,
+        count: Number(r.count),
+      })),
       dernieres24h,
     };
   }

@@ -9,21 +9,32 @@ import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 @Injectable()
 export class SynchronisationsService {
   constructor(
-    @InjectRepository(Synchronisation) private repo: Repository<Synchronisation>,
+    @InjectRepository(Synchronisation)
+    private repo: Repository<Synchronisation>,
     @InjectRepository(Utilisateur) private userRepo: Repository<Utilisateur>,
   ) {}
 
   async create(dto: CreateSynchronisationDto) {
-    const manager = await this.userRepo.findOne({ where: { id: dto.managerId } });
-    if (!manager) throw new NotFoundException('Manager (Utilisateur) not found');
-    const entity = this.repo.create({ typeSync: dto.typeSync, statut: dto.statut, manager });
+    const manager = await this.userRepo.findOne({
+      where: { id: dto.managerId },
+    });
+    if (!manager)
+      throw new NotFoundException('Manager (Utilisateur) not found');
+    const entity = this.repo.create({
+      typeSync: dto.typeSync,
+      statut: dto.statut,
+      manager,
+    });
     return this.repo.save(entity);
   }
   findAll() {
     return this.repo.find({ relations: ['manager'] });
   }
   async findOne(id: number) {
-    const item = await this.repo.findOne({ where: { id }, relations: ['manager'] });
+    const item = await this.repo.findOne({
+      where: { id },
+      relations: ['manager'],
+    });
     if (!item) throw new NotFoundException('Synchronisation not found');
     return item;
   }
