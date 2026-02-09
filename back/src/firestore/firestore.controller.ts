@@ -7,8 +7,7 @@ export class FirestoreController {
 
   @Post('sync')
   async syncAll() {
-    await this.sync.syncAll();
-    return { status: 'ok' };
+    return this.sync.syncAll();
   }
 
   @Post('sync-signalements')

@@ -26,29 +26,45 @@ export class FirestoreSyncService implements OnModuleInit {
       .catch((e) => this.logger.warn('Firestore sync failed (no internet?): ' + String(e?.message ?? e)));
   }
 
-  private async syncEntity(entity: any) {
+  private async syncEntity(entity: any): Promise<{ collection: string; sent: number; skipped: number }> {
     const repo = this.ds.getRepository(entity);
     const rows = await repo.find();
     const collectionName = repo.metadata.tableName || entity.name;
     const col = firestore.collection(collectionName);
+    let sent = 0;
+    let skipped = 0;
     for (const row of rows) {
       const id = (row as any).id ?? (row as any)[repo.metadata.primaryColumns[0].propertyName];
+      const docRef = col.doc(String(id));
+      const existing = await docRef.get();
+      if (existing.exists) {
+        skipped++;
+        continue;
+      }
       const data = JSON.parse(JSON.stringify(row, (_k, v) => (v instanceof Date ? v.toISOString() : v)));
-      await col.doc(String(id)).set(data, { merge: true });
+      await docRef.set(data, { merge: true });
+      sent++;
     }
-    this.logger.log(`Synced ${rows.length} records to Firestore collection '${collectionName}'`);
+    this.logger.log(`Synced '${collectionName}': ${sent} envoyé(s), ${skipped} déjà existant(s) (total ${rows.length})`);
+    return { collection: collectionName, sent, skipped };
   }
 
-  async syncAll() {
-    // Add here the entities you want to sync
+  async syncAll(): Promise<{ totalSent: number; totalSkipped: number; details: { collection: string; sent: number; skipped: number }[] }> {
     const entities = [Role, Utilisateur, Entreprise, Signalement, Session, StatutCompte];
+    const details: { collection: string; sent: number; skipped: number }[] = [];
+    let totalSent = 0;
+    let totalSkipped = 0;
     for (const e of entities) {
       try {
-        await this.syncEntity(e);
+        const result = await this.syncEntity(e);
+        details.push(result);
+        totalSent += result.sent;
+        totalSkipped += result.skipped;
       } catch (err) {
         this.logger.warn(`Failed to sync entity ${e.name}: ${String(err?.message ?? err)}`);
       }
     }
+    return { totalSent, totalSkipped, details };
   }
 
   /**
@@ -70,14 +86,22 @@ export class FirestoreSyncService implements OnModuleInit {
     for (const doc of snapshot.docs) {
       const data = doc.data();
 
-      // Ignorer les docs déjà synchronisés vers PG
-      if (data.synced_to_pg === true) {
+      // Ignorer les docs poussés depuis PG (ID numérique = vient de syncAll)
+      if (/^\d+$/.test(doc.id)) {
         skipped++;
         continue;
       }
 
-      // Ignorer les docs poussés depuis PG (ID numérique = vient de syncAll)
-      if (/^\d+$/.test(doc.id)) {
+      // Vérifier si ce signalement existe déjà en base (coordonnées exactes + même utilisateur)
+      const existingDuplicate = await signalementRepo.findOne({
+        where: {
+          latitude: String(data.latitude),
+          longitude: String(data.longitude),
+        },
+      });
+      if (existingDuplicate) {
+        // Mettre à jour le pg_id dans Firestore pour cohérence
+        await col.doc(doc.id).update({ synced_to_pg: true, pg_id: existingDuplicate.id });
         skipped++;
         continue;
       }
