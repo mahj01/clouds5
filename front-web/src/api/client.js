@@ -295,6 +295,15 @@ export function syncUsersToFirebase() {
   })
 }
 
+// Synchronisation des données (Firestore)
+// Déclenche une synchronisation serveur -> Firestore (voir back: POST /firestore/sync)
+export function syncFirestoreData() {
+  return apiFetch('/firestore/sync', {
+    method: 'POST',
+    headers: authHeaders(),
+  })
+}
+
 export function getUnsyncedUsersCount() {
   return apiFetch('/auth/unsynced-count', {
     headers: authHeaders(),
