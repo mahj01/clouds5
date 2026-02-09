@@ -5,6 +5,7 @@ import MapPage from '@/views/MapPage.vue';
 import LoginPage from '@/views/LoginPage.vue';
 import SignalementsPage from '@/views/SignalementsPage.vue';
 import RecapitulatifSignalementPage from '@/views/RecapitulatifSignalementPage.vue';
+import MySignalementsPage from '@/views/MySignalementsPage.vue';
 
 
 const routes: Array<RouteRecordRaw> = [
@@ -36,6 +37,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/recap-signalements',
     name: 'RecapSignalements',
     component: RecapitulatifSignalementPage,
+  },
+  {
+    path: '/mes-signalements',
+    name: 'MesSignalements',
+    component: MySignalementsPage,
   },
 
 ]
