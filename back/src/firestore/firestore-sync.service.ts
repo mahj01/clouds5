@@ -50,4 +50,168 @@ export class FirestoreSyncService implements OnModuleInit {
       }
     }
   }
+
+  /**
+   * Récupère les signalements créés dans Firestore (appli mobile)
+   * et les insère dans la base de données PostgreSQL locale.
+   * Les docs déjà synchronisés (synced_to_pg === true) sont ignorés.
+   */
+  async syncSignalementsFromFirestore(): Promise<{ imported: number; skipped: number; errors: string[] }> {
+    const col = firestore.collection('signalement');
+    const snapshot = await col.get();
+
+    const signalementRepo = this.ds.getRepository(Signalement);
+    const utilisateurRepo = this.ds.getRepository(Utilisateur);
+
+    let imported = 0;
+    let skipped = 0;
+    const errors: string[] = [];
+
+    for (const doc of snapshot.docs) {
+      const data = doc.data();
+
+      // Ignorer les docs déjà synchronisés vers PG
+      if (data.synced_to_pg === true) {
+        skipped++;
+        continue;
+      }
+
+      // Ignorer les docs poussés depuis PG (ID numérique = vient de syncAll)
+      if (/^\d+$/.test(doc.id)) {
+        skipped++;
+        continue;
+      }
+
+      try {
+        // Résoudre l'utilisateur : 1) par id_utilisateur, 2) par firebase UID, 3) par email stocké dans le doc Firestore
+        let utilisateur: Utilisateur | null = null;
+
+        if (data.id_utilisateur) {
+          utilisateur = await utilisateurRepo.findOne({ where: { id: Number(data.id_utilisateur) } });
+        }
+
+        if (!utilisateur && data.utilisateurUid) {
+          utilisateur = await utilisateurRepo.findOne({ where: { firebaseUid: data.utilisateurUid } });
+        }
+
+        // Chercher par email (le champ utilisateurEmail est stocké par l'appli mobile)
+        if (!utilisateur && data.utilisateurEmail) {
+          utilisateur = await utilisateurRepo.findOne({ where: { email: data.utilisateurEmail } });
+
+          // Si trouvé par email, lier le firebase_uid pour les prochaines fois
+          if (utilisateur && data.utilisateurUid && !utilisateur.firebaseUid) {
+            utilisateur.firebaseUid = data.utilisateurUid;
+            await utilisateurRepo.save(utilisateur);
+            this.logger.log(`Linked firebase UID ${data.utilisateurUid} to PG user ${utilisateur.id} (${data.utilisateurEmail})`);
+          }
+        }
+
+        // Dernier recours : auto-créer l'utilisateur PG à partir des infos du doc Firestore
+        if (!utilisateur && data.utilisateurEmail) {
+          const roleRepo = this.ds.getRepository(Role);
+          const defaultRole = await roleRepo.findOne({ where: { nom: 'citoyen' } });
+
+          const newUser = utilisateurRepo.create({
+            email: data.utilisateurEmail,
+            motDePasse: '!!firebase_only!!',
+            firebaseUid: data.utilisateurUid || null,
+            role: defaultRole || undefined,
+          });
+          utilisateur = await utilisateurRepo.save(newUser);
+          this.logger.log(`Auto-created PG user ${utilisateur.id} for ${data.utilisateurEmail} (uid=${data.utilisateurUid})`);
+        }
+
+        // Si toujours pas trouvé et qu'on a un UID, chercher l'email dans la collection email_uid de Firestore
+        if (!utilisateur && data.utilisateurUid) {
+          try {
+            const emailUidCol = firestore.collection('email_uid');
+            const emailSnap = await emailUidCol.where('uid', '==', data.utilisateurUid).limit(1).get();
+            if (!emailSnap.empty) {
+              const emailDoc = emailSnap.docs[0].data();
+              const resolvedEmail = emailDoc?.email;
+              if (resolvedEmail) {
+                // Chercher l'utilisateur par cet email
+                utilisateur = await utilisateurRepo.findOne({ where: { email: resolvedEmail } });
+
+                if (utilisateur && !utilisateur.firebaseUid) {
+                  utilisateur.firebaseUid = data.utilisateurUid;
+                  await utilisateurRepo.save(utilisateur);
+                  this.logger.log(`Linked firebase UID ${data.utilisateurUid} to PG user ${utilisateur.id} via email_uid (${resolvedEmail})`);
+                }
+
+                // Si toujours pas trouvé : auto-créer
+                if (!utilisateur) {
+                  const roleRepo = this.ds.getRepository(Role);
+                  const defaultRole = await roleRepo.findOne({ where: { nom: 'citoyen' } });
+
+                  const newUser = utilisateurRepo.create({
+                    email: resolvedEmail,
+                    motDePasse: '!!firebase_only!!',
+                    firebaseUid: data.utilisateurUid,
+                    role: defaultRole || undefined,
+                  });
+                  utilisateur = await utilisateurRepo.save(newUser);
+                  this.logger.log(`Auto-created PG user ${utilisateur.id} via email_uid for ${resolvedEmail} (uid=${data.utilisateurUid})`);
+                }
+              }
+            }
+          } catch (emailUidErr) {
+            this.logger.warn(`email_uid lookup failed for UID ${data.utilisateurUid}: ${String(emailUidErr?.message ?? emailUidErr)}`);
+          }
+        }
+
+        if (!utilisateur) {
+          errors.push(`Doc ${doc.id}: utilisateur introuvable (id=${data.id_utilisateur}, uid=${data.utilisateurUid}, email=${data.utilisateurEmail})`);
+          continue;
+        }
+
+        // Mapper le statut Firestore vers le statut PG
+        const statutMap: Record<string, string> = {
+          nouveau: 'actif',
+          actif: 'actif',
+          en_cours: 'en_cours',
+          resolu: 'resolu',
+          rejete: 'rejete',
+        };
+        const statut = statutMap[data.statut] || 'actif';
+
+        // Convertir date_signalement (Firestore Timestamp → Date)
+        let dateSignalement = new Date();
+        if (data.date_signalement) {
+          if (typeof data.date_signalement.toDate === 'function') {
+            dateSignalement = data.date_signalement.toDate();
+          } else if (typeof data.date_signalement === 'number') {
+            dateSignalement = new Date(data.date_signalement);
+          }
+        }
+
+        const entity = signalementRepo.create({
+          titre: data.titre || 'Signalement mobile',
+          description: data.description || null,
+          latitude: String(data.latitude),
+          longitude: String(data.longitude),
+          statut,
+          priorite: 1,
+          surfaceM2: data.surface_m2 != null ? String(data.surface_m2) : undefined,
+          budget: data.budget != null ? String(data.budget) : undefined,
+          avancement: statut === 'resolu' ? 100 : statut === 'en_cours' ? 50 : 0,
+          dateSignalement,
+          utilisateur,
+        });
+
+        const saved = await signalementRepo.save(entity);
+
+        // Marquer le doc Firestore comme synchronisé (évite les doublons)
+        await col.doc(doc.id).update({ synced_to_pg: true, pg_id: saved.id });
+
+        imported++;
+        this.logger.log(`Imported Firestore signalement ${doc.id} → PG id ${saved.id}`);
+      } catch (err) {
+        errors.push(`Doc ${doc.id}: ${String(err?.message ?? err)}`);
+      }
+    }
+
+    this.logger.log(`syncSignalementsFromFirestore: imported=${imported}, skipped=${skipped}, errors=${errors.length}`);
+    return { imported, skipped, errors };
+  }
 }

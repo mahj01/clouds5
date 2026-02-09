@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { DASHBOARD_NAV_ITEMS } from '../constants/dashboardNav.js'
 import SyncFirebaseButton from '../components/SyncFirebaseButton.jsx'
+import SyncSignalementsButton from '../components/SyncSignalementsButton.jsx'
 
 function getStoredRoleName() {
   try {
@@ -41,7 +42,12 @@ export default function DashboardLayout({ onLogout }) {
           ☰
         </button>
         <span className="text-sm font-semibold text-slate-800">Clouds5</span>
-        {roleName === 'manager' && <SyncFirebaseButton />}
+        {roleName === 'manager' && (
+          <div className="flex items-center gap-2">
+            <SyncFirebaseButton />
+            <SyncSignalementsButton />
+          </div>
+        )}
       </header>
 
       {sidebarOpen && (
@@ -91,8 +97,9 @@ export default function DashboardLayout({ onLogout }) {
       <main className="flex-1 px-4 pb-10 pt-20 md:pt-6">
         {/* Header avec bouton Synchroniser en haut à droite */}
         {roleName === 'manager' && (
-          <div className="mb-4 flex justify-end">
+          <div className="mb-4 flex flex-wrap justify-end gap-2">
             <SyncFirebaseButton />
+            <SyncSignalementsButton />
           </div>
         )}
         <div className="mx-auto h-full w-full max-w-7xl">

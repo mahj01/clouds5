@@ -10,4 +10,9 @@ export class FirestoreController {
     await this.sync.syncAll();
     return { status: 'ok' };
   }
+
+  @Post('sync-signalements')
+  async syncSignalements() {
+    return this.sync.syncSignalementsFromFirestore();
+  }
 }

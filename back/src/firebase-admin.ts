@@ -63,5 +63,4 @@ if (serviceAccount) {
 }
 
 export const firestore = admin.firestore();
-
-
+export default admin;

@@ -304,6 +304,14 @@ export function syncFirestoreData() {
   })
 }
 
+// Récupération des signalements Firebase → base de données locale
+export function syncSignalementsFromFirestore() {
+  return apiFetch('/firestore/sync-signalements', {
+    method: 'POST',
+    headers: authHeaders(),
+  })
+}
+
 export function getUnsyncedUsersCount() {
   return apiFetch('/auth/unsynced-count', {
     headers: authHeaders(),
