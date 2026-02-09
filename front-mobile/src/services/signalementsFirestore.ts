@@ -1,4 +1,4 @@
-import { addDoc, collection, getDocsFromServer, onSnapshot, serverTimestamp } from 'firebase/firestore'
+import { addDoc, collection, getDocsFromServer, onSnapshot, query, serverTimestamp, where } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
 
 export const SIGNALMENT_COLLECTION = 'signalement'
@@ -173,4 +173,64 @@ export async function createSignalementInFirestore(input: FirestoreSignalementCr
   // Collection name matches the SQL table: "signalement"
   const ref = await addDoc(collection(db, SIGNALMENT_COLLECTION), docData)
   return { id: ref.id, ...docData }
+}
+
+export type SignalementStatutFilter = 'all' | 'nouveau' | 'en_cours' | 'cloture'
+
+function getConnectedUtilisateurUidOrThrow() {
+  const uid = auth.currentUser?.uid
+  if (!uid) throw new Error('Vous devez être connecté pour consulter vos signalements.')
+  return uid
+}
+
+export async function fetchMySignalementsFromServer(options?: { statut?: SignalementStatutFilter }) {
+  const uid = getConnectedUtilisateurUidOrThrow()
+
+  const statut = options?.statut ?? 'all'
+  const base = collection(db, SIGNALMENT_COLLECTION)
+  const q =
+    statut && statut !== 'all'
+      ? query(base, where('utilisateurUid', '==', uid), where('statut', '==', statut))
+      : query(base, where('utilisateurUid', '==', uid))
+
+  const snap = await getDocsFromServer(q)
+  return snap.docs.map((doc) => docToSignalement(doc.id, doc.data()))
+}
+
+export function subscribeMySignalements(
+  options: { statut?: SignalementStatutFilter } | undefined,
+  onDiffs: (diffs: SignalementDiff[]) => void,
+  onError?: (err: unknown) => void,
+) {
+  let uid: string
+  try {
+    uid = getConnectedUtilisateurUidOrThrow()
+  } catch (e) {
+    onError?.(e)
+    return () => {}
+  }
+
+  const statut = options?.statut ?? 'all'
+  const base = collection(db, SIGNALMENT_COLLECTION)
+  const q =
+    statut && statut !== 'all'
+      ? query(base, where('utilisateurUid', '==', uid), where('statut', '==', statut))
+      : query(base, where('utilisateurUid', '==', uid))
+
+  return onSnapshot(
+    q,
+    { includeMetadataChanges: true },
+    (snap) => {
+      const diffs: SignalementDiff[] = []
+      for (const ch of snap.docChanges()) {
+        if (ch.type === 'removed') {
+          diffs.push({ type: 'removed', id: ch.doc.id })
+          continue
+        }
+        diffs.push({ type: ch.type, item: docToSignalement(ch.doc.id, ch.doc.data()) } as any)
+      }
+      if (diffs.length) onDiffs(diffs)
+    },
+    (err) => onError?.(err),
+  )
 }

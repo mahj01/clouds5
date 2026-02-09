@@ -25,6 +25,9 @@
           <IonButton expand="block" fill="outline" style="margin-top: 10px" @click="$router.push('/signalements')">
             Signalements (debug)
           </IonButton>
+          <IonButton expand="block" fill="outline" style="margin-top: 10px" @click="$router.push('/mes-signalements')">
+            Mes signalements
+          </IonButton>
         </div>
       </div>
     </IonContent>
