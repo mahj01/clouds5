@@ -495,3 +495,11 @@ export function validerTousSignalementsAuto() {
     headers: authHeaders(),
   })
 }
+
+// ==================== DASHBOARD ====================
+
+export function getDashboardSummary() {
+  return apiFetch('/dashboard/summary', {
+    headers: authHeaders(),
+  })
+}
