@@ -154,4 +154,7 @@ export class SignalementsController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.svc.remove(id);
   }
+
+
+  
 }

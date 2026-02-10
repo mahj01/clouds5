@@ -131,4 +131,6 @@ export class Signalement {
 
   @OneToMany(() => HistoriqueSignalement, (h) => h.signalement)
   historiques: HistoriqueSignalement[];
+
+  
 }
