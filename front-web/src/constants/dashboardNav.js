@@ -14,6 +14,7 @@ export const DASHBOARD_NAV_ITEMS = [
   { id: 'journal', label: 'Journal des accès', icon: 'fa fa-history', path: '/journal', adminOnly: true },
   { id: 'sauvegarde', label: 'Sauvegarde données', icon: 'fa fa-database', path: '/sauvegarde', adminOnly: true },
   { id: 'validation', label: 'Validation données', icon: 'fa fa-check-circle', path: '/validation', adminOnly: true },
+  { id: 'niveaux-reparation', label: 'Niveaux Réparation', icon: 'fa fa-wrench', path: '/niveaux-reparation', adminOnly: true },
 ]
 
 // Utility exports for role-based UI

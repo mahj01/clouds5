@@ -20,6 +20,7 @@ import { ProblemesModule } from './problemes/problemes.module';
 import { JournalModule } from './journal/journal.module';
 import { SauvegardeModule } from './sauvegarde/sauvegarde.module';
 import { ValidationModule } from './validation/validation.module';
+import { NiveauxReparationModule } from './niveaux_reparation/niveaux-reparation.module';
 
 @Module({
   imports: [
@@ -57,6 +58,8 @@ import { ValidationModule } from './validation/validation.module';
     SauvegardeModule,
     // Validation - Validation des données cartographiques (admin)
     ValidationModule,
+    // Niveaux de réparation - Catégorisation des niveaux (1-10) (manager)
+    NiveauxReparationModule,
     // Firestore sync module (syncs selected entities to Firestore at startup)
     FirestoreModule,
   ],
