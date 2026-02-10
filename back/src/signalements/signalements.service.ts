@@ -186,13 +186,28 @@ export class SignalementsService {
         dto.surfaceM2 != null ? String(dto.surfaceM2) : undefined;
     if (dto.budget !== undefined)
       entity.budget = dto.budget != null ? String(dto.budget) : undefined;
+    // Entreprise: allow setting or clearing entreprise on update
+    if (dto.entrepriseId !== undefined) {
+      if (dto.entrepriseId == null) {
+        entity.entreprise = undefined;
+      } else {
+        const ent = await this.entRepo.findOne({ where: { id: dto.entrepriseId } });
+        if (!ent) throw new NotFoundException('Entreprise non trouvée');
+        entity.entreprise = ent;
+      }
+    }
 
     let createdHistoriqueId: number | undefined;
 
     if (dto.statut !== undefined && dto.statut !== entity.statut) {
       const ancienStatut = entity.statut;
       entity.statut = dto.statut;
-      entity.avancement = avancementFromStatut(dto.statut);
+      // Prefer explicit avancement if provided in DTO, otherwise compute from statut
+      if (dto.avancement !== undefined) {
+        entity.avancement = dto.avancement;
+      } else {
+        entity.avancement = avancementFromStatut(dto.statut);
+      }
       if (String(dto.statut) === String(StatutSignalement.RESOLU)) {
         entity.dateResolution = new Date();
       }
@@ -211,6 +226,11 @@ export class SignalementsService {
           console.error('Erreur enregistrement historique:', e);
         }
       }
+    }
+
+    // If avancement provided outside of statut change, apply it
+    if (dto.avancement !== undefined && dto.statut === undefined) {
+      entity.avancement = dto.avancement;
     }
 
     const saved = await this.repo.save(entity);

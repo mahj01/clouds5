@@ -140,6 +140,7 @@ export default function Signalements() {
       surfaceM2: s?.surfaceM2 ?? '',
       budget: s?.budget ?? '',
       entrepriseId: s?.entreprise?.id ?? '',
+      avancement: s?.avancement ?? avancementFromStatut(s?.statut),
     })
   }
 
@@ -153,6 +154,12 @@ export default function Signalements() {
     setSaving(true)
     setError(null)
     try {
+      // If status changed, require avancement to be provided
+      if (form.statut !== editing.statut && (form.avancement === undefined || form.avancement === '')) {
+        setError('Veuillez saisir le niveau de réparation (avancement) lors du changement de statut.')
+        setSaving(false)
+        return
+      }
       // 1) Upload photo si une nouvelle a été sélectionnée
       let uploadedPhotoUrl = null
       if (form._photoFile) {
@@ -178,7 +185,18 @@ export default function Signalements() {
       if (form.typeProblemeId) payload.typeProblemeId = parseInt(form.typeProblemeId)
       if (form.surfaceM2) payload.surfaceM2 = parseFloat(form.surfaceM2)
       if (form.budget) payload.budget = parseFloat(form.budget)
-      if (form.entrepriseId) payload.entrepriseId = parseInt(form.entrepriseId)
+      // entrepriseId: allow selecting none (empty string) to clear
+      if (form.entrepriseId !== undefined) {
+        if (form.entrepriseId === '' || form.entrepriseId === null) {
+          payload.entrepriseId = null
+        } else {
+          payload.entrepriseId = parseInt(form.entrepriseId)
+        }
+      }
+      // Avancement: include if user provided (especially after statut change)
+      if (form.avancement !== undefined && form.avancement !== null && form.avancement !== '') {
+        payload.avancement = parseInt(form.avancement)
+      }
 
       await updateSignalement(editing.id, payload)
       setSuccess('Signalement mis à jour avec succès.' + (uploadedPhotoUrl ? ' Photo enregistrée.' : ''))
@@ -910,26 +928,43 @@ export default function Signalements() {
                 />
               </div>
 
-              {/* Avancement auto-calculé */}
-              <div className="sm:col-span-2 rounded-xl border-2 border-slate-200 bg-slate-50 p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold text-slate-700">
-                    <i className="fa fa-tasks mr-2" />Avancement (auto-calculé)
-                  </span>
-                  <span className="text-lg font-bold text-slate-800">
-                    {avancementFromStatut(form.statut)}%
-                  </span>
-                </div>
-                <div className="h-3 rounded-full bg-slate-200 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${avancementColor(avancementFromStatut(form.statut))}`}
-                    style={{ width: `${avancementFromStatut(form.statut)}%` }}
+              {/* Avancement — si le statut a été modifié, demander la saisie manuelle */}
+              {form.statut !== editing.statut ? (
+                <div className="sm:col-span-2 rounded-xl border-2 border-slate-200 bg-yellow-50 p-4">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Niveau de réparation (0–100%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={form.avancement}
+                    onChange={(e) => setForm(f => ({ ...f, avancement: e.target.value }))}
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
                   />
+                  <p className="text-xs text-slate-500 mt-2">
+                    Saisissez le niveau d'avancement suite au changement de statut (ex: 0, 50, 100).
+                  </p>
                 </div>
-                <p className="text-xs text-slate-500 mt-2">
-                  Nouveau/Actif = 0% · En cours = 50% · Résolu = 100%
-                </p>
-              </div>
+              ) : (
+                <div className="sm:col-span-2 rounded-xl border-2 border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-slate-700">
+                      <i className="fa fa-tasks mr-2" />Avancement (auto-calculé)
+                    </span>
+                    <span className="text-lg font-bold text-slate-800">
+                      {avancementFromStatut(form.statut)}%
+                    </span>
+                  </div>
+                  <div className="h-3 rounded-full bg-slate-200 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${avancementColor(avancementFromStatut(form.statut))}`}
+                      style={{ width: `${avancementFromStatut(form.statut)}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">
+                    Nouveau/Actif = 0% · En cours = 50% · Résolu = 100%
+                  </p>
+                </div>
+              )}
 
               {/* Infos lecture seule */}
               <div className="sm:col-span-2 pt-2 border-t border-gray-100">
