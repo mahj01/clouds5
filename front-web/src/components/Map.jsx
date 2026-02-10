@@ -344,7 +344,38 @@ export default function Map() {
       const data = await getSignalements();
       setSignalements(Array.isArray(data) ? data : []);
     } catch (e) {
-      setApiError(e?.message ? String(e.message) : String(e));
+      const msg = e?.message ? String(e.message) : String(e);
+      // If unauthorized, attempt a best-effort unauthenticated fetch (in case backend allows public access)
+      if (msg.toLowerCase().includes('authorization') || msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('missing')) {
+        try {
+          const url = `${window.location.protocol}//${window.location.hostname}:3001/signalements/geojson`;
+          const res = await fetch(url, { method: 'GET' });
+          if (res.ok) {
+            const geojson = await res.json();
+            geojsonRef.current = geojson;
+            const map = mapRef.current;
+            try {
+              const src = map && map.getSource && map.getSource('signalements');
+              if (src && typeof src.setData === 'function') src.setData(geojson);
+            } catch {}
+            const list = geojson.features.map((f) => ({
+              id: f.properties?.id,
+              ...f.properties,
+              longitude: f.geometry?.coordinates?.[0],
+              latitude: f.geometry?.coordinates?.[1],
+            }));
+            setSignalements(list);
+            setApiError(null);
+            return;
+          }
+          // unauth fetch failed -> show login hint
+          setApiError('Accès refusé à l\'API GeoJSON (401). Connectez-vous pour voir les signalements.');
+        } catch (e2) {
+          setApiError('Erreur lors de la récupération des signalements: ' + (e2?.message || String(e2)));
+        }
+      } else {
+        setApiError(msg);
+      }
       setSignalements([]);
     } finally {
       setLoading(false);
