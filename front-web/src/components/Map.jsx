@@ -89,6 +89,7 @@ export default function Map() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [isRecapVisible, setIsRecapVisible] = useState(true);
 
   useEffect(() => {
     if (mapRef.current) return;
@@ -547,7 +548,8 @@ export default function Map() {
       </div>
 
       <div className="pointer-events-none absolute left-3 top-16 right-3 flex flex-col gap-3 sm:left-4 sm:right-auto sm:w-[320px] md:w-[400px]">
-        <div className="pointer-events-auto rounded-2xl border border-slate-200 bg-white/95 backdrop-blur px-4 py-3 shadow-lg">
+        {isRecapVisible ? (
+          <div className="pointer-events-auto relative resize overflow-auto min-w-[240px] min-h-[140px] max-w-[90vw] max-h-[70vh] rounded-2xl border border-slate-200 bg-white/95 backdrop-blur px-4 py-3 shadow-lg">
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="text-sm font-semibold text-slate-800">Carte des problèmes routiers</div>
@@ -556,14 +558,24 @@ export default function Map() {
                 {loading ? <span className="ml-2 text-slate-400">(chargement…)</span> : null}
               </div>
             </div>
-
-            <button
-              type="button"
-              onClick={refreshSignalements}
-              className="rounded-xl border border-slate-200 bg-indigo-500 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-600 shadow-sm"
-            >
-              Actualiser
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsRecapVisible(false)}
+                className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold text-slate-600 shadow-sm hover:bg-slate-50"
+                title="Masquer le panneau"
+              >
+                <i className="fa fa-chevron-left" aria-hidden="true" />
+                <span className="ml-1">Cacher</span>
+              </button>
+              <button
+                type="button"
+                onClick={refreshSignalements}
+                className="rounded-xl border border-slate-200 bg-indigo-500 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-600 shadow-sm"
+              >
+                Actualiser
+              </button>
+            </div>
           </div>
 
           <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
@@ -604,7 +616,20 @@ export default function Map() {
               </div>
             </div>
           </div>
-        </div>
+          </div>
+        ) : (
+          <div className="pointer-events-auto">
+            <button
+              type="button"
+              onClick={() => setIsRecapVisible(true)}
+              className="rounded-lg border border-slate-200 bg-white/95 px-3 py-2 text-xs font-semibold text-slate-700 shadow hover:bg-white"
+              title="Afficher le panneau"
+            >
+              <i className="fa fa-chevron-right mr-2" aria-hidden="true" />
+              Afficher le panneau
+            </button>
+          </div>
+        )}
 
         {apiError ? (
           <div className="pointer-events-auto rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
