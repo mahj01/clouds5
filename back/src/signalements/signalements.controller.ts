@@ -155,6 +155,21 @@ export class SignalementsController {
     return this.svc.remove(id);
   }
 
-
-  
+  @Post(':id/assigner-niveau')
+  @ApiOperation({ summary: 'Assigner un niveau de réparation et recalculer le budget' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        niveauId: { type: 'number', description: 'ID du niveau de réparation' },
+      },
+      required: ['niveauId'],
+    },
+  })
+  assignerNiveau(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { niveauId: number },
+  ) {
+    return this.svc.assignerNiveau(id, body.niveauId);
+  }
 }

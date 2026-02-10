@@ -6,6 +6,7 @@ import { SignalementsController } from './signalements.controller';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { Entreprise } from '../entreprises/entreprise.entity';
 import { TypeProbleme } from '../problemes/type-probleme.entity';
+import { NiveauReparation } from '../niveaux_reparation/niveau-reparation.entity';
 import { JournalModule } from '../journal/journal.module';
 import { HistoriqueSignalementModule } from '../historique_signalement/historique-signalement.module';
 import { FirestoreModule } from '../firestore/firestore.module';
@@ -19,6 +20,7 @@ import { ParametresModule } from '../parametres/parametres.module';
       Utilisateur,
       Entreprise,
       TypeProbleme,
+      NiveauReparation,
     ]),
     JournalModule,
     HistoriqueSignalementModule,

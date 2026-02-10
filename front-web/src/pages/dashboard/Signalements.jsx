@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getSignalements, updateSignalement, deleteSignalement, resoudreSignalement, getEntreprises, getHistoriqueBySignalement, uploadPhotoSignalement } from '../../api/client.js'
+import { getSignalements, updateSignalement, deleteSignalement, resoudreSignalement, getEntreprises, getHistoriqueBySignalement, uploadPhotoSignalement, getNiveauxReparation, assignerNiveauSignalement } from '../../api/client.js'
 import { getTypesProblemeActifs } from '../../api/problemes.js'
 
 const STATUTS = [
@@ -61,6 +61,7 @@ export default function Signalements() {
   const [signalements, setSignalements] = useState([])
   const [types, setTypes] = useState([])
   const [entreprises, setEntreprises] = useState([])
+  const [niveaux, setNiveaux] = useState([])
   const [filtreStatut, setFiltreStatut] = useState(null)
   
   // Modals
@@ -83,14 +84,16 @@ export default function Signalements() {
     setLoading(true)
     setError(null)
     try {
-      const [sigs, typesData, entreprisesData] = await Promise.all([
+      const [sigs, typesData, entreprisesData, niveauxData] = await Promise.all([
         getSignalements(),
         getTypesProblemeActifs(),
         getEntreprises(),
+        getNiveauxReparation(),
       ])
       setSignalements(Array.isArray(sigs) ? sigs : [])
       setTypes(Array.isArray(typesData) ? typesData : [])
       setEntreprises(Array.isArray(entreprisesData) ? entreprisesData : [])
+      setNiveaux(Array.isArray(niveauxData) ? niveauxData : [])
     } catch (e) {
       setError(e?.message || String(e))
     } finally {
@@ -243,6 +246,18 @@ export default function Signalements() {
     }
   }
 
+  async function handleAssignerNiveau(signalementId, niveauId) {
+    if (!niveauId) return
+    setError(null)
+    try {
+      await assignerNiveauSignalement(signalementId, parseInt(niveauId))
+      setSuccess('Niveau assigné et budget recalculé.')
+      await refresh()
+    } catch (e) {
+      setError(e?.message || String(e))
+    }
+  }
+
   function getStatutBadge(statut) {
     const s = STATUTS.find(st => st.value === statut) || STATUTS[0]
     return <span className={`px-2 py-1 rounded-full text-xs font-medium ${s.color}`}>{s.label}</span>
@@ -361,6 +376,11 @@ export default function Signalements() {
                     )}
                     {getStatutBadge(s.statut)}
                     {getPrioriteBadge(s.priorite)}
+                    {s.niveauReparation && (
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                        <i className="fa fa-wrench mr-1" />Niv. {s.niveauReparation.niveau}
+                      </span>
+                    )}
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900">{s.titre || 'Sans titre'}</h3>
                   {s.description && (
@@ -447,6 +467,21 @@ export default function Signalements() {
                   >
                     <i className="fa fa-trash mr-1" />
                   </button>
+                  
+                  {/* Assignation niveau */}
+                  <select
+                    value={s.niveauReparation?.id || ''}
+                    onChange={(e) => handleAssignerNiveau(s.id, parseInt(e.target.value))}
+                    className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-sm text-purple-700 hover:bg-purple-100 cursor-pointer"
+                    title="Assigner un niveau de réparation"
+                  >
+                    <option value="">-- Niveau --</option>
+                    {niveaux.map(n => (
+                      <option key={n.id} value={n.id}>
+                        Niv. {n.niveau} - {n.libelle}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
