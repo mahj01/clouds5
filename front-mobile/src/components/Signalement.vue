@@ -12,7 +12,8 @@
 
 		<IonCardContent>
 			<IonList lines="full">
-				<IonItem v-if="mode === 'full'">
+				<!-- Titre: now available in both modes -->
+				<IonItem>
 					<IonInput v-model="titre" label="Titre" label-placement="stacked" placeholder="Ex: Dépôt sauvage" />
 				</IonItem>
 
@@ -68,7 +69,7 @@
 						label="Surface (m²)"
 						label-placement="stacked"
 						inputmode="decimal"
-						placeholder="Optionnel"
+						placeholder="Ex: 12.5"
 					/>
 				</IonItem>
 
@@ -104,20 +105,19 @@
 
 				<IonItem v-if="mode === 'map'">
 					<IonSelect
-						v-model="typeSignalement"
-						label="Type de signalement"
+						v-model="typeProbleme"
+						label="Type de problème"
 						label-placement="stacked"
 						interface="popover"
 						placeholder="Choisir un type"
 					>
-						<IonSelectOption v-for="t in typesSignalement" :key="t.id" :value="t.libelle">
+						<IonSelectOption v-for="t in typesProbleme" :key="t.id" :value="t.libelle">
 							{{ t.libelle }}
 						</IonSelectOption>
 					</IonSelect>
 				</IonItem>
-
-				<IonText v-if="mode === 'map' && typesSignalementError" color="danger" class="block-msg">
-					{{ typesSignalementError }}
+				<IonText v-if="mode === 'map' && typesProblemeError" color="danger" class="block-msg">
+					{{ typesProblemeError }}
 				</IonText>
 			</IonList>
 
@@ -158,10 +158,7 @@ import {
 } from '@ionic/vue'
 
 import { createSignalementInFirestore } from '@/services/signalementsFirestore'
-import {
-	subscribeTypesSignalement,
-	type FirestoreTypeSignalement,
-} from '@/services/type-signalementFirestore'
+import { subscribeTypesProbleme, type FirestoreTypeProbleme } from '@/services/type-problemeFirestore'
 
 type VisitorLoginResponse = {
 	token: string
@@ -208,10 +205,20 @@ const budget = ref('')
 const utilisateurId = ref('')
 const entrepriseId = ref('')
 
-const typeSignalement = ref('')
-const typesSignalement = ref<FirestoreTypeSignalement[]>([])
-const typesSignalementError = ref('')
-let unsubscribeTypes: null | (() => void) = null
+const typeProbleme = ref('')
+const typesProbleme = ref<FirestoreTypeProbleme[]>([])
+const typesProblemeError = ref('')
+let unsubscribeTypesProbleme: null | (() => void) = null
+
+// Helper to find the numeric id from the selected libellé
+function getSelectedTypeProblemeId(): number | undefined {
+    const label = typeProbleme.value.trim()
+    if (!label) return undefined
+    const found = typesProbleme.value.find((t) => t.libelle === label)
+    if (!found?.id) return undefined
+    const n = Number(found.id)
+    return Number.isInteger(n) && n > 0 ? n : undefined
+}
 
 const busy = ref(false)
 const error = ref('')
@@ -352,20 +359,34 @@ function toRequiredNumber(v: string, label: string) {
 	return n
 }
 
+function toRequiredPositiveNumber(v: string, label: string) {
+	const trimmed = v.trim()
+	if (!trimmed) throw new Error(`${label} est requis.`)
+	const n = Number(trimmed)
+	if (!Number.isFinite(n) || n <= 0) throw new Error(`${label} doit être > 0.`)
+	return n
+}
+
 async function submit() {
 	error.value = ''
 	info.value = ''
 	busy.value = true
 
 	try {
+		// Shared validation
+		const titreClean = titre.value.trim()
+		if (!titreClean) throw new Error('Titre est requis.')
+		const surfaceRequired = toRequiredPositiveNumber(surfaceM2.value, 'Surface (m²)')
+
 		// Map mode: write directly to Firestore (no REST API)
 		if (mode.value === 'map') {
 			const lat = toRequiredNumber(latitude.value, 'Latitude')
 			const lng = toRequiredNumber(longitude.value, 'Longitude')
 			await createSignalementInFirestore({
-				typeSignalement: typeSignalement.value.trim() || undefined,
+				titre: titreClean,
+				typeProblemeId: getSelectedTypeProblemeId(),
 				description: description.value.trim() || undefined,
-				surfaceM2: toOptionalNumber(surfaceM2.value),
+				surfaceM2: surfaceRequired,
 				latitude: lat,
 				longitude: lng,
 			})
@@ -378,8 +399,6 @@ async function submit() {
 		let token = getStoredToken()
 		const expiry = getStoredExpiry()
 		if (!token || !isExpiryValid(expiry)) {
-			// In map mode we expect the user to be logged-in, but we still allow fallback to a visitor session
-			// so the feature is usable during development.
 			const session = await ensureVisitorSession()
 			token = session.token
 		}
@@ -388,12 +407,12 @@ async function submit() {
 		if (!Number.isInteger(uid) || uid <= 0) throw new Error('Utilisateur ID est requis (entier > 0).')
 
 		const payload: CreateSignalementPayload = {
-			titre: mode.value === 'full' ? titre.value.trim() || undefined : undefined,
+			titre: titreClean,
 			description: description.value.trim() || undefined,
 			statut: mode.value === 'full' ? statut.value || undefined : 'nouveau',
 			latitude: toRequiredNumber(latitude.value, 'Latitude'),
 			longitude: toRequiredNumber(longitude.value, 'Longitude'),
-			surfaceM2: toOptionalNumber(surfaceM2.value),
+			surfaceM2: surfaceRequired,
 			budget: mode.value === 'full' ? toOptionalNumber(budget.value) : undefined,
 			utilisateurId: uid,
 			entrepriseId: mode.value === 'full' ? toOptionalNumber(entrepriseId.value) : undefined,
@@ -426,25 +445,28 @@ onMounted(() => {
 	if (uid && !utilisateurId.value) utilisateurId.value = uid
 
 	if (mode.value === 'map') {
-		typesSignalementError.value = ''
-		unsubscribeTypes = subscribeTypesSignalement(
+		// Removed subscription to type_signalement
+
+		typesProblemeError.value = ''
+		unsubscribeTypesProbleme = subscribeTypesProbleme(
 			(list) => {
-				typesSignalement.value = list
+				typesProbleme.value = list
 					.filter((x) => x.actif)
 					.filter((x) => x.id !== 'bootstrap_init')
 					.sort((a, b) => a.libelle.localeCompare(b.libelle))
 			},
 			(err) => {
-				typesSignalementError.value = err instanceof Error ? err.message : String(err)
+				typesProblemeError.value = err instanceof Error ? err.message : String(err)
 			},
 		)
 	}
 })
 
 onBeforeUnmount(() => {
-	if (unsubscribeTypes) {
-		unsubscribeTypes()
-		unsubscribeTypes = null
+	// Removed unsubscribeTypes
+	if (unsubscribeTypesProbleme) {
+		unsubscribeTypesProbleme()
+		unsubscribeTypesProbleme = null
 	}
 })
 </script>
