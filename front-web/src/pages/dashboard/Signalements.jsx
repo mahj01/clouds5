@@ -468,20 +468,26 @@ export default function Signalements() {
                     <i className="fa fa-trash mr-1" />
                   </button>
                   
-                  {/* Assignation niveau */}
-                  <select
-                    value={s.niveauReparation?.id || ''}
-                    onChange={(e) => handleAssignerNiveau(s.id, parseInt(e.target.value))}
-                    className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-sm text-purple-700 hover:bg-purple-100 cursor-pointer"
-                    title="Assigner un niveau de réparation"
-                  >
-                    <option value="">-- Niveau --</option>
-                    {niveaux.map(n => (
-                      <option key={n.id} value={n.id}>
-                        Niv. {n.niveau} - {n.libelle}
-                      </option>
-                    ))}
-                  </select>
+                  {/* Assignation niveau - désactivé si déjà assigné */}
+                  {s.niveauReparation ? (
+                    <span className="rounded-lg border border-purple-300 bg-purple-100 px-3 py-2 text-sm text-purple-700 font-medium cursor-not-allowed" title="Niveau déjà assigné">
+                      <i className="fa fa-lock mr-1" />Niv. {s.niveauReparation.niveau}
+                    </span>
+                  ) : (
+                    <select
+                      value=""
+                      onChange={(e) => handleAssignerNiveau(s.id, parseInt(e.target.value))}
+                      className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-sm text-purple-700 hover:bg-purple-100 cursor-pointer"
+                      title="Assigner un niveau de réparation"
+                    >
+                      <option value="">-- Niveau --</option>
+                      {niveaux.map(n => (
+                        <option key={n.id} value={n.id}>
+                          Niv. {n.niveau} - {n.libelle}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </div>
             </div>
@@ -599,6 +605,14 @@ export default function Signalements() {
                   {viewing.entreprise ? (
                     <><i className="fa fa-building mr-1" />{viewing.entreprise.nom}</>
                   ) : 'Non assignée'}
+                </div>
+              </div>
+              <div className="rounded-xl bg-violet-50 border border-violet-100 p-4">
+                <div className="text-xs text-violet-600 mb-1">Niveau de réparation</div>
+                <div className="font-bold text-violet-700">
+                  {viewing.niveauReparation ? (
+                    <><i className="fa fa-wrench mr-1" />Niveau {viewing.niveauReparation.niveau} - {viewing.niveauReparation.libelle}</>
+                  ) : 'Non assigné'}
                 </div>
               </div>
               {viewing.dateResolution && (
