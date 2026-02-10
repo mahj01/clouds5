@@ -7,6 +7,13 @@ import { Entreprise } from '../entreprises/entreprise.entity';
 import { Signalement } from '../signalements/signalement.entity';
 import { Session } from '../sessions/session.entity';
 import { StatutCompte } from '../statut_compte/statut-compte.entity';
+import { TypeProbleme } from '../problemes/type-probleme.entity';
+import { HistoriqueSignalement } from '../historique_signalement/historique-signalement.entity';
+import { HistoriqueStatusUtilisateur } from '../historique_status_utilisateur/historique-status-utilisateur.entity';
+import { Validation } from '../validation/validation.entity';
+import { JournalAcces } from '../journal/journal.entity';
+import { TentativeConnexion } from '../tentative_connexion/tentative-connexion.entity';
+import { Synchronisation } from '../synchronisations/synchronisation.entity';
 import { FirestoreDiffSyncService } from './firestore-diff-sync.service';
 
 @Injectable()
