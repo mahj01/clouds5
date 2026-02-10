@@ -33,7 +33,7 @@ import { NiveauxReparationModule } from './niveaux_reparation/niveaux-reparation
         host: config.get('DB_HOST', 'localhost'),
         port: parseInt(config.get('DB_PORT', '5432'), 10),
         username: config.get('DB_USER', 'postgres'),
-        password: config.get('DB_PASS', ''),
+        password: config.get('DB_PASS', 'postgres'),
         database: config.get('DB_NAME', 'cloud'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true, // désactiver en production

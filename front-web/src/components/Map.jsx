@@ -73,6 +73,11 @@ function formatMoneyMGA(value) {
   }
 }
 
+function photoFullUrl(photoUrl) {
+  if (!photoUrl) return null;
+  if (String(photoUrl).startsWith('http')) return photoUrl;
+  return `${window.location.protocol}//${window.location.hostname}:3001${photoUrl}`;
+}
 export default function Map() {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -214,29 +219,31 @@ export default function Map() {
             const budget = props.budget != null && props.budget !== '' ? formatMoneyMGA(props.budget) : '—';
             const entreprise = props.entrepriseNom || '—';
 
-            // Avancement : utiliser la valeur stockée ou calculer depuis le statut
+            // Niveau (avancement)
             const st = String(props.statut || '').toLowerCase();
             const avancement = props.avancement != null ? Number(props.avancement) : statusWeight(st);
             const avColor = avancement >= 100 ? '#22c55e' : avancement >= 50 ? '#eab308' : '#d1d5db';
+
+            // Lien vers la photo
+            const photoUrl = props.photoUrl ? photoFullUrl(props.photoUrl) : null;
+            const photoLink = photoUrl
+              ? `<div style="margin-top:8px;"><a href="${photoUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:4px;color:#6366f1;text-decoration:none;font-weight:500;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><i class="fa fa-camera"></i> Voir la photo</a></div>`
+              : '';
 
             const html = `
               <div class="p-2">
                 <div class="text-sm font-semibold text-slate-900">Problème routier</div>
                 <div class="mt-1 grid gap-1 text-xs text-slate-700">
-                  <div><span class="text-slate-500">Date:</span> ${dateText}</div>
-                  <div><span class="text-slate-500">Statut:</span> ${statusLabel(props.statut)}</div>
-                  <div>
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
-                      <span class="text-slate-500">Avancement</span>
-                      <span style="font-weight:700;">${avancement}%</span>
-                    </div>
-                    <div style="height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden;">
-                      <div style="height:100%;width:${avancement}%;background:${avColor};border-radius:3px;"></div>
-                    </div>
+                  <div><span class="text-slate-500">Date :</span> ${dateText}</div>
+                  <div><span class="text-slate-500">Statut :</span> ${statusLabel(props.statut)}</div>
+                  <div><span class="text-slate-500">Surface :</span> ${surface}</div>
+                  <div><span class="text-slate-500">Budget :</span> ${budget}</div>
+                  <div><span class="text-slate-500">Entreprise :</span> ${entreprise}</div>
+                  <div><span class="text-slate-500">Niveau :</span> <span style="font-weight:700;color:${avColor}">${avancement}%</span></div>
+                  <div style="height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden;margin-top:2px;">
+                    <div style="height:100%;width:${avancement}%;background:${avColor};border-radius:3px;"></div>
                   </div>
-                  <div><span class="text-slate-500">Surface:</span> ${surface}</div>
-                  <div><span class="text-slate-500">Budget:</span> ${budget}</div>
-                  <div><span class="text-slate-500">Entreprise:</span> ${entreprise}</div>
+                  ${photoLink}
                 </div>
               </div>
             `;
@@ -418,6 +425,7 @@ export default function Map() {
             surfaceM2: s.surfaceM2,
             budget: s.budget,
             entrepriseNom: s.entreprise?.nom,
+            photoUrl: s.photoUrl,
           },
         };
       })

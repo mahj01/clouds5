@@ -23,6 +23,28 @@ function formatDate(date) {
   })
 }
 
+function formatNumber(value, opts = {}) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  return new Intl.NumberFormat('fr-FR', opts).format(n);
+}
+
+function formatMoneyMGA(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n === 0) return '—';
+  try {
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'MGA' }).format(n);
+  } catch {
+    return `${formatNumber(n)} MGA`;
+  }
+}
+
+function photoFullUrl(photoUrl) {
+  if (!photoUrl) return null;
+  if (String(photoUrl).startsWith('http')) return photoUrl;
+  return `${window.location.protocol}//${window.location.hostname}:3001${photoUrl}`;
+}
+
 export default function TableauSyntheseFrontOffice() {
   // Récupérer le contexte du layout (rôle utilisateur)
   const outletContext = useOutletContext() || {}
@@ -288,6 +310,25 @@ export default function TableauSyntheseFrontOffice() {
                           <span>
                             <i className="fa fa-calendar mr-1" />{formatDate(signalement.dateSignalement)}
                           </span>
+                          <span>
+                            <i className="fa fa-expand mr-1" />{signalement.surfaceM2 ? `${formatNumber(signalement.surfaceM2)} m²` : '—'}
+                          </span>
+                          <span>
+                            <i className="fa fa-money mr-1" />{signalement.budget ? formatMoneyMGA(signalement.budget) : '—'}
+                          </span>
+                          <span>
+                            <i className="fa fa-industry mr-1" />{signalement.entrepriseNom || (signalement.entreprise && signalement.entreprise.nom) || '—'}
+                          </span>
+                          <span>
+                            <i className="fa fa-tachometer mr-1" />{signalement.avancement != null ? `${signalement.avancement}%` : (signalement.statut === 'resolu' ? '100%' : signalement.statut === 'en_cours' ? '50%' : '0%')}
+                          </span>
+                          {signalement.photoUrl && (
+                            <span>
+                              <a href={photoFullUrl(signalement.photoUrl)} target="_blank" rel="noopener noreferrer" className="text-indigo-600 font-medium inline-flex items-center">
+                                <i className="fa fa-camera mr-1" />Voir photo
+                              </a>
+                            </span>
+                          )}
                         </div>
                       </div>
 

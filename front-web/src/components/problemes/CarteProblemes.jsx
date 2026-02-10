@@ -196,6 +196,29 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated, on
       })
 
       // Créer le popup
+      // Helpers for formatting inside this file
+      function fmtNumber(v) {
+        const n = Number(v)
+        if (!Number.isFinite(n)) return '—'
+        return new Intl.NumberFormat('fr-FR').format(n)
+      }
+      function fmtMoney(v) {
+        const n = Number(v)
+        if (!Number.isFinite(n) || n === 0) return '—'
+        try { return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'MGA' }).format(n) } catch { return `${fmtNumber(n)} MGA` }
+      }
+      function photoFullUrlLocal(url) {
+        if (!url) return null
+        if (String(url).startsWith('http')) return url
+        return `${window.location.protocol}//${window.location.hostname}:3001${url}`
+      }
+
+      const surfaceText = props.surfaceM2 != null && props.surfaceM2 !== '' ? `${fmtNumber(props.surfaceM2)} m²` : '—'
+      const budgetText = props.budget != null && props.budget !== '' ? fmtMoney(props.budget) : '—'
+      const entrepriseText = props.entrepriseNom || (props.entreprise && props.entreprise.nom) || '—'
+      const photoUrl = props.photoUrl ? photoFullUrlLocal(props.photoUrl) : null
+      const photoLinkHtml = photoUrl ? `<div style="margin-top:8px;"><a href="${photoUrl}" target="_blank" rel="noopener noreferrer" style="color:#6366f1;font-weight:600;text-decoration:none;"><i class="fa fa-camera" style="margin-right:6px"></i>Voir la photo</a></div>` : ''
+
       const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
         <div style="min-width: 220px; padding: 8px;">
           <div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">${props.titre}</div>
@@ -204,6 +227,12 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated, on
           ${props.adresse ? `<p style="font-size: 12px; color: #64748b;"><i class="fa fa-map-marker" style="margin-right: 4px;"></i>${props.adresse}</p>` : ''}
           <div style="font-size: 12px; color: #64748b; margin-top: 8px;">
             Statut: <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;color:white;background-color:${couleurStatut};">${props.statut === 'actif' ? 'Actif' : props.statut === 'en_cours' ? 'En cours' : props.statut === 'resolu' ? 'Résolu' : props.statut === 'rejete' ? 'Rejeté' : props.statut}</span>
+          </div>
+          <div style="margin-top:8px;font-size:12px;color:#475569;display:flex;flex-direction:column;gap:4px;">
+            <div><span style="color:#94a3b8">Date :</span> ${props.dateSignalement ? new Date(props.dateSignalement).toLocaleString('fr-FR') : '—'}</div>
+            <div><span style="color:#94a3b8">Surface :</span> ${surfaceText}</div>
+            <div><span style="color:#94a3b8">Budget :</span> ${budgetText}</div>
+            <div><span style="color:#94a3b8">Entreprise :</span> ${entrepriseText}</div>
           </div>
           <div style="margin-top: 8px;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
@@ -214,6 +243,7 @@ export default function CarteProblemes({ selectedProbleme, onProblemeCreated, on
               <div style="height: 100%; width: ${avancement}%; background: ${avancementColor}; border-radius: 3px; transition: width 0.3s;"></div>
             </div>
           </div>
+          ${photoLinkHtml}
           ${props.priorite > 1 ? `<div style="font-size: 12px; color: #ea580c; margin-top: 4px;"><i class="fa fa-flag" style="margin-right: 4px;"></i>Priorité ${props.priorite}</div>` : ''}
         </div>
       `)
