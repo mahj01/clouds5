@@ -439,6 +439,70 @@ export class FirestoreSyncService implements OnModuleInit {
   }
 
   /**
+   * Synchronise les utilisateurs non synchronisés (firebaseUid IS NULL) vers Firestore.
+   * Utilisé par fullBidirectionalSync pour capturer les nouveaux utilisateurs.
+   */
+  private async syncUnsyncedUsersToFirestore(): Promise<{ synced: number; created: number; updated: number }> {
+    const userRepo = this.ds.getRepository(Utilisateur);
+    const roleRepo = this.ds.getRepository(Role);
+    
+    // Récupérer les utilisateurs non synchronisés (firebaseUid est null)
+    const unsyncedUsers = await userRepo.find({
+      where: { firebaseUid: null as any },
+      relations: ['role'],
+    });
+
+    // Exclure les visiteurs
+    const visiteurRole = await roleRepo.findOne({ where: { nom: 'visiteur' } });
+    const usersToSync = unsyncedUsers.filter(
+      (u) => u.email && (!visiteurRole || u.role?.id !== visiteurRole.id),
+    );
+
+    let synced = 0;
+    let created = 0;
+    let updated = 0;
+    
+    for (const user of usersToSync) {
+      try {
+        const syncedUid = `synced_${Date.now()}_${user.id}`;
+        const docId = String(user.id);
+        const col = firestore.collection('utilisateur');
+        const docRef = col.doc(docId);
+        const existing = await docRef.get();
+
+        const userData = {
+          id: user.id,
+          email: user.email,
+          nom: user.nom || null,
+          prenom: user.prenom || null,
+          motDePasse: user.motDePasse,
+          nbTentatives: user.nbTentatives,
+          dateBlocage: user.dateBlocage ? user.dateBlocage.toISOString() : null,
+          dateCreation: user.dateCreation ? user.dateCreation.toISOString() : new Date().toISOString(),
+          firebaseUid: syncedUid,
+          role: user.role ? { id: user.role.id, nom: user.role.nom } : null,
+        };
+
+        await docRef.set(userData, { merge: true });
+        user.firebaseUid = syncedUid;
+        await userRepo.save(user);
+        
+        synced++;
+        if (existing.exists) {
+          updated++;
+        } else {
+          created++;
+        }
+      } catch (err) {
+        this.logger.warn(`Sync unsynced user ${user.email} failed: ${String(err?.message ?? err)}`);
+      }
+    }
+
+    this.logger.log(`SyncUnsyncedUsers: ${synced} utilisateur(s) synchronisé(s) (${created} créé(s), ${updated} mis à jour)`);
+    return { synced, created, updated };
+  }
+
+  /**
    * Synchronisation bidirectionnelle complète :
    * 1) PG → Firebase (toutes les tables, avec merge = crée + met à jour)
    * 2) Firebase → PG (signalements mobiles + entités simples manquantes)
@@ -447,6 +511,9 @@ export class FirestoreSyncService implements OnModuleInit {
     push: { totalCreated: number; totalUpdated: number; details: any[] };
     pull: { totalImported: number; totalSkipped: number; details: any[]; errors: string[] };
   }> {
+    // === D'abord synchroniser les utilisateurs non synchronisés ===
+    const unsyncedUsersResult = await this.syncUnsyncedUsersToFirestore();
+
     // === PUSH : PG → Firebase (toutes les tables) ===
     const allEntities = [
       Role,
@@ -465,8 +532,17 @@ export class FirestoreSyncService implements OnModuleInit {
     ];
 
     const pushDetails: any[] = [];
-    let totalCreated = 0;
-    let totalUpdated = 0;
+    let totalCreated = unsyncedUsersResult.created;
+    let totalUpdated = unsyncedUsersResult.updated;
+
+    // Ajouter les détails des utilisateurs non synchronisés en premier
+    if (unsyncedUsersResult.synced > 0) {
+      pushDetails.push({ 
+        collection: 'utilisateur (nouveaux/modifiés)', 
+        created: unsyncedUsersResult.created, 
+        updated: unsyncedUsersResult.updated 
+      });
+    }
 
     for (const e of allEntities) {
       try {

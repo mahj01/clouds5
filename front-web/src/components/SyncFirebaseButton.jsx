@@ -1,39 +1,21 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { syncUsersToFirebase, getUnsyncedUsersCount } from '../api/client.js'
 
 export default function SyncFirebaseButton() {
-  const [unsyncedCount, setUnsyncedCount] = useState(0)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
 
-  const fetchCount = useCallback(async () => {
-    try {
-      const data = await getUnsyncedUsersCount()
-      setUnsyncedCount(data?.count ?? 0)
-    } catch {
-      // Ignorer les erreurs de comptage
-    }
-  }, [])
-
+  // Auto-close popup after 3 seconds
   useEffect(() => {
-    fetchCount()
-    // Rafraîchir le compteur toutes les 30 secondes
-    const interval = setInterval(fetchCount, 30000)
-    const handleUsersUpdated = (event) => {
-      const next = event?.detail?.count
-      if (typeof next === 'number') {
-        setUnsyncedCount(next)
-        return
-      }
-      fetchCount()
+    if (result || error) {
+      const timer = setTimeout(() => {
+        setResult(null)
+        setError('')
+      }, 3000)
+      return () => clearTimeout(timer)
     }
-    window.addEventListener('users-updated', handleUsersUpdated)
-    return () => {
-      clearInterval(interval)
-      window.removeEventListener('users-updated', handleUsersUpdated)
-    }
-  }, [fetchCount])
+  }, [result, error])
 
   async function handleSync() {
     setLoading(true)
@@ -43,8 +25,15 @@ export default function SyncFirebaseButton() {
     try {
       const data = await syncUsersToFirebase()
       setResult(data)
-      // Rafraîchir le compteur après synchronisation
-      await fetchCount()
+      
+      // Notifier les autres composants pour mettre à jour
+      try {
+        const countData = await getUnsyncedUsersCount()
+        const count = typeof countData?.count === 'number' ? countData.count : undefined
+        window.dispatchEvent(new CustomEvent('users-updated', { detail: { count } }))
+      } catch {
+        window.dispatchEvent(new CustomEvent('users-updated'))
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur de synchronisation')
     } finally {
@@ -57,69 +46,41 @@ export default function SyncFirebaseButton() {
       <button
         type="button"
         onClick={handleSync}
-        disabled={false}
-        className={`relative flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
-          unsyncedCount > 0
-            ? 'bg-indigo-500 text-white hover:bg-indigo-600 shadow-md'
-            : 'bg-slate-200 text-slate-500 cursor-not-allowed'
-        }`}
-        title={unsyncedCount > 0 ? `${unsyncedCount} utilisateur(s) à synchroniser` : 'Tous les utilisateurs sont synchronisés'}
+        disabled={loading}
+        className="relative flex items-center gap-2 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-medium text-white shadow-md transition hover:bg-indigo-600 disabled:opacity-60"
+        title="Synchroniser les utilisateurs vers Firebase"
       >
         <i className={`fa fa-cloud-upload ${loading ? 'animate-pulse' : ''}`} aria-hidden="true" />
         <span>{loading ? 'Synchronisation...' : 'Synchroniser les utilisateurs'}</span>
-        
-        {unsyncedCount > 0 && !loading && (
-          <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
-            {unsyncedCount}
-          </span>
-        )}
       </button>
 
       {/* Popup de résultat */}
-      {result && (
+      {(result || error) && (
         <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
           <div className="flex items-center justify-between">
             <span className="font-semibold text-slate-800">Résultat</span>
             <button
               type="button"
-              onClick={() => setResult(null)}
+              onClick={() => { setResult(null); setError('') }}
               className="text-slate-400 hover:text-slate-600"
             >
               ✕
             </button>
           </div>
-          <div className="mt-2 space-y-1 text-sm">
-            <p className="text-emerald-600">
-              <i className="fa fa-check mr-1" aria-hidden="true" />
-              {result.synced} synchronisé(s) sur {result.total}
-            </p>
-            {result.errors?.length > 0 && (
-              <div className="mt-2">
-                <p className="text-red-600 font-medium">Erreurs :</p>
-                <ul className="mt-1 max-h-24 overflow-y-auto text-xs text-red-500">
-                  {result.errors.map((e, i) => (
-                    <li key={i}>{e}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
-      {/* Popup d'erreur */}
-      {error && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-xl border border-red-200 bg-red-50 p-3 shadow-xl">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-red-600">{error}</span>
-            <button
-              type="button"
-              onClick={() => setError('')}
-              className="text-red-400 hover:text-red-600"
-            >
-              ✕
-            </button>
-          </div>
+          {error && (
+            <div className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+              <i className="fa fa-times-circle mr-1" aria-hidden="true" />
+              {error}
+            </div>
+          )}
+
+          {result && (
+            <div className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">
+              <i className="fa fa-check-circle mr-2" aria-hidden="true" />
+              Synchronisation utilisateurs effectuée
+            </div>
+          )}
         </div>
       )}
     </div>

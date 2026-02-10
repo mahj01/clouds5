@@ -1,11 +1,22 @@
-import { useState } from 'react'
-import { fullBidirectionalSync } from '../api/client.js'
+import { useState, useEffect } from 'react'
+import { fullBidirectionalSync, getUnsyncedUsersCount } from '../api/client.js'
 
 export default function SyncAllButton() {
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState('')
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
+
+  // Auto-close popup after 3 seconds
+  useEffect(() => {
+    if (result || error) {
+      const timer = setTimeout(() => {
+        setResult(null)
+        setError('')
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [result, error])
 
   async function handleSync() {
     setLoading(true)
@@ -16,6 +27,15 @@ export default function SyncAllButton() {
     try {
       const data = await fullBidirectionalSync()
       setResult(data)
+      
+      // Notifier les autres composants pour mettre à jour le badge
+      try {
+        const countData = await getUnsyncedUsersCount()
+        const count = typeof countData?.count === 'number' ? countData.count : undefined
+        window.dispatchEvent(new CustomEvent('users-updated', { detail: { count } }))
+      } catch {
+        window.dispatchEvent(new CustomEvent('users-updated'))
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur de synchronisation')
     } finally {
@@ -34,7 +54,7 @@ export default function SyncAllButton() {
         title="Synchronisation complète bidirectionnelle de toutes les tables"
       >
         <i className={`fa fa-exchange ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
-        <span>{loading ? step || 'Sync...' : 'Sync All'}</span>
+        <span>{loading ? step || 'Sync...' : 'Synchroniser tout'}</span>
       </button>
 
       {/* Popup de résultat */}
@@ -59,62 +79,9 @@ export default function SyncAllButton() {
           )}
 
           {result && (
-            <div className="mt-3 space-y-3 text-sm">
-              {/* PUSH : PG → Firebase */}
-              <div className="rounded-lg bg-emerald-50 p-3">
-                <p className="font-medium text-emerald-700">
-                  <i className="fa fa-cloud-upload mr-1" aria-hidden="true" />
-                  Envoi PG → Firebase
-                </p>
-                <p className="mt-1 text-xs text-emerald-600">
-                  ✓ {result.push?.totalCreated ?? 0} créé(s), {result.push?.totalUpdated ?? 0} mis à jour
-                </p>
-                {result.push?.details?.length > 0 && (
-                  <ul className="mt-2 max-h-32 space-y-1 overflow-y-auto text-xs text-emerald-600">
-                    {result.push.details.map((d, i) => (
-                      <li key={i} className="flex justify-between">
-                        <span className="font-medium">{d.collection}</span>
-                        <span>
-                          {d.error
-                            ? <span className="text-red-500">erreur</span>
-                            : `${d.created} créé(s), ${d.updated} MAJ`}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              {/* PULL : Firebase → PG */}
-              <div className="rounded-lg bg-blue-50 p-3">
-                <p className="font-medium text-blue-700">
-                  <i className="fa fa-cloud-download mr-1" aria-hidden="true" />
-                  Récupération Firebase → PG
-                </p>
-                <p className="mt-1 text-xs text-blue-600">
-                  ✓ {result.pull?.totalImported ?? 0} importé(s), {result.pull?.totalSkipped ?? 0} ignoré(s)
-                </p>
-                {result.pull?.details?.length > 0 && (
-                  <ul className="mt-2 max-h-32 space-y-1 overflow-y-auto text-xs text-blue-600">
-                    {result.pull.details.map((d, i) => (
-                      <li key={i} className="flex justify-between">
-                        <span className="font-medium">{d.collection}</span>
-                        <span>{d.imported} importé(s), {d.skipped} ignoré(s)</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {result.pull?.errors?.length > 0 && (
-                  <div className="mt-2">
-                    <p className="text-xs font-medium text-red-600">Erreurs :</p>
-                    <ul className="mt-1 max-h-20 overflow-y-auto text-xs text-red-500">
-                      {result.pull.errors.map((e, i) => (
-                        <li key={i}>{e}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
+            <div className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">
+              <i className="fa fa-check-circle mr-2" aria-hidden="true" />
+              Synchronisation tout effectuée
             </div>
           )}
         </div>
