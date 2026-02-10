@@ -183,6 +183,28 @@ export default function Map() {
             });
           }
 
+          // Labels showing avancement (%) above each marker
+          if (!map.getLayer('signalements-labels')) {
+            map.addLayer({
+              id: 'signalements-labels',
+              type: 'symbol',
+              source: 'signalements',
+              layout: {
+                'text-field': ['concat', ['to-string', ['coalesce', ['get', 'avancement'], 0]], '%'],
+                'text-size': 12,
+                'text-offset': [0, -1.4],
+                'text-anchor': 'bottom',
+                'text-allow-overlap': false,
+              },
+              paint: {
+                'text-color': '#0f172a',
+                'text-halo-color': 'rgba(255,255,255,0.9)',
+                'text-halo-width': 2,
+              },
+            });
+          }
+          
+
           // Hover tooltip
           const popup = new maplibregl.Popup({
             closeButton: false,
