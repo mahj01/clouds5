@@ -62,65 +62,78 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1001;
-  padding: 20px;
+  padding: 24px;
 }
 
 .validation-card {
-  background: white;
-  padding: 28px;
-  border-radius: 16px;
+  background: #ffffff;
+  padding: 32px 28px;
+  border-radius: 24px;
   text-align: center;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.16), 0 4px 12px rgba(0, 0, 0, 0.06);
   max-width: 340px;
   width: 100%;
 }
 
 .location-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
+  font-size: 52px;
+  margin-bottom: 18px;
+  display: block;
+  animation: pulse-pin 2s ease-in-out infinite;
+}
+
+@keyframes pulse-pin {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
 }
 
 .message {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 12px;
+  font-size: 19px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 14px;
+  letter-spacing: -0.02em;
+  line-height: 1.4;
 }
 
 .coordinates {
   font-size: 13px;
-  color: #6b7280;
+  color: #64748b;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  margin-bottom: 24px;
-  padding: 8px 12px;
-  background: #f3f4f6;
-  border-radius: 8px;
+  margin-bottom: 26px;
+  padding: 10px 14px;
+  background: #f1f5f9;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
 }
 
 .button-group {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   border: none;
-  padding: 14px 24px;
-  border-radius: 12px;
+  padding: 16px 24px;
+  border-radius: 14px;
   cursor: pointer;
   font-size: 16px;
-  font-weight: 600;
-  transition: all 0.2s ease;
+  font-weight: 700;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: -0.01em;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn-icon {
@@ -128,32 +141,39 @@ export default {
 }
 
 .btn-confirm {
-  background-color: #2563eb;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   color: white;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
 }
 
 .btn-confirm:hover {
-  background-color: #1d4ed8;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
   transform: translateY(-1px);
 }
 
 .btn-confirm:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
 
 .btn-cancel {
-  background-color: #f3f4f6;
-  color: #4b5563;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1.5px solid #e2e8f0;
 }
 
 .btn-cancel:hover {
-  background-color: #e5e7eb;
+  background: #e2e8f0;
+}
+
+.btn-cancel:active {
+  transform: scale(0.98);
 }
 
 /* Transition animations */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.2s ease;
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .fade-enter-from,
@@ -163,11 +183,38 @@ export default {
 
 .fade-enter-active .validation-card,
 .fade-leave-active .validation-card {
-  transition: transform 0.2s ease;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .fade-enter-from .validation-card,
 .fade-leave-to .validation-card {
-  transform: scale(0.95);
+  transform: scale(0.92) translateY(8px);
+}
+
+@media (prefers-color-scheme: dark) {
+  .validation-card {
+    background: #1e293b;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+  }
+
+  .message {
+    color: #f1f5f9;
+  }
+
+  .coordinates {
+    background: #0f172a;
+    border-color: #334155;
+    color: #94a3b8;
+  }
+
+  .btn-cancel {
+    background: #334155;
+    border-color: #475569;
+    color: #cbd5e1;
+  }
+
+  .btn-cancel:hover {
+    background: #475569;
+  }
 }
 </style>

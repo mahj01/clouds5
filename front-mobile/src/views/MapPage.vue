@@ -572,6 +572,33 @@ onBeforeUnmount(() => {
 .hint {
   display: block;
   margin-bottom: 12px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* Details panel */
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.details > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.details > div strong {
+  color: #475569;
+  font-weight: 600;
+  min-width: 90px;
+  flex-shrink: 0;
 }
 
 /* Picking banner styles */
@@ -580,22 +607,24 @@ onBeforeUnmount(() => {
   top: 16px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(37, 99, 235, 0.95);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.97) 0%, rgba(29, 78, 216, 0.97) 100%);
   color: white;
-  padding: 12px 20px;
-  border-radius: 12px;
+  padding: 14px 24px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  gap: 12px;
+  box-shadow: 0 8px 32px rgba(37, 99, 235, 0.35), 0 2px 8px rgba(0, 0, 0, 0.1);
   z-index: 100;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 15px;
+  letter-spacing: -0.01em;
+  backdrop-filter: blur(8px);
 }
 
 .picking-icon {
-  font-size: 20px;
-  animation: bounce 1s ease infinite;
+  font-size: 22px;
+  animation: bounce 1.2s ease-in-out infinite;
 }
 
 .picking-text {
@@ -607,19 +636,30 @@ onBeforeUnmount(() => {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-4px);
+    transform: translateY(-5px);
   }
 }
 
 /* Slide down transition */
 .slide-down-enter-active,
 .slide-down-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .slide-down-enter-from,
 .slide-down-leave-to {
   opacity: 0;
-  transform: translateX(-50%) translateY(-20px);
+  transform: translateX(-50%) translateY(-24px);
+}
+
+/* Dark mode details */
+@media (prefers-color-scheme: dark) {
+  .details > div {
+    background: #1e293b;
+  }
+
+  .details > div strong {
+    color: #94a3b8;
+  }
 }
 </style>

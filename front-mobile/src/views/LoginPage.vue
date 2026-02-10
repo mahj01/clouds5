@@ -153,40 +153,75 @@ onBeforeUnmount(() => unsubscribe());
 
 <style scoped>
 .hero {
-  height: 220px;
-  background: linear-gradient(180deg, #222428 0%, #0f1112 100%);
-  border-bottom-left-radius: 50% 12%;
-  border-bottom-right-radius: 50% 12%;
+  height: 240px;
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%);
+  border-bottom-left-radius: 50% 14%;
+  border-bottom-right-radius: 50% 14%;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 30% 70%, rgba(255,255,255,0.08) 0%, transparent 60%);
 }
 
 .login-page {
-  background: linear-gradient(180deg,#0b0b0c 0%, #151617 100%);
+  --background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
   min-height: 100vh;
 }
 
 .card {
   background: #ffffff;
-  border-radius: 18px;
-  padding: 22px;
-  margin-top: -70px;
-  box-shadow: 0 18px 40px rgba(2,6,12,0.7);
+  border-radius: 24px;
+  padding: 32px 28px;
+  margin: -80px 16px 0;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
 .title {
-  margin: 0 0 12px 0;
+  margin: 0 0 24px 0;
   font-size: 28px;
-  color: #222;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #0f172a;
 }
 
 .field {
-  margin-bottom: 12px;
+  margin-bottom: 18px;
 }
 
 .field-label {
   display: block;
   font-size: 13px;
-  color: #666;
-  margin-bottom: 6px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.field ion-item {
+  --background: #f8fafc;
+  --border-color: #e2e8f0;
+  --border-radius: 12px;
+  --border-width: 1.5px;
+  --border-style: solid;
+  --min-height: 52px;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.field ion-item:focus-within {
+  --border-color: var(--ion-color-primary);
+  --background: #eff6ff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .row {
@@ -200,64 +235,105 @@ onBeforeUnmount(() => unsubscribe());
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #666;
+  color: #64748b;
 }
 
 .forgot {
-  color: #7f8c8d;
+  color: #64748b;
   font-size: 13px;
   text-decoration: none;
+  font-weight: 500;
 }
 
 .login-btn {
-  --border-radius: 12px;
+  --border-radius: 14px;
+  --background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  --box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+  --color: #ffffff;
+  margin-top: 8px;
   margin-bottom: 12px;
-  background: linear-gradient(180deg,#2b2b2b,#111);
-  color: #fff;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  height: 54px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  transition: transform 0.15s ease;
+}
+
+.login-btn:active {
+  transform: scale(0.98);
 }
 
 .signup {
   text-align: center;
-  color: #8c8c8c;
+  color: #64748b;
   font-size: 14px;
 }
 
 .signup a {
-  color: #2b2b2b;
+  color: var(--ion-color-primary);
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 700;
 }
 
-/* style Ionic items/inputs via CSS variables */
-.input-item {
-  --background: #0f0f10;
-  --color: #e6e6e6;
-  border-radius: 6px;
-  padding: 8px 12px;
+.error-message {
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1.5px solid #fecaca;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
-.card ::v-deep(.ion-input) {
-  color: #e6e6e6;
-}
- .error-message {
-   color: #e74c3c;
-   background: #fff0f0;
-   border: 1px solid #e74c3c;
-   border-radius: 8px;
-   padding: 8px 12px;
-   margin-bottom: 12px;
-   text-align: center;
-   font-size: 15px;
- }
 .field.remember-field {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  padding: 4px 0;
 }
 
 .remember-label {
   margin: 0;
-  color: #666;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+@media (prefers-color-scheme: dark) {
+  .card {
+    background: #1e293b;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  }
+
+  .title {
+    color: #f1f5f9;
+  }
+
+  .field ion-item {
+    --background: #0f172a;
+    --border-color: #334155;
+  }
+
+  .field ion-item:focus-within {
+    --background: #162033;
+    --border-color: var(--ion-color-primary);
+  }
+
+  .error-message {
+    background: #1c1917;
+    border-color: #7f1d1d;
+    color: #fca5a5;
+  }
+
+  .field-label {
+    color: #94a3b8;
+  }
+
+  .remember-label {
+    color: #94a3b8;
+  }
 }
 </style>
