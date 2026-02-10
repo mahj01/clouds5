@@ -18,6 +18,7 @@ import { TypeProbleme } from '../problemes/type-probleme.entity';
 import { JournalService } from '../journal/journal.service';
 import { HistoriqueSignalementService } from '../historique_signalement/historique-signalement.service';
 import { FirestoreDiffSyncService } from '../firestore/firestore-diff-sync.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class SignalementsService {
@@ -29,6 +30,7 @@ export class SignalementsService {
     private readonly journalService: JournalService,
     private readonly historiqueService: HistoriqueSignalementService,
     private readonly firestoreDiffSync: FirestoreDiffSyncService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   private async logAction(
@@ -185,23 +187,26 @@ export class SignalementsService {
     if (dto.budget !== undefined)
       entity.budget = dto.budget != null ? String(dto.budget) : undefined;
 
+    let createdHistoriqueId: number | undefined;
+
     if (dto.statut !== undefined && dto.statut !== entity.statut) {
       const ancienStatut = entity.statut;
       entity.statut = dto.statut;
       entity.avancement = avancementFromStatut(dto.statut);
-      if (dto.statut === StatutSignalement.RESOLU) {
+      if (String(dto.statut) === String(StatutSignalement.RESOLU)) {
         entity.dateResolution = new Date();
       }
       // Enregistrer l'historique du changement de statut
       const managerId = dto.utilisateurId || entity.utilisateur?.id;
       if (managerId) {
         try {
-          await this.historiqueService.create({
+          const hist = await this.historiqueService.create({
             ancienStatut,
             nouveauStatut: dto.statut,
             signalementId: id,
             managerId,
           });
+          createdHistoriqueId = hist.id;
         } catch (e) {
           console.error('Erreur enregistrement historique:', e);
         }
@@ -215,8 +220,33 @@ export class SignalementsService {
       try {
         await this.firestoreDiffSync.flushPendingStatusDiffs(25);
       } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
         // Don't fail the API request if Firestore is unreachable
-        console.warn('Firestore diff sync failed:', e?.message ?? e);
+        console.warn('Firestore diff sync failed:', msg);
+      }
+
+      // Notifications (best-effort): create local outbox row, then try immediate delivery
+      if (createdHistoriqueId && saved.utilisateur?.id) {
+        try {
+          // Ensure we have firebaseUid loaded.
+          const utilisateur = await this.userRepo.findOne({
+            where: { id: saved.utilisateur.id },
+          });
+          if (utilisateur) {
+            const hist =
+              await this.historiqueService.findOne(createdHistoriqueId);
+            const outbox =
+              await this.notificationsService.enqueueSignalementStatusChange({
+                historique: hist,
+                signalement: saved,
+                utilisateur,
+              });
+            await this.notificationsService.tryDeliverNow(outbox.id);
+          }
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          console.warn('Notification enqueue/delivery failed:', msg);
+        }
       }
     }
 
@@ -252,14 +282,17 @@ export class SignalementsService {
 
     const saved = await this.repo.save(entity);
 
+    let createdHistoriqueId: number | undefined;
+
     // Enregistrer l'historique
     try {
-      await this.historiqueService.create({
+      const hist = await this.historiqueService.create({
         ancienStatut,
         nouveauStatut: StatutSignalement.RESOLU,
         signalementId: id,
         managerId: utilisateurResolutionId,
       });
+      createdHistoriqueId = hist.id;
     } catch (e) {
       console.error('Erreur enregistrement historique:', e);
     }
@@ -268,7 +301,31 @@ export class SignalementsService {
     try {
       await this.firestoreDiffSync.flushPendingStatusDiffs(25);
     } catch (e) {
-      console.warn('Firestore diff sync failed:', e?.message ?? e);
+      const msg = e instanceof Error ? e.message : String(e);
+      console.warn('Firestore diff sync failed:', msg);
+    }
+
+    // Notifications (best-effort)
+    if (createdHistoriqueId && saved.utilisateur?.id) {
+      try {
+        const utilisateur = await this.userRepo.findOne({
+          where: { id: saved.utilisateur.id },
+        });
+        if (utilisateur) {
+          const hist =
+            await this.historiqueService.findOne(createdHistoriqueId);
+          const outbox =
+            await this.notificationsService.enqueueSignalementStatusChange({
+              historique: hist,
+              signalement: saved,
+              utilisateur,
+            });
+          await this.notificationsService.tryDeliverNow(outbox.id);
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.warn('Notification enqueue/delivery failed:', msg);
+      }
     }
 
     // Log resolution

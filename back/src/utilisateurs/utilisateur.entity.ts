@@ -50,4 +50,15 @@ export class Utilisateur {
     nullable: true,
   })
   firebaseUid?: string | null;
+
+  /**
+   * Firebase Cloud Messaging token for push notifications.
+   * Updated by the mobile app after login.
+   */
+  @Column({
+    name: 'fcm_token',
+    type: 'text',
+    nullable: true,
+  })
+  fcmToken?: string | null;
 }

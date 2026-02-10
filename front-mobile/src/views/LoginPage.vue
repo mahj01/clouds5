@@ -48,6 +48,10 @@ import { useRouter } from 'vue-router';
 import { IonPage, IonContent, IonItem, IonInput, IonButton, IonCheckbox } from '@ionic/vue';
 
 import authService from '@/services/auth';
+import { registerForPushNotifications } from '@/services/push-notifications';
+import { apiPost } from '@/services/api';
+import { checkAndRequestGPSPermission } from '@/services/gps-permission';
+import { upsertUserFcmTokenInFirestore } from '@/services/firestore-user-profile';
 
 const router = useRouter();
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
@@ -89,6 +93,40 @@ async function onLogin() {
         errorMessage.value = res.error.message || 'Invalid email or password.';
       }
       return;
+    }
+
+    // IMPORTANT: request GPS permission first, then push permissions.
+    // We've seen concurrency issues on Android if multiple permission/token flows overlap.
+    try {
+      console.log('[login] requesting GPS permission (pre-push)');
+      await checkAndRequestGPSPermission();
+    } catch (e) {
+      console.warn('[login] GPS permission flow failed (continuing)', e);
+    }
+
+    // Register device for push notifications and send token to backend (best-effort)
+    try {
+      console.log('[login] starting push registration (post-gps)');
+      const token = await registerForPushNotifications();
+      console.log('[login] push token acquired, syncing to Firestore + backend');
+
+      // Store on Firestore user doc (fallback path for backend)
+      try {
+        const uid = res.data?.user?.uid;
+        if (uid) {
+          await upsertUserFcmTokenInFirestore({ firebaseUid: uid, token });
+          console.log('[login] push token stored in Firestore users/' + uid);
+        } else {
+          console.log('[login] no firebase uid in session (skip Firestore token write)');
+        }
+      } catch (e) {
+        console.warn('[login] Firestore token write failed (continuing)', e);
+      }
+
+      await apiPost('/utilisateurs/me/fcm-token', { fcmToken: token });
+      console.log('[login] push token sent to backend');
+    } catch (e) {
+      console.warn('[push] token registration failed', e);
     }
 
     await router.replace('/home');

@@ -23,6 +23,7 @@ import {
 import { UtilisateursService } from './utilisateurs.service';
 import { CreateUtilisateurDto } from './dto/create-utilisateur.dto';
 import { UpdateUtilisateurDto } from './dto/update-utilisateur.dto';
+import { UpdateFcmTokenDto } from './dto/update-fcm-token.dto';
 
 @ApiTags('utilisateurs')
 @ApiBearerAuth()
@@ -128,5 +129,10 @@ export class UtilisateursController {
   @ApiResponse({ status: 409, description: 'Email déjà utilisé' })
   async register(@Body() dto: CreateUtilisateurDto) {
     return this.svc.register(dto);
+  }
+
+  @Post('me/fcm-token')
+  updateMyFcmToken(@Body() dto: UpdateFcmTokenDto, @Req() req: any) {
+    return this.svc.updateFcmToken(req?.user?.id, dto.fcmToken);
   }
 }
