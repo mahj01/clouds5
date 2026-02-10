@@ -61,7 +61,7 @@ export default function DashboardLayout({ onLogout }) {
       )}
 
       <aside
-        className={`fixed left-0 top-0 z-40 h-full w-72 border-r border-slate-200 bg-slate-100 px-5 py-6 transition-transform md:sticky md:top-0 md:h-screen md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed left-0 top-0 z-40 h-full w-72 overflow-y-auto overscroll-contain border-r border-slate-200 bg-slate-100 px-5 py-6 transition-transform md:sticky md:top-0 md:h-screen md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="flex items-center justify-between">
           <div className="text-lg font-semibold text-indigo-600">Clouds5</div>
