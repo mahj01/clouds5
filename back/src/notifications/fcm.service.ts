@@ -5,6 +5,9 @@ import admin from '../firebase-admin';
 export class FcmService {
   private readonly logger = new Logger(FcmService.name);
 
+  /** Must match a channel created on Android (Capacitor Push plugin uses "default" by default). */
+  private static readonly ANDROID_CHANNEL_ID = 'default';
+
   async sendToToken(params: {
     token: string;
     title: string;
@@ -23,6 +26,10 @@ export class FcmService {
       data,
       android: {
         priority: 'high',
+        notification: {
+          channelId: FcmService.ANDROID_CHANNEL_ID,
+          sound: 'default',
+        },
       },
     };
 
