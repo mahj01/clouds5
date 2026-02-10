@@ -11,8 +11,6 @@ export const DASHBOARD_NAV_ITEMS = [
   { id: 'tableau-synthese', label: 'Tableau Synthèse', icon: 'fa fa-th-list', path: '/tableau-synthese' },
   { id: 'carte-problemes', label: 'Carte des Problèmes', icon: 'fa fa-map-marker', path: '/carte-problemes' },
   { id: 'signaler-probleme', label: 'Signaler un Problème', icon: 'fa fa-plus-circle', path: '/signaler-probleme' },
-  // Admin seulement
-  { id: 'parametres', label: 'Paramètres', icon: 'fa fa-cog', path: '/parametres', adminOnly: true },
   { id: 'journal', label: 'Journal des accès', icon: 'fa fa-history', path: '/journal', adminOnly: true },
   { id: 'sauvegarde', label: 'Sauvegarde données', icon: 'fa fa-database', path: '/sauvegarde', adminOnly: true },
   { id: 'validation', label: 'Validation données', icon: 'fa fa-check-circle', path: '/validation', adminOnly: true },

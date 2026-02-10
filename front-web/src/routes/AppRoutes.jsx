@@ -127,7 +127,6 @@ export default function AppRoutes() {
         <Route path="/signalements" element={<Signalements />} />
         <Route path="/historique-signalements" element={<HistoriqueSignalements />} />
         <Route path="/statistiques" element={<Statistiques />} />
-        <Route path="/parametres" element={<Parametres />} />
         <Route path="/maplibre" element={<MapPage />} />
         {/* Pages front-office accessibles depuis le dashboard */}
         <Route path="/tableau-synthese" element={<TableauSyntheseFrontOffice />} />
