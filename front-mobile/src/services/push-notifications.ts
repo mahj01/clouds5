@@ -1,6 +1,45 @@
 import { Capacitor } from '@capacitor/core';
+import { getToken } from './auth-storage';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+/**
+ * Helper pour récupérer le token d'authentification
+ * Essaie les deux méthodes de stockage
+ */
+async function getAuthToken(): Promise<string | null> {
+  // Méthode 1: via auth-storage (auth.session JSON)
+  const sessionToken = await getToken();
+  console.log('[PushService] Token from auth.session:', sessionToken ? 'found' : 'null');
+  if (sessionToken) return sessionToken;
+  
+  // Méthode 2: clé simple auth_token
+  const simpleToken = localStorage.getItem('auth_token');
+  console.log('[PushService] Token from auth_token:', simpleToken ? 'found' : 'null');
+  if (simpleToken) return simpleToken;
+  
+  // Debug: afficher toutes les clés localStorage
+  console.log('[PushService] localStorage keys:', Object.keys(localStorage));
+  
+  return null;
+}
+
+/**
+ * Helper pour faire des requêtes authentifiées
+ */
+async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const token = await getAuthToken();
+  console.log('[PushService] Token value:', token ? token.substring(0, 20) + '...' : 'null');
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {}),
+  };
+  if (token) {
+    (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+  }
+  console.log('[PushService] Request headers:', headers);
+  return fetch(url, { ...options, headers });
+}
 
 // Import dynamique pour éviter l'erreur si le module n'est pas installé
 let PushNotificationsPlugin: any = null;
@@ -35,9 +74,8 @@ async function registerTokenWithBackend(token: string): Promise<void> {
   }
 
   try {
-    const response = await fetch(`${API_URL}/utilisateurs/firebase/${currentFirebaseUid}/fcm-token`, {
+    const response = await authFetch(`${API_URL}/utilisateurs/firebase/${currentFirebaseUid}/fcm-token`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ fcmToken: token }),
     });
 
@@ -158,7 +196,7 @@ export async function cleanupPushNotifications(): Promise<void> {
  */
 export async function getUnreadCount(firebaseUid: string): Promise<number> {
   try {
-    const response = await fetch(`${API_URL}/notifications/firebase/${firebaseUid}/unread-count`);
+    const response = await authFetch(`${API_URL}/notifications/firebase/${firebaseUid}/unread-count`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     return data.count || 0;
@@ -173,9 +211,11 @@ export async function getUnreadCount(firebaseUid: string): Promise<number> {
  */
 export async function getNotifications(firebaseUid: string): Promise<any[]> {
   try {
-    const response = await fetch(`${API_URL}/notifications/firebase/${firebaseUid}`);
+    const response = await authFetch(`${API_URL}/notifications/firebase/${firebaseUid}`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return await response.json();
+    const data = await response.json();
+    console.log('[PushService] Notifications reçues:', data);
+    return data;
   } catch (error) {
     console.error('[PushService] Erreur récupération notifications:', error);
     return [];
@@ -187,7 +227,7 @@ export async function getNotifications(firebaseUid: string): Promise<any[]> {
  */
 export async function markNotificationRead(notificationId: number): Promise<void> {
   try {
-    await fetch(`${API_URL}/notifications/${notificationId}/read`, { method: 'POST' });
+    await authFetch(`${API_URL}/notifications/${notificationId}/read`, { method: 'POST' });
   } catch (error) {
     console.error('[PushService] Erreur marquage lu:', error);
   }
@@ -198,7 +238,7 @@ export async function markNotificationRead(notificationId: number): Promise<void
  */
 export async function markAllNotificationsRead(firebaseUid: string): Promise<void> {
   try {
-    await fetch(`${API_URL}/notifications/firebase/${firebaseUid}/read-all`, { method: 'POST' });
+    await authFetch(`${API_URL}/notifications/firebase/${firebaseUid}/read-all`, { method: 'POST' });
   } catch (error) {
     console.error('[PushService] Erreur marquage tout lu:', error);
   }
