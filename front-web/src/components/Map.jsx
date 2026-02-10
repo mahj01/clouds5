@@ -566,7 +566,7 @@ export default function Map() {
                 title="Masquer le panneau"
               >
                 <i className="fa fa-chevron-left" aria-hidden="true" />
-                <span className="ml-1">Cacher</span>
+                {/* <span className="ml-1">Cacher</span> */}
               </button>
               <button
                 type="button"
@@ -624,9 +624,7 @@ export default function Map() {
               onClick={() => setIsRecapVisible(true)}
               className="rounded-lg border border-slate-200 bg-white/95 px-3 py-2 text-xs font-semibold text-slate-700 shadow hover:bg-white"
               title="Afficher le panneau"
-            >
-              <i className="fa fa-chevron-right mr-2" aria-hidden="true" />
-              Afficher le panneau
+            ><i className="fa fa-chevron-right mr-2" aria-hidden="true" />
             </button>
           </div>
         )}
