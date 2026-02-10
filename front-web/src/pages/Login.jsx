@@ -5,7 +5,7 @@ export default function Login({ onLoginSuccess } = {}) {
   const emailId = useId()
   const passwordId = useId()
 
-  const [email, setEmail] = useState('test@mail.com')
+  const [email, setEmail] = useState('manager@mail.com')
   const [motDePasse, setMotDePasse] = useState('12345678')
 
   const [loading, setLoading] = useState(false)
