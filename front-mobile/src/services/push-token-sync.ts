@@ -1,5 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 import { apiPost } from './api';
+import { upsertUserFcmTokenInFirestore } from './firestore-user-profile';
+import { getSession } from './auth-storage';
 
 const STORAGE_KEY = 'push.fcmToken.v1';
 const STORAGE_LAST_SENT_KEY = 'push.fcmTokenLastSent.v1';
@@ -41,6 +43,22 @@ export async function sendFcmTokenToBackendIfNeeded(token: string): Promise<void
     return;
   }
 
+  // 1) Always try to mirror token in Firestore (best-effort)
+  try {
+    const session = await getSession();
+    const uid = session?.user?.uid;
+    if (uid) {
+      console.log('[push] syncing token to Firestore user doc');
+      await upsertUserFcmTokenInFirestore({ firebaseUid: uid, token });
+      console.log('[push] token synced to Firestore');
+    } else {
+      console.log('[push] no firebase uid in session yet (skip Firestore token sync)');
+    }
+  } catch (e) {
+    console.warn('[push] Firestore token sync failed (will retry on next registration/start)', e);
+  }
+
+  // 2) Best-effort: send token to backend if changed.
   const lastSent = safeGet(STORAGE_LAST_SENT_KEY);
   if (lastSent === token) {
     console.log('[push] token already sent to backend (no change)');
@@ -57,4 +75,3 @@ export async function sendFcmTokenToBackendIfNeeded(token: string): Promise<void
     // don't mark as sent
   }
 }
-

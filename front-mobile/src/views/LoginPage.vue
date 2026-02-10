@@ -51,6 +51,7 @@ import authService from '@/services/auth';
 import { registerForPushNotifications } from '@/services/push-notifications';
 import { apiPost } from '@/services/api';
 import { checkAndRequestGPSPermission } from '@/services/gps-permission';
+import { upsertUserFcmTokenInFirestore } from '@/services/firestore-user-profile';
 
 const router = useRouter();
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
@@ -107,7 +108,21 @@ async function onLogin() {
     try {
       console.log('[login] starting push registration (post-gps)');
       const token = await registerForPushNotifications();
-      console.log('[login] push token acquired, sending to backend');
+      console.log('[login] push token acquired, syncing to Firestore + backend');
+
+      // Store on Firestore user doc (fallback path for backend)
+      try {
+        const uid = res.data?.user?.uid;
+        if (uid) {
+          await upsertUserFcmTokenInFirestore({ firebaseUid: uid, token });
+          console.log('[login] push token stored in Firestore users/' + uid);
+        } else {
+          console.log('[login] no firebase uid in session (skip Firestore token write)');
+        }
+      } catch (e) {
+        console.warn('[login] Firestore token write failed (continuing)', e);
+      }
+
       await apiPost('/utilisateurs/me/fcm-token', { fcmToken: token });
       console.log('[login] push token sent to backend');
     } catch (e) {

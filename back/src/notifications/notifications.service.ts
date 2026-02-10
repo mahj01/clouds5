@@ -11,6 +11,7 @@ import { HistoriqueSignalement } from '../historique_signalement/historique-sign
 import { Signalement } from '../signalements/signalement.entity';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { FcmService } from './fcm.service';
+import { FirestoreUserTokensService } from './firestore-user-tokens.service';
 
 export type FirestoreUserNotification = {
   pg_notification_id: number;
@@ -34,6 +35,7 @@ export class NotificationsService {
     @InjectRepository(NotificationOutbox)
     private readonly repo: Repository<NotificationOutbox>,
     private readonly fcm: FcmService,
+    private readonly userTokens: FirestoreUserTokensService,
   ) {}
 
   private computeBackoffNextAttempt(attempts: number): Date {
@@ -135,10 +137,20 @@ export class NotificationsService {
       await this.pushToFirestore(notif);
 
       // 2) OS-level push (FCM) for killed/backgrounded app (best-effort)
-      // Today we have a single token on Utilisateur. This loop prepares for multi-token support.
-      const tokens = [notif.utilisateur?.fcmToken].filter(
-        (t): t is string => !this.tokenLooksInvalid(t),
-      );
+      // Prefer local PG token, but fallback to Firestore user doc tokens when missing.
+      const firebaseUid = notif.utilisateur?.firebaseUid;
+      const firestoreTokens = firebaseUid
+        ? await this.userTokens.getTokensForFirebaseUid(firebaseUid)
+        : [];
+
+      const candidateTokens = [
+        notif.utilisateur?.fcmToken,
+        ...firestoreTokens,
+      ].filter((t): t is string => typeof t === 'string');
+
+      const tokens = Array.from(
+        new Set(candidateTokens.map((t) => t.trim()).filter(Boolean)),
+      ).filter((t) => !this.tokenLooksInvalid(t));
 
       if (tokens.length === 0) {
         this.logger.log(
@@ -164,10 +176,10 @@ export class NotificationsService {
             this.logger.warn(`FCM push failed for notif ${notif.id}: ${msg}`);
 
             // If the token is unregistered/invalid, clear it so we don't retry forever.
-            // (When we move to a token table, we'll revoke that token row instead.)
+            // Note: this only clears the PG single-token field. Firestore token cleanup can be added later.
             if (this.isUnregisteredTokenError(pushErr)) {
               try {
-                if (notif.utilisateur) {
+                if (notif.utilisateur && notif.utilisateur.fcmToken === token) {
                   notif.utilisateur.fcmToken = null;
                   // best-effort: avoid coupling to user repo here
                   await this.repo.manager.save(notif.utilisateur);
