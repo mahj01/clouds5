@@ -134,6 +134,15 @@ export class FirestoreSyncService implements OnModuleInit {
         continue;
       }
 
+      // Ignorer les docs sans coordonnées valides
+      if (data.latitude == null || data.longitude == null) {
+        this.logger.warn(
+          `Document Firestore ${doc.id} ignoré : latitude ou longitude manquante`,
+        );
+        skipped++;
+        continue;
+      }
+
       // Vérifier si ce signalement existe déjà en base (coordonnées exactes + même utilisateur)
       const existingDuplicate = await signalementRepo.findOne({
         where: {
