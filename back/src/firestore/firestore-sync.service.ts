@@ -45,8 +45,8 @@ export class FirestoreSyncService implements OnModuleInit {
     for (const e of entities) {
       try {
         await this.syncEntity(e);
-      } catch (err) {
-        this.logger.warn(`Failed to sync entity ${e.name}: ${String(err?.message ?? err)}`);
+      } catch (err: unknown) {
+        this.logger.warn(`Failed to sync entity ${e.name}: ${String(err instanceof Error ? err.message : err)}`);
       }
     }
   }
