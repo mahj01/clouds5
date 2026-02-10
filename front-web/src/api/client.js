@@ -215,6 +215,14 @@ export function resoudreSignalement(id, utilisateurResolutionId, commentaire = n
   })
 }
 
+export function assignerNiveauSignalement(id, niveauId) {
+  return apiFetch(`/signalements/${id}/assigner-niveau`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ niveauId }),
+  })
+}
+
 export function deleteSignalement(id) {
   return apiFetch(`/signalements/${id}`, {
     method: 'DELETE',
@@ -449,6 +457,14 @@ export async function telechargerSauvegarde(id) {
 
 export function getValidations() {
   return apiFetch('/validation', {
+    headers: authHeaders(),
+  })
+}
+
+// ==================== NIVEAUX REPARATION ====================
+
+export function getNiveauxReparation() {
+  return apiFetch('/niveaux-reparation', {
     headers: authHeaders(),
   })
 }

@@ -15,6 +15,7 @@ import { UpdateSignalementDto } from './dto/update-signalement.dto';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { Entreprise } from '../entreprises/entreprise.entity';
 import { TypeProbleme } from '../problemes/type-probleme.entity';
+import { NiveauReparation } from '../niveaux_reparation/niveau-reparation.entity';
 import { JournalService } from '../journal/journal.service';
 import { HistoriqueSignalementService } from '../historique_signalement/historique-signalement.service';
 import { FirestoreDiffSyncService } from '../firestore/firestore-diff-sync.service';
@@ -28,6 +29,7 @@ export class SignalementsService {
     @InjectRepository(Utilisateur) private userRepo: Repository<Utilisateur>,
     @InjectRepository(Entreprise) private entRepo: Repository<Entreprise>,
     @InjectRepository(TypeProbleme) private typeRepo: Repository<TypeProbleme>,
+    @InjectRepository(NiveauReparation) private niveauRepo: Repository<NiveauReparation>,
     private readonly journalService: JournalService,
     private readonly historiqueService: HistoriqueSignalementService,
     private readonly firestoreDiffSync: FirestoreDiffSyncService,
@@ -139,6 +141,7 @@ export class SignalementsService {
         'entreprise',
         'typeProbleme',
         'utilisateurResolution',
+        'niveauReparation',
       ],
       order: { dateSignalement: 'DESC' },
     });
@@ -177,6 +180,7 @@ export class SignalementsService {
         'entreprise',
         'typeProbleme',
         'utilisateurResolution',
+        'niveauReparation',
       ],
     });
     if (!item) throw new NotFoundException('Signalement non trouvé');
@@ -588,5 +592,55 @@ export class SignalementsService {
       },
       tauxResolution,
     };
+  }
+
+  /**
+   * Assigne un niveau de réparation à un signalement et recalcule le budget.
+   * Formule: budget = prix_par_m2 × niveau × surface_m2
+   */
+  async assignerNiveau(
+    signalementId: number,
+    niveauId: number,
+  ): Promise<Signalement> {
+    const signalement = await this.findOne(signalementId);
+
+    // Récupérer le niveau de réparation
+    const niveau = await this.niveauRepo.findOne({ where: { id: niveauId } });
+    if (!niveau) {
+      throw new NotFoundException(`Niveau de réparation #${niveauId} non trouvé`);
+    }
+
+    signalement.niveauReparation = niveau;
+
+    // Recalculer le budget si surface et prix forfaitaire sont disponibles
+    const surfaceM2 = signalement.surfaceM2 ? Number(signalement.surfaceM2) : 0;
+    if (surfaceM2 > 0) {
+      try {
+        const prixForfaitaires = await this.prixForfaitaireService.findAll();
+        if (prixForfaitaires.length > 0) {
+          const prixM2 = Number(prixForfaitaires[0].prixM2);
+          if (prixM2 > 0) {
+            // Formule: prix_par_m2 × niveau × surface_m2
+            const budget = prixM2 * niveau.niveau * surfaceM2;
+            signalement.budget = String(Math.round(budget * 100) / 100);
+          }
+        }
+      } catch (e) {
+        console.warn('Impossible de recalculer le budget:', e);
+      }
+    }
+
+    const saved = await this.repo.save(signalement);
+
+    // Log l'assignation
+    await this.logAction(
+      'ASSIGN_NIVEAU',
+      'signalements',
+      undefined,
+      'info',
+      `Niveau ${niveau.libelle} (${niveau.niveau}) assigné au signalement #${signalementId}. Budget: ${signalement.budget || 'N/A'}`,
+    );
+
+    return saved;
   }
 }
