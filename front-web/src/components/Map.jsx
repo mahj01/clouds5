@@ -213,6 +213,10 @@ export default function Map() {
             maxWidth: '320px',
           });
 
+          // current photo URL shown in popup (used by key handler)
+          let currentPopupPhotoUrl = null;
+          let currentPopupKeyHandler = null;
+
           map.on('mouseenter', 'signalements-circles', (e) => {
             map.getCanvas().style.cursor = 'pointer';
             // Changer la palette en noir au survol
@@ -223,6 +227,12 @@ export default function Map() {
           map.on('mouseleave', 'signalements-circles', () => {
             map.getCanvas().style.cursor = '';
             popup.remove();
+            // remove key handler when leaving
+            if (currentPopupKeyHandler) {
+              try { document.removeEventListener('keydown', currentPopupKeyHandler) } catch {}
+              currentPopupKeyHandler = null;
+              currentPopupPhotoUrl = null;
+            }
             // Rétablir la palette normale
             map.setPaintProperty('osm-raster', 'raster-saturation', 0.1);
             map.setPaintProperty('osm-raster', 'raster-brightness-max', 1);
@@ -249,7 +259,7 @@ export default function Map() {
             // Lien vers la photo
             const photoUrl = props.photoUrl ? photoFullUrl(props.photoUrl) : null;
             const photoLink = photoUrl
-              ? `<div style="margin-top:8px;"><a href="${photoUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:4px;color:#6366f1;text-decoration:none;font-weight:500;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><i class="fa fa-camera"></i> Voir la photo</a></div>`
+              ? `<div style="margin-top:8px;"><a href="${photoUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:4px;color:#6366f1;text-decoration:none;font-weight:500;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><i class="fa fa-camera"></i> Voir la photo</a><div style="font-size:11px;color:#94a3b8;margin-top:6px;">Appuyez sur Entrée pour ouvrir la photo</div></div>`
               : '';
 
             const html = `
@@ -271,6 +281,25 @@ export default function Map() {
             `;
 
             popup.setLngLat(e.lngLat).setHTML(html).addTo(map);
+            // install key handler to open photo on Enter
+            try {
+              if (currentPopupKeyHandler) {
+                document.removeEventListener('keydown', currentPopupKeyHandler);
+                currentPopupKeyHandler = null;
+                currentPopupPhotoUrl = null;
+              }
+              if (photoUrl) {
+                currentPopupPhotoUrl = photoUrl;
+                currentPopupKeyHandler = (ev) => {
+                  if (ev.key === 'Enter' && currentPopupPhotoUrl) {
+                    window.open(currentPopupPhotoUrl, '_blank');
+                  }
+                };
+                document.addEventListener('keydown', currentPopupKeyHandler);
+              }
+            } catch (e) {
+              // ignore
+            }
           });
 
           // In case data arrived before map load
