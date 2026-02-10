@@ -4,11 +4,13 @@ import { auth, db } from '@/firebase'
 export const SIGNALMENT_COLLECTION = 'signalement'
 
 export type FirestoreSignalementCreate = {
+  titre?: string
   description?: string
   surfaceM2?: number
   latitude: number
   longitude: number
   typeSignalement?: string
+  typeProblemeId?: number
 }
 
 export type FirestoreSignalement = {
@@ -150,8 +152,9 @@ export async function createSignalementInFirestore(input: FirestoreSignalementCr
   // Conform to SQL-like column names without forcing a numeric PK in Firestore.
   // Firestore will generate the document id.
   const docData = {
-    titre: null,
+    titre: input.titre?.trim() || null,
     type_signalement: input.typeSignalement?.trim() || null,
+    type_probleme_id: input.typeProblemeId != null ? Number(input.typeProblemeId) : null,
     description: input.description ?? null,
     latitude: roundTo(input.latitude, 6),
     longitude: roundTo(input.longitude, 6),

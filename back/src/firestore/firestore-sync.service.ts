@@ -86,6 +86,7 @@ export class FirestoreSyncService implements OnModuleInit {
       Signalement,
       Session,
       StatutCompte,
+      TypeProbleme,
     ];
     const details: { collection: string; sent: number; skipped: number }[] = [];
     let totalSent = 0;
