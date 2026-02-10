@@ -15,6 +15,7 @@ export const DASHBOARD_NAV_ITEMS = [
   { id: 'sauvegarde', label: 'Sauvegarde données', icon: 'fa fa-database', path: '/sauvegarde', adminOnly: true },
   { id: 'validation', label: 'Validation données', icon: 'fa fa-check-circle', path: '/validation', adminOnly: true },
   { id: 'niveaux-reparation', label: 'Niveaux Réparation', icon: 'fa fa-wrench', path: '/niveaux-reparation', adminOnly: true },
+  { id: 'prix-forfaitaire', label: 'Prix Forfaitaire m²', icon: 'fa fa-money', path: '/prix-forfaitaire', adminOnly: true },
 ]
 
 // Utility exports for role-based UI
