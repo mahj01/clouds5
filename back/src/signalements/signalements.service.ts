@@ -150,7 +150,7 @@ export class SignalementsService {
   findAllActifs() {
     return this.repo.find({
       where: { statut: StatutSignalement.ACTIF },
-      relations: ['utilisateur', 'typeProbleme'],
+      relations: ['utilisateur', 'typeProbleme', 'niveauReparation'],
       order: { priorite: 'DESC', dateSignalement: 'DESC' },
     });
   }
@@ -159,7 +159,7 @@ export class SignalementsService {
     return this.repo.find({
       where: { statut },
       // include entreprise so GeoJSON has entreprise data too
-      relations: ['utilisateur', 'entreprise', 'typeProbleme', 'utilisateurResolution'],
+      relations: ['utilisateur', 'entreprise', 'typeProbleme', 'utilisateurResolution', 'niveauReparation'],
       order: { dateSignalement: 'DESC' },
     });
   }
@@ -167,7 +167,7 @@ export class SignalementsService {
   findByType(typeId: number) {
     return this.repo.find({
       where: { typeProbleme: { id: typeId } },
-      relations: ['utilisateur', 'typeProbleme'],
+      relations: ['utilisateur', 'typeProbleme', 'niveauReparation'],
       order: { dateSignalement: 'DESC' },
     });
   }
@@ -641,6 +641,7 @@ export class SignalementsService {
       `Niveau ${niveau.libelle} (${niveau.niveau}) assigné au signalement #${signalementId}. Budget: ${signalement.budget || 'N/A'}`,
     );
 
-    return saved;
+    // Retourner le signalement avec toutes ses relations
+    return this.findOne(saved.id);
   }
 }
