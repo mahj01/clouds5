@@ -98,16 +98,38 @@ export class UtilisateursService {
 
   async update(id: number, dto: UpdateUtilisateurDto) {
     const user = await this.findOne(id);
-    if (dto.email !== undefined) user.email = dto.email;
-    if (dto.motDePasse !== undefined) user.motDePasse = dto.motDePasse;
-    if (dto.nom !== undefined) user.nom = dto.nom;
-    if (dto.prenom !== undefined) user.prenom = dto.prenom;
+    let shouldMarkUnsynced = false;
+    if (dto.email !== undefined && dto.email !== user.email) {
+      user.email = dto.email;
+      shouldMarkUnsynced = true;
+    }
+    if (dto.motDePasse !== undefined) {
+      const pwd = String(dto.motDePasse || '').trim();
+      if (pwd && pwd !== 'unchanged_placeholder_pwd' && pwd !== user.motDePasse) {
+        user.motDePasse = dto.motDePasse;
+        shouldMarkUnsynced = true;
+      }
+    }
+    if (dto.nom !== undefined && dto.nom !== user.nom) {
+      user.nom = dto.nom;
+      shouldMarkUnsynced = true;
+    }
+    if (dto.prenom !== undefined && dto.prenom !== user.prenom) {
+      user.prenom = dto.prenom;
+      shouldMarkUnsynced = true;
+    }
     if (dto.nbTentatives !== undefined) user.nbTentatives = dto.nbTentatives;
     if (dto.dateBlocage !== undefined) user.dateBlocage = dto.dateBlocage;
     if (dto.roleId !== undefined) {
       const role = await this.roleRepo.findOne({ where: { id: dto.roleId } });
       if (!role) throw new NotFoundException('Role not found');
-      user.role = role;
+      if (user.role?.id !== role.id) {
+        user.role = role;
+        shouldMarkUnsynced = true;
+      }
+    }
+    if (shouldMarkUnsynced) {
+      user.firebaseUid = null;
     }
     return this.repo.save(user);
   }

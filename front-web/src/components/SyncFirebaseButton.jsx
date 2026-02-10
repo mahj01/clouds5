@@ -20,7 +20,19 @@ export default function SyncFirebaseButton() {
     fetchCount()
     // Rafraîchir le compteur toutes les 30 secondes
     const interval = setInterval(fetchCount, 30000)
-    return () => clearInterval(interval)
+    const handleUsersUpdated = (event) => {
+      const next = event?.detail?.count
+      if (typeof next === 'number') {
+        setUnsyncedCount(next)
+        return
+      }
+      fetchCount()
+    }
+    window.addEventListener('users-updated', handleUsersUpdated)
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('users-updated', handleUsersUpdated)
+    }
   }, [fetchCount])
 
   async function handleSync() {

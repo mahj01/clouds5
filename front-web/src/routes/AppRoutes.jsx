@@ -31,7 +31,7 @@ function getStoredRoleName() {
 function ManagerOnly({ children }) {
   const role = String(getStoredRoleName() || '').toLowerCase()
   if (role !== 'manager') {
-    return <Navigate to="/dashboard" replace />
+    return <Navigate to={role === 'visiteur' ? '/map' : '/dashboard'} replace />
   }
   return children
 }
@@ -46,7 +46,8 @@ function LoginRoute() {
           localStorage.setItem('auth_expiresAt', String(expiresAt))
           if (roleName) localStorage.setItem('auth_role', String(roleName))
           if (userId) localStorage.setItem('auth_userId', String(userId))
-          navigate('/dashboard')
+          const role = String(roleName || '').toLowerCase()
+          navigate(role === 'visiteur' ? '/map' : '/dashboard')
         }}
       />
     </div>
@@ -69,6 +70,8 @@ function IndexRoute() {
 
 function DashboardLayoutRoute() {
   const navigate = useNavigate()
+  const role = String(getStoredRoleName() || '').toLowerCase()
+  if (role === 'visiteur') return <Navigate to="/map" replace />
   function handleLogout() {
     localStorage.removeItem('auth_token')
     localStorage.removeItem('auth_expiresAt')
@@ -81,7 +84,7 @@ function DashboardLayoutRoute() {
 
 function ManagerOnlyRoute({ children }) {
   const role = localStorage.getItem('auth_role')
-  if (role !== 'manager') return <Navigate to="/dashboard" replace />
+  if (role !== 'manager') return <Navigate to={role === 'visiteur' ? '/map' : '/dashboard'} replace />
   return children
 }
 

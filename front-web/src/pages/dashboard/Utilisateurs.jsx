@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import bcrypt from 'bcryptjs'
 import {
   getAllUtilisateurs,
   supprimerUtilisateur,
@@ -7,6 +8,7 @@ import {
   lockUser,
   unlockUser,
   getRoles,
+  getUnsyncedUsersCount,
 } from '../../api/client.js'
 
 function getStoredRoleName() {
@@ -96,6 +98,16 @@ export default function Utilisateurs() {
 
   const resolveUserId = (user) => user?.id ?? user?.id_utilisateur
 
+  const notifyUsersUpdated = async () => {
+    try {
+      const data = await getUnsyncedUsersCount()
+      const count = typeof data?.count === 'number' ? data.count : undefined
+      window.dispatchEvent(new CustomEvent('users-updated', { detail: { count } }))
+    } catch {
+      window.dispatchEvent(new CustomEvent('users-updated'))
+    }
+  }
+
   const isValidEmail = (value) => {
     const email = String(value || '').trim()
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -135,10 +147,12 @@ export default function Utilisateurs() {
         return
       }
 
+      const hashedPassword = passwordValue ? await bcrypt.hash(passwordValue, 10) : ''
+
       // Construire le payload - backend exige email et motDePasse toujours
       const payload = {
         email: emailValue,
-        motDePasse: passwordValue || 'unchanged_placeholder_pwd',
+        motDePasse: hashedPassword || 'unchanged_placeholder_pwd',
         nom: String(formData.nom || ''),
         prenom: String(formData.prenom || ''),
       }
@@ -169,6 +183,7 @@ export default function Utilisateurs() {
         setActionType('success')
         setActionMessage('Utilisateur créé avec succès.')
       }
+      await notifyUsersUpdated()
       closeModal()
       loadData()
     } catch (err) {
@@ -201,6 +216,7 @@ export default function Utilisateurs() {
         setActionType('success')
         setActionMessage('Utilisateur bloqué avec succès.')
       }
+      await notifyUsersUpdated()
       await loadData()
     } catch (err) {
       setActionType('error')
@@ -222,6 +238,7 @@ export default function Utilisateurs() {
       await supprimerUtilisateur(userId)
       setActionType('success')
       setActionMessage('Utilisateur supprimé avec succès.')
+      await notifyUsersUpdated()
       await loadData()
     } catch (err) {
       setActionType('error')
