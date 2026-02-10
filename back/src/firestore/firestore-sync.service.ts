@@ -4,10 +4,10 @@ import { firestore } from '../firebase-admin';
 import { Role } from '../roles/role.entity';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { Entreprise } from '../entreprises/entreprise.entity';
+import { TypeProbleme } from '../problemes/type-probleme.entity';
 import { Signalement } from '../signalements/signalement.entity';
 import { Session } from '../sessions/session.entity';
 import { StatutCompte } from '../statut_compte/statut-compte.entity';
-import { TypeProbleme } from '../problemes/type-probleme.entity';
 import { HistoriqueSignalement } from '../historique_signalement/historique-signalement.entity';
 import { HistoriqueStatusUtilisateur } from '../historique_status_utilisateur/historique-status-utilisateur.entity';
 import { Validation } from '../validation/validation.entity';
@@ -130,6 +130,15 @@ export class FirestoreSyncService implements OnModuleInit {
 
       // Ignorer les docs poussés depuis PG (ID numérique = vient de syncAll)
       if (/^\d+$/.test(doc.id)) {
+        skipped++;
+        continue;
+      }
+
+      // Ignorer les docs sans coordonnées valides
+      if (data.latitude == null || data.longitude == null) {
+        this.logger.warn(
+          `Document Firestore ${doc.id} ignoré : latitude ou longitude manquante`,
+        );
         skipped++;
         continue;
       }
@@ -440,10 +449,19 @@ export class FirestoreSyncService implements OnModuleInit {
   }> {
     // === PUSH : PG → Firebase (toutes les tables) ===
     const allEntities = [
-      Role, Utilisateur, Entreprise, TypeProbleme, Signalement,
-      HistoriqueSignalement, HistoriqueStatusUtilisateur,
-      Session, StatutCompte, Validation, JournalAcces,
-      TentativeConnexion, Synchronisation,
+      Role,
+      Utilisateur,
+      Entreprise,
+      TypeProbleme,
+      Signalement,
+      HistoriqueSignalement,
+      HistoriqueStatusUtilisateur,
+      Session,
+      StatutCompte,
+      Validation,
+      JournalAcces,
+      TentativeConnexion,
+      Synchronisation,
     ];
 
     const pushDetails: any[] = [];
@@ -468,8 +486,13 @@ export class FirestoreSyncService implements OnModuleInit {
 
     // 2) Autres collections simples
     const pullEntities = [
-      Role, Utilisateur, Entreprise, TypeProbleme,
-      HistoriqueSignalement, StatutCompte, Session,
+      Role,
+      Utilisateur,
+      Entreprise,
+      TypeProbleme,
+      HistoriqueSignalement,
+      StatutCompte,
+      Session,
     ];
 
     const pullDetails: any[] = [

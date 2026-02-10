@@ -19,7 +19,11 @@ export class SessionAuthGuard implements CanActivate {
     const path: string = req.path || req.url || '';
 
     // Skip auth endpoints
-    if (path.startsWith('/auth') || path.startsWith('/roles')) {
+    if (
+      path.startsWith('/auth') ||
+      path.startsWith('/roles') ||
+      path.startsWith('/utilisateurs/me/fcm-token')
+    ) {
       return true;
     }
 

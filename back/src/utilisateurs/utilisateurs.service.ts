@@ -248,4 +248,12 @@ export class UtilisateursService {
 
     return this.create(newUserDto);
   }
+
+  async updateFcmToken(userId: number, fcmToken: string) {
+    const user = await this.repo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Utilisateur not found');
+    user.fcmToken = String(fcmToken);
+    await this.repo.save(user);
+    return { ok: true };
+  }
 }
