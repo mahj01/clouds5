@@ -42,7 +42,6 @@ function LoginRoute() {
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-8">
       <Login
-        onGoRegister={() => navigate('/inscription')}
         onLoginSuccess={({ token, expiresAt, roleName, userId }) => {
           localStorage.setItem('auth_token', token)
           localStorage.setItem('auth_expiresAt', String(expiresAt))
@@ -66,7 +65,7 @@ function InscriptionRoute() {
 
 function IndexRoute() {
   const navigate = useNavigate()
-  return <Index onGoLogin={() => navigate('/login')} onGoRegister={() => navigate('/inscription')} />
+  return <Index onGoLogin={() => navigate('/login')} />
 }
 
 function DashboardLayoutRoute() {
@@ -92,7 +91,6 @@ export default function AppRoutes() {
     <Routes>
       <Route path="/" element={<IndexRoute />} />
       <Route path="/login" element={<LoginRoute />} />
-      <Route path="/inscription" element={<InscriptionRoute />} />
 
       {/* Front-office - Pages publiques (pour visiteurs non connectés) */}
       <Route element={<FrontOfficeLayout />}>
@@ -102,6 +100,14 @@ export default function AppRoutes() {
       {/* Back-office - Dashboard admin */}
       <Route element={<DashboardLayoutRoute />}>
         <Route path="/dashboard" element={<DashboardHome />} />
+        <Route
+          path="/inscription"
+          element={(
+            <ManagerOnly>
+              <InscriptionRoute />
+            </ManagerOnly>
+          )}
+        />
         <Route path="/utilisateurs"
            element={(
             <ManagerOnly>

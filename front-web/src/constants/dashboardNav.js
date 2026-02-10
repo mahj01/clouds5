@@ -1,6 +1,7 @@
 export const DASHBOARD_NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: 'fa fa-bar-chart', path: '/dashboard' },
   { id: 'utilisateurs', label: 'Liste des Utilisateurs', icon: 'fa fa-users', path: '/utilisateurs', adminOnly: true },
+  { id: 'ajouter-utilisateur', label: 'Ajouter un utilisateur', icon: 'fa fa-user-plus', path: '/inscription', adminOnly: true },
   { id: 'entreprises', label: 'Entreprises', icon: 'fa fa-building', path: '/entreprises' },
   { id: 'signalements', label: 'Signalements', icon: 'fa fa-exclamation-triangle', path: '/signalements' },
   { id: 'historique-signalements', label: 'Historique Signalements', icon: 'fa fa-history', path: '/historique-signalements' },

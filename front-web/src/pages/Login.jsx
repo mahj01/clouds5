@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
 import { loginUser, loginVisitor } from '../api/client.js'
 
-export default function Login({ onGoRegister, onLoginSuccess } = {}) {
+export default function Login({ onLoginSuccess } = {}) {
   const emailId = useId()
   const passwordId = useId()
 
@@ -124,16 +124,6 @@ export default function Login({ onGoRegister, onLoginSuccess } = {}) {
         >
           <i className="fa fa-user mr-2" aria-hidden="true" />
           {visitorLoading ? 'Connexion visiteur…' : 'Continuer en visiteur'}
-        </button>
-
-        <button
-          className="w-full text-sm text-indigo-600 transition hover:text-indigo-500"
-          type="button"
-          onClick={() => onGoRegister?.()}
-          disabled={loading || visitorLoading}
-        >
-          <i className="fa fa-user-plus mr-2" aria-hidden="true" />
-          Pas de compte ? S’inscrire
         </button>
 
         {error && <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}

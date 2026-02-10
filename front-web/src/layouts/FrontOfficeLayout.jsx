@@ -53,20 +53,12 @@ export default function FrontOfficeLayout() {
                 Dashboard
               </Link>
             ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  Connexion
-                </Link>
-                <Link
-                  to="/inscription"
-                  className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-                >
-                  S'inscrire
-                </Link>
-              </>
+              <Link
+                to="/login"
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Connexion
+              </Link>
             )}
           </div>
 
@@ -109,22 +101,13 @@ export default function FrontOfficeLayout() {
                   Dashboard
                 </Link>
               ) : (
-                <>
-                  <Link
-                    to="/login"
-                    onClick={() => setMenuOpen(false)}
-                    className="px-4 py-3 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium text-center"
-                  >
-                    Connexion
-                  </Link>
-                  <Link
-                    to="/inscription"
-                    onClick={() => setMenuOpen(false)}
-                    className="px-4 py-3 rounded-lg bg-indigo-600 text-white text-sm font-medium text-center"
-                  >
-                    S'inscrire
-                  </Link>
-                </>
+                <Link
+                  to="/login"
+                  onClick={() => setMenuOpen(false)}
+                  className="px-4 py-3 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium text-center"
+                >
+                  Connexion
+                </Link>
               )}
             </nav>
           </div>

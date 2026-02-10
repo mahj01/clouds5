@@ -1,11 +1,11 @@
-export default function Index({ onGoLogin, onGoRegister }) {
+export default function Index({ onGoLogin }) {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl items-center justify-center px-4">
       <section className="w-full max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xl">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-600">Clouds5</p>
         <h1 className="mt-2 text-2xl sm:text-3xl font-semibold text-slate-800 md:text-4xl">Bienvenue</h1>
         <p className="mt-3 text-balance text-base text-slate-500 sm:text-lg">
-          Connectez-vous pour accéder à votre espace, ou créez un compte.
+          Connectez-vous pour accéder à votre espace.
         </p>
 
         <div className="mt-6 flex flex-wrap gap-3">
@@ -15,13 +15,6 @@ export default function Index({ onGoLogin, onGoRegister }) {
             onClick={onGoLogin}
           >
             Se connecter
-          </button>
-          <button
-            className="rounded-xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-            type="button"
-            onClick={onGoRegister}
-          >
-            Créer un compte
           </button>
         </div>
       </section>
