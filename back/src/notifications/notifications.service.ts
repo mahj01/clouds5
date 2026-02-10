@@ -135,26 +135,59 @@ export class NotificationsService {
       await this.pushToFirestore(notif);
 
       // 2) OS-level push (FCM) for killed/backgrounded app (best-effort)
-      const token = notif.utilisateur?.fcmToken;
-      if (token) {
-        try {
-          await this.fcm.sendToToken({
-            token,
-            title: notif.title,
-            body: notif.body,
-            data: {
-              type: String(notif.type),
-              pg_notification_id: String(notif.id),
-              signalement_pg_id: String(notif.signalement?.id ?? ''),
-            },
-          });
-        } catch (pushErr) {
-          // Don't block overall delivery; Firestore inbox is already written.
-          this.logger.warn(
-            `FCM push failed for notif ${notif.id}: ${
-              pushErr instanceof Error ? pushErr.message : String(pushErr)
-            }`,
-          );
+      // Today we have a single token on Utilisateur. This loop prepares for multi-token support.
+      const tokens = [notif.utilisateur?.fcmToken].filter(
+        (t): t is string => !this.tokenLooksInvalid(t),
+      );
+
+      if (tokens.length === 0) {
+        this.logger.log(
+          `notif ${notif.id}: no valid FCM token for user ${notif.utilisateur?.id} (skip push)`,
+        );
+      } else {
+        for (const token of tokens) {
+          try {
+            await this.fcm.sendToToken({
+              token,
+              title: notif.title,
+              body: notif.body,
+              data: {
+                type: String(notif.type),
+                pg_notification_id: String(notif.id),
+                signalement_pg_id: String(notif.signalement?.id ?? ''),
+              },
+            });
+          } catch (pushErr) {
+            // Don't block overall delivery; Firestore inbox is already written.
+            const msg =
+              pushErr instanceof Error ? pushErr.message : String(pushErr);
+            this.logger.warn(`FCM push failed for notif ${notif.id}: ${msg}`);
+
+            // If the token is unregistered/invalid, clear it so we don't retry forever.
+            // (When we move to a token table, we'll revoke that token row instead.)
+            if (this.isUnregisteredTokenError(pushErr)) {
+              try {
+                if (notif.utilisateur) {
+                  notif.utilisateur.fcmToken = null;
+                  // best-effort: avoid coupling to user repo here
+                  await this.repo.manager.save(notif.utilisateur);
+                  this.logger.warn(
+                    `Cleared invalid FCM token for utilisateur ${notif.utilisateur.id}`,
+                  );
+                }
+              } catch (clearErr) {
+                this.logger.warn(
+                  `Failed to clear invalid FCM token for utilisateur ${
+                    notif.utilisateur?.id
+                  }: ${
+                    clearErr instanceof Error
+                      ? clearErr.message
+                      : String(clearErr)
+                  }`,
+                );
+              }
+            }
+          }
         }
       }
 
@@ -218,5 +251,23 @@ export class NotificationsService {
       expiresAt: LessThanOrEqual(now),
     });
     return res.affected ?? 0;
+  }
+
+  private tokenLooksInvalid(token: string | null | undefined): boolean {
+    if (!token) return true;
+    const t = String(token).trim();
+    if (!t) return true;
+    // FCM tokens are typically long; this is just a sanity check to avoid obvious junk.
+    return t.length < 50;
+  }
+
+  private isUnregisteredTokenError(e: unknown): boolean {
+    const msg = e instanceof Error ? e.message : String(e);
+    return (
+      msg.includes('registration-token-not-registered') ||
+      msg.includes('messaging/registration-token-not-registered') ||
+      msg.includes('invalid-registration-token') ||
+      msg.includes('messaging/invalid-registration-token')
+    );
   }
 }

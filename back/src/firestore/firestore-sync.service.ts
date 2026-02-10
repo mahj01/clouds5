@@ -440,10 +440,19 @@ export class FirestoreSyncService implements OnModuleInit {
   }> {
     // === PUSH : PG → Firebase (toutes les tables) ===
     const allEntities = [
-      Role, Utilisateur, Entreprise, TypeProbleme, Signalement,
-      HistoriqueSignalement, HistoriqueStatusUtilisateur,
-      Session, StatutCompte, Validation, JournalAcces,
-      TentativeConnexion, Synchronisation,
+      Role,
+      Utilisateur,
+      Entreprise,
+      TypeProbleme,
+      Signalement,
+      HistoriqueSignalement,
+      HistoriqueStatusUtilisateur,
+      Session,
+      StatutCompte,
+      Validation,
+      JournalAcces,
+      TentativeConnexion,
+      Synchronisation,
     ];
 
     const pushDetails: any[] = [];
@@ -468,8 +477,13 @@ export class FirestoreSyncService implements OnModuleInit {
 
     // 2) Autres collections simples
     const pullEntities = [
-      Role, Utilisateur, Entreprise, TypeProbleme,
-      HistoriqueSignalement, StatutCompte, Session,
+      Role,
+      Utilisateur,
+      Entreprise,
+      TypeProbleme,
+      HistoriqueSignalement,
+      StatutCompte,
+      Session,
     ];
 
     const pullDetails: any[] = [
