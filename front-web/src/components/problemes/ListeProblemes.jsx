@@ -24,6 +24,10 @@ function avancementFromStatut(statut) {
   }
 }
 
+
+
+
+
 export default function ListeProblemes({ onSelectProbleme ,selectedProblemeId}) {
   const [problemes, setProblemes] = useState([])
   const [types, setTypes] = useState([])
