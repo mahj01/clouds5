@@ -49,6 +49,13 @@ function avancementColor(pct) {
   return 'bg-gray-300'
 }
 
+/** Retourne le statut effectif en tenant compte de l'avancement */
+function effectiveStatutFor(s) {
+  const av = s?.avancement ?? avancementFromStatut(s?.statut)
+  if (av >= 100) return 'resolu'
+  return s?.statut ?? 'actif'
+}
+
 function formatMoney(amount) {
   if (!amount) return '—'
   return new Intl.NumberFormat('fr-MG', { style: 'currency', currency: 'MGA' }).format(amount)
@@ -72,12 +79,12 @@ export default function Signalements() {
   const [historique, setHistorique] = useState([])
   const [loadingHistorique, setLoadingHistorique] = useState(false)
 
-  // Stats
+  // Stats (utilise le statut effectif calculé à partir de l'avancement)
   const stats = {
     total: signalements.length,
-    actifs: signalements.filter(s => s.statut === 'actif').length,
-    enCours: signalements.filter(s => s.statut === 'en_cours').length,
-    resolus: signalements.filter(s => s.statut === 'resolu').length,
+    actifs: signalements.filter(s => effectiveStatutFor(s) === 'actif').length,
+    enCours: signalements.filter(s => effectiveStatutFor(s) === 'en_cours').length,
+    resolus: signalements.filter(s => effectiveStatutFor(s) === 'resolu').length,
   }
 
   async function refresh() {
@@ -198,7 +205,13 @@ export default function Signalements() {
       }
       // Avancement: include if user provided (especially after statut change)
       if (form.avancement !== undefined && form.avancement !== null && form.avancement !== '') {
-        payload.avancement = parseInt(form.avancement)
+        const av = parseInt(form.avancement)
+        if (Number.isNaN(av) || av < 0 || av > 100) {
+          setError('Le niveau de réparation (avancement) doit être un nombre entre 0 et 100.')
+          setSaving(false)
+          return
+        }
+        payload.avancement = av
       }
 
       await updateSignalement(editing.id, payload)
@@ -227,7 +240,8 @@ export default function Signalements() {
   async function handlePrendreEnCharge(s) {
     try {
       const userId = parseInt(localStorage.getItem('auth_userId') || '1')
-      await updateSignalement(s.id, { statut: 'en_cours', utilisateurId: userId })
+      // When taking charge, set avancement to 0 (début des travaux)
+      await updateSignalement(s.id, { statut: 'en_cours', utilisateurId: userId, avancement: 0 })
       setSuccess('Signalement pris en charge.')
       await refresh()
     } catch (e) {
@@ -357,7 +371,9 @@ export default function Signalements() {
             Aucun signalement trouvé.
           </div>
         ) : (
-          filteredSignalements.map((s) => (
+          filteredSignalements.map((s) => {
+            const effStatut = effectiveStatutFor(s)
+            return (
             <div
               key={s.id}
               className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition"
@@ -374,7 +390,7 @@ export default function Signalements() {
                         {s.typeProbleme.nom}
                       </span>
                     )}
-                    {getStatutBadge(s.statut)}
+                    {getStatutBadge(effStatut)}
                     {getPrioriteBadge(s.priorite)}
                     {s.niveauReparation && (
                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
@@ -445,7 +461,7 @@ export default function Signalements() {
                   >
                     <i className="fa fa-pencil mr-1" />Modifier
                   </button>
-                  {s.statut === 'actif' && (
+                  {effStatut === 'actif' && (
                     <button
                       onClick={() => handlePrendreEnCharge(s)}
                       className="rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-700 hover:bg-yellow-100"
@@ -453,14 +469,18 @@ export default function Signalements() {
                       <i className="fa fa-play mr-1" />Prendre en charge
                     </button>
                   )}
-                  {(s.statut === 'actif' || s.statut === 'en_cours') && (
-                    <button
-                      onClick={() => handleResoudre(s)}
-                      className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 hover:bg-green-100"
-                    >
-                      <i className="fa fa-check mr-1" />Résoudre
-                    </button>
-                  )}
+                  {(() => {
+                    const effectiveAvancement = s.avancement ?? avancementFromStatut(s.statut)
+                    const shouldShowResolve = (effStatut === 'actif' || effStatut === 'en_cours') && effectiveAvancement < 100 && effStatut !== 'resolu'
+                    return shouldShowResolve ? (
+                      <button
+                        onClick={() => handleResoudre(s)}
+                        className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 hover:bg-green-100"
+                      >
+                        <i className="fa fa-check mr-1" />Résoudre
+                      </button>
+                    ) : null
+                  })()}
                   <button
                     onClick={() => handleDelete(s)}
                     className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 hover:bg-red-100"
@@ -491,7 +511,8 @@ export default function Signalements() {
                 </div>
               </div>
             </div>
-          ))
+          )
+        })
         )}
       </div>
 
@@ -835,7 +856,14 @@ export default function Signalements() {
                 <label className="block text-xs font-medium text-gray-600 mb-1">Statut</label>
                 <select
                   value={form.statut}
-                  onChange={(e) => setForm(f => ({ ...f, statut: e.target.value }))}
+                  onChange={(e) => {
+                    const newStatut = e.target.value
+                    setForm(f => {
+                      // Si on repasse en 'actif', forcer l'avancement à 0
+                      const newAv = newStatut === 'actif' ? 0 : f.avancement
+                      return { ...f, statut: newStatut, avancement: newAv }
+                    })
+                  }}
                   className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
                 >
                   {STATUTS.map(s => (
@@ -977,43 +1005,34 @@ export default function Signalements() {
                 />
               </div>
 
-              {/* Avancement — si le statut a été modifié, demander la saisie manuelle */}
-              {form.statut !== editing.statut ? (
-                <div className="sm:col-span-2 rounded-xl border-2 border-slate-200 bg-yellow-50 p-4">
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Niveau de réparation (0–100%)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={form.avancement}
-                    onChange={(e) => setForm(f => ({ ...f, avancement: e.target.value }))}
-                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
-                  />
-                  <p className="text-xs text-slate-500 mt-2">
-                    Saisissez le niveau d'avancement suite au changement de statut (ex: 0, 50, 100).
-                  </p>
-                </div>
-              ) : (
-                <div className="sm:col-span-2 rounded-xl border-2 border-slate-200 bg-slate-50 p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-slate-700">
-                      <i className="fa fa-tasks mr-2" />Avancement (auto-calculé)
-                    </span>
-                    <span className="text-lg font-bold text-slate-800">
-                      {avancementFromStatut(form.statut)}%
-                    </span>
-                  </div>
-                  <div className="h-3 rounded-full bg-slate-200 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${avancementColor(avancementFromStatut(form.statut))}`}
-                      style={{ width: `${avancementFromStatut(form.statut)}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-slate-500 mt-2">
-                    Nouveau/Actif = 0% · En cours = 50% · Résolu = 100%
-                  </p>
-                </div>
-              )}
+              {/* Avancement — toujours éditable. Si l'utilisateur saisit 0 ou 100, on met à jour
+                  automatiquement le statut pour indiquer la prise en charge ou la résolution,
+                  mais l'utilisateur peut toujours overrider le statut via le select. */}
+              <div className="sm:col-span-2 rounded-xl border-2 border-slate-200 bg-white p-4">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Niveau de réparation (0–100%)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={form.avancement}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    const parsed = val === '' ? '' : parseInt(val)
+                    setForm(f => {
+                      let newStatut = f.statut
+                      if (!Number.isNaN(parsed)) {
+                        if (parsed === 100) newStatut = 'resolu'
+                        else if (parsed === 0) newStatut = 'en_cours'
+                      }
+                      return { ...f, avancement: val, statut: newStatut }
+                    })
+                  }}
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+                />
+                <p className="text-xs text-slate-500 mt-2">
+                  Entrez un pourcentage entre 0 et 100. 0 → statut automatique « En cours ». 100 → statut automatique « Résolu ». Vous pouvez modifier le statut manuellement si besoin.
+                </p>
+              </div>
 
               {/* Infos lecture seule */}
               <div className="sm:col-span-2 pt-2 border-t border-gray-100">
