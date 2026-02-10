@@ -10,6 +10,7 @@ import { JournalModule } from '../journal/journal.module';
 import { HistoriqueSignalementModule } from '../historique_signalement/historique-signalement.module';
 import { FirestoreModule } from '../firestore/firestore.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { ParametresModule } from '../parametres/parametres.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     HistoriqueSignalementModule,
     FirestoreModule,
     NotificationsModule,
+    ParametresModule,
   ],
   providers: [SignalementsService],
   controllers: [SignalementsController],

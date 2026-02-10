@@ -19,6 +19,7 @@ import { JournalService } from '../journal/journal.service';
 import { HistoriqueSignalementService } from '../historique_signalement/historique-signalement.service';
 import { FirestoreDiffSyncService } from '../firestore/firestore-diff-sync.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PrixForfaitaireService } from '../parametres/prix-forfaitaire.service';
 
 @Injectable()
 export class SignalementsService {
@@ -31,6 +32,7 @@ export class SignalementsService {
     private readonly historiqueService: HistoriqueSignalementService,
     private readonly firestoreDiffSync: FirestoreDiffSyncService,
     private readonly notificationsService: NotificationsService,
+    private readonly prixForfaitaireService: PrixForfaitaireService,
   ) {}
 
   private async logAction(
@@ -80,6 +82,25 @@ export class SignalementsService {
     }
 
     const statut = dto.statut ?? StatutSignalement.ACTIF;
+
+    // Calcul automatique du budget si une surface est fournie
+    let budgetCalcule: string | undefined = dto.budget !== undefined ? String(dto.budget) : undefined;
+    if (dto.surfaceM2 !== undefined && dto.surfaceM2 > 0) {
+      try {
+        const prixForfaitaires = await this.prixForfaitaireService.findAll();
+        if (prixForfaitaires.length > 0) {
+          // Prendre le premier prix forfaitaire configuré
+          const prixM2 = Number(prixForfaitaires[0].prixM2);
+          if (prixM2 > 0) {
+            const budget = dto.surfaceM2 * prixM2;
+            budgetCalcule = String(Math.round(budget * 100) / 100);
+          }
+        }
+      } catch (e) {
+        console.warn('Impossible de calculer le budget automatiquement:', e);
+      }
+    }
+
     const entity = this.repo.create({
       titre: dto.titre,
       description: dto.description,
@@ -91,7 +112,7 @@ export class SignalementsService {
       photoUrl: dto.photoUrl,
       surfaceM2:
         dto.surfaceM2 !== undefined ? String(dto.surfaceM2) : undefined,
-      budget: dto.budget !== undefined ? String(dto.budget) : undefined,
+      budget: budgetCalcule,
       avancement: avancementFromStatut(statut),
       utilisateur: user,
       typeProbleme,
@@ -182,9 +203,25 @@ export class SignalementsService {
     if (dto.photoUrl !== undefined) entity.photoUrl = dto.photoUrl;
     if (dto.commentaireResolution !== undefined)
       entity.commentaireResolution = dto.commentaireResolution;
-    if (dto.surfaceM2 !== undefined)
+    if (dto.surfaceM2 !== undefined) {
       entity.surfaceM2 =
         dto.surfaceM2 != null ? String(dto.surfaceM2) : undefined;
+      // Recalculer le budget automatiquement si la surface change
+      if (dto.surfaceM2 != null && dto.surfaceM2 > 0) {
+        try {
+          const prixForfaitaires = await this.prixForfaitaireService.findAll();
+          if (prixForfaitaires.length > 0) {
+            const prixM2 = Number(prixForfaitaires[0].prixM2);
+            if (prixM2 > 0) {
+              const budget = dto.surfaceM2 * prixM2;
+              entity.budget = String(Math.round(budget * 100) / 100);
+            }
+          }
+        } catch (e) {
+          console.warn('Impossible de recalculer le budget:', e);
+        }
+      }
+    }
     if (dto.budget !== undefined)
       entity.budget = dto.budget != null ? String(dto.budget) : undefined;
     // Entreprise: allow setting or clearing entreprise on update
