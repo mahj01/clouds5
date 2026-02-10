@@ -72,29 +72,29 @@ async function bootstrap() {
     }
 
     // default manager
-    const adminEmail = 'admin@mail.com';
-    let admin = await userRepo.findOne({
-      where: { email: adminEmail },
+    const managerEmail = 'manager@mail.com';
+    let manager = await userRepo.findOne({
+      where: { email: managerEmail },
       relations: ['role'],
     });
-    if (!admin) {
-      const hash = await bcrypt.hash('admin', 10);
-      admin = userRepo.create({
-        email: adminEmail,
+    if (!manager) {
+      const hash = await bcrypt.hash('12345678', 10);
+      manager = userRepo.create({
+        email: managerEmail,
         motDePasse: hash,
         role: roles['manager'],
         nbTentatives: 3,
         dateBlocage: null,
       });
-      await userRepo.save(admin);
+      await userRepo.save(manager);
     } else {
       // If legacy seed stored plaintext, upgrade to bcrypt so /auth/login works.
-      const pwd = String(admin.motDePasse || '');
+      const pwd = String(manager.motDePasse || '');
       if (!pwd.startsWith('$2')) {
-        admin.motDePasse = await bcrypt.hash('admin', 10);
-        admin.nbTentatives = 3;
-        admin.dateBlocage = null;
-        await userRepo.save(admin);
+        manager.motDePasse = await bcrypt.hash('12345678', 10);
+        manager.nbTentatives = 3;
+        manager.dateBlocage = null;
+        await userRepo.save(manager);
       }
     }
 
