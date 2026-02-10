@@ -121,6 +121,30 @@ export async function loginOnline(
     // On success, reset attempts + ensure actif
     await markLoginSuccess(uid);
 
+    // Obtenir un vrai token de session du backend via /auth/login
+    let backendToken: string | null = null;
+    let backendExpiresAt: string | null = null;
+    let backendUser: any = null;
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, motDePasse }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        backendToken = data.token;
+        backendExpiresAt = data.expiresAt;
+        backendUser = data.user;
+        console.log('[loginOnline] Backend session obtained');
+      } else {
+        console.warn('[loginOnline] Failed to get backend session:', response.status);
+      }
+    } catch (e) {
+      console.warn('[loginOnline] Error getting backend session:', e);
+    }
+
     // Initialiser les notifications push
     try {
       await initPushNotifications(uid);
@@ -128,10 +152,18 @@ export async function loginOnline(
       console.warn('[loginOnline] Failed to init push notifications:', e);
     }
 
-    // Persist a minimal session for app usage
-    const expiresAt = new Date(Date.now() + sessionTtlMs).toISOString();
-    const token = uid;
-    const session: AuthSession = { token, expiresAt, user: { uid, email: user?.email ?? email } };
+    // Persist session - use backend token if available, fallback to uid
+    const expiresAt = backendExpiresAt || new Date(Date.now() + sessionTtlMs).toISOString();
+    const token = backendToken || uid;
+    const session: AuthSession = { 
+      token, 
+      expiresAt, 
+      user: { 
+        uid, 
+        email: user?.email ?? email,
+        ...backendUser 
+      } 
+    };
     await setSession(session);
 
     return { ok: true, data: session };
