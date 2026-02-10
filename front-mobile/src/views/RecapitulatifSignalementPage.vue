@@ -251,48 +251,106 @@ onBeforeUnmount(() => {
 <style scoped>
 .block-msg {
   display: block;
-  margin: 10px 0 14px;
+  margin: 14px 4px 18px;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .loading-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 6px 0 12px;
+  justify-content: center;
+  gap: 12px;
+  margin: 12px 0 20px;
+  padding: 16px;
 }
 
 .kpi-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 14px;
 }
 
 .kpi {
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 10px;
-  padding: 10px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpi::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #2563eb, #3b82f6);
+  border-radius: 3px 3px 0 0;
+}
+
+.kpi:nth-child(2)::before {
+  background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.kpi:nth-child(3)::before {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.kpi:nth-child(4)::before {
+  background: linear-gradient(90deg, #8b5cf6, #a78bfa);
 }
 
 .kpi-label {
   font-size: 12px;
-  color: #666;
-  margin-bottom: 6px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .kpi-value {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #0f172a;
   margin-bottom: 8px;
 }
 
 .kpi-sub {
   font-size: 12px;
-  color: #666;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+ion-progress-bar {
+  border-radius: 6px;
+  height: 8px !important;
+  margin-top: 4px;
 }
 
 @media (max-width: 360px) {
   .kpi-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .kpi {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-color: #334155;
+  }
+
+  .kpi-value {
+    color: #f1f5f9;
+  }
+
+  .kpi-label {
+    color: #94a3b8;
   }
 }
 </style>

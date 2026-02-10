@@ -1,2 +1,327 @@
-/* For information on how to create your own theme, please refer to:
-http://ionicframework.com/docs/theming/ */
+/* ==========================================================
+   Professional Theme – Clouds5 Mobile App
+   ========================================================== */
+
+/* ---------- Google Fonts (Inter – clean, modern, professional) ---------- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* ---- Brand palette ---- */
+  --ion-color-primary: #2563eb;
+  --ion-color-primary-rgb: 37,99,235;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255,255,255;
+  --ion-color-primary-shade: #1d4ed8;
+  --ion-color-primary-tint: #3b82f6;
+
+  --ion-color-secondary: #7c3aed;
+  --ion-color-secondary-rgb: 124,58,237;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-contrast-rgb: 255,255,255;
+  --ion-color-secondary-shade: #6d28d9;
+  --ion-color-secondary-tint: #8b5cf6;
+
+  --ion-color-tertiary: #06b6d4;
+  --ion-color-tertiary-rgb: 6,182,212;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-contrast-rgb: 255,255,255;
+  --ion-color-tertiary-shade: #0891b2;
+  --ion-color-tertiary-tint: #22d3ee;
+
+  --ion-color-success: #10b981;
+  --ion-color-success-rgb: 16,185,129;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-contrast-rgb: 255,255,255;
+  --ion-color-success-shade: #059669;
+  --ion-color-success-tint: #34d399;
+
+  --ion-color-warning: #f59e0b;
+  --ion-color-warning-rgb: 245,158,11;
+  --ion-color-warning-contrast: #000000;
+  --ion-color-warning-contrast-rgb: 0,0,0;
+  --ion-color-warning-shade: #d97706;
+  --ion-color-warning-tint: #fbbf24;
+
+  --ion-color-danger: #ef4444;
+  --ion-color-danger-rgb: 239,68,68;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255,255,255;
+  --ion-color-danger-shade: #dc2626;
+  --ion-color-danger-tint: #f87171;
+
+  --ion-color-medium: #64748b;
+  --ion-color-medium-rgb: 100,116,139;
+  --ion-color-medium-contrast: #ffffff;
+  --ion-color-medium-contrast-rgb: 255,255,255;
+  --ion-color-medium-shade: #475569;
+  --ion-color-medium-tint: #94a3b8;
+
+  --ion-color-light: #f8fafc;
+  --ion-color-light-rgb: 248,250,252;
+  --ion-color-light-contrast: #0f172a;
+  --ion-color-light-contrast-rgb: 15,23,42;
+  --ion-color-light-shade: #e2e8f0;
+  --ion-color-light-tint: #ffffff;
+
+  /* ---- Typography ---- */
+  --ion-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /* ---- Backgrounds ---- */
+  --ion-background-color: #f1f5f9;
+  --ion-background-color-rgb: 241,245,249;
+
+  --ion-text-color: #0f172a;
+  --ion-text-color-rgb: 15,23,42;
+
+  /* ---- Toolbar ---- */
+  --ion-toolbar-background: #ffffff;
+  --ion-toolbar-color: #0f172a;
+  --ion-toolbar-border-color: #e2e8f0;
+
+  /* ---- Cards ---- */
+  --ion-card-background: #ffffff;
+
+  /* ---- Items ---- */
+  --ion-item-background: #ffffff;
+  --ion-item-border-color: #e2e8f0;
+
+  /* ---- Tabs ---- */
+  --ion-tab-bar-background: #ffffff;
+  --ion-tab-bar-border-color: #e2e8f0;
+
+  /* ---- Safe area ---- */
+  --ion-safe-area-top: env(safe-area-inset-top);
+  --ion-safe-area-bottom: env(safe-area-inset-bottom);
+}
+
+/* ---------- Dark Mode ---------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ion-background-color: #0f172a;
+    --ion-background-color-rgb: 15,23,42;
+
+    --ion-text-color: #e2e8f0;
+    --ion-text-color-rgb: 226,232,240;
+
+    --ion-toolbar-background: #1e293b;
+    --ion-toolbar-color: #f1f5f9;
+    --ion-toolbar-border-color: #334155;
+
+    --ion-card-background: #1e293b;
+    --ion-item-background: #1e293b;
+    --ion-item-border-color: #334155;
+
+    --ion-tab-bar-background: #1e293b;
+    --ion-tab-bar-border-color: #334155;
+
+    --ion-color-light: #1e293b;
+    --ion-color-light-rgb: 30,41,59;
+    --ion-color-light-contrast: #e2e8f0;
+    --ion-color-light-contrast-rgb: 226,232,240;
+    --ion-color-light-shade: #0f172a;
+    --ion-color-light-tint: #334155;
+  }
+}
+
+/* ==========================================================
+   Global Overrides — professional polish
+   ========================================================== */
+
+/* All text */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Toolbar */
+ion-toolbar {
+  --min-height: 56px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+}
+
+ion-toolbar ion-title {
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+
+ion-toolbar ion-button {
+  --border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+}
+
+/* Header shadow */
+ion-header::after {
+  background-image: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Cards */
+ion-card {
+  border-radius: 16px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06) !important;
+  margin: 12px 16px !important;
+  overflow: hidden;
+}
+
+ion-card-header {
+  padding: 18px 20px 8px !important;
+}
+
+ion-card-title {
+  font-size: 17px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+}
+
+ion-card-content {
+  padding: 8px 20px 20px !important;
+}
+
+/* Items */
+ion-item {
+  --inner-padding-end: 16px;
+  --inner-padding-start: 0;
+  --padding-start: 16px;
+  --min-height: 50px;
+  font-size: 15px;
+}
+
+/* Lists inside cards */
+ion-card ion-list {
+  padding: 0 !important;
+}
+
+/* Buttons */
+ion-button {
+  --border-radius: 12px;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  --box-shadow: none;
+  text-transform: none;
+}
+
+ion-button[expand="block"] {
+  --border-radius: 14px;
+  height: 52px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* Input */
+ion-input, ion-textarea {
+  --padding-start: 14px !important;
+  --padding-end: 14px !important;
+  font-size: 15px;
+}
+
+/* Select */
+ion-select {
+  font-size: 15px;
+}
+
+/* Modal */
+ion-modal {
+  --border-radius: 20px 20px 0 0;
+}
+
+/* Spinner */
+ion-spinner {
+  --color: var(--ion-color-primary);
+}
+
+/* Progress bar */
+ion-progress-bar {
+  --progress-background: var(--ion-color-primary);
+  border-radius: 6px;
+  height: 6px;
+}
+
+/* Refresher */
+ion-refresher-content {
+  --color: var(--ion-color-primary);
+}
+
+/* Toast / Notification */
+ion-toast {
+  --border-radius: 14px;
+  --background: #0f172a;
+  --color: #f1f5f9;
+  --box-shadow: 0 8px 32px rgba(15, 23, 42, 0.28), 0 2px 8px rgba(0, 0, 0, 0.12);
+  --button-color: #60a5fa;
+  --min-height: 52px;
+  --max-width: 420px;
+  --start: 16px;
+  --end: 16px;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+}
+
+ion-toast::part(message) {
+  padding: 14px 20px;
+  line-height: 1.45;
+}
+
+ion-toast::part(container) {
+  border-radius: 14px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+ion-toast::part(button) {
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Toast variant colours via CSS custom properties */
+ion-toast.toast-success {
+  --background: linear-gradient(135deg, #065f46, #047857);
+}
+
+ion-toast.toast-error {
+  --background: linear-gradient(135deg, #7f1d1d, #991b1b);
+}
+
+ion-toast.toast-warning {
+  --background: linear-gradient(135deg, #78350f, #92400e);
+  --color: #fef3c7;
+}
+
+@media (prefers-color-scheme: dark) {
+  ion-toast {
+    --background: #1e293b;
+    --color: #e2e8f0;
+    --box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+}
+
+/* Checkbox */
+ion-checkbox {
+  --border-radius: 6px;
+  --size: 22px;
+}
+
+/* Back button */
+ion-back-button {
+  --color: var(--ion-color-primary);
+  font-weight: 600;
+}
+
+/* Scrollbar (WebView) */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}

@@ -451,32 +451,83 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .signalement-card {
-	border-radius: 16px;
+  border-radius: 20px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06) !important;
+  margin: 0 !important;
+}
+
+.signalement-card ion-card-header {
+  padding-bottom: 4px !important;
+}
+
+.signalement-card ion-card-title {
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.03em !important;
+}
+
+.signalement-card ion-card-subtitle {
+  margin-top: 4px;
 }
 
 .mono {
-	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-	font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 11px;
+  color: #94a3b8;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 6px;
 }
 
 .row {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-	padding: 10px 6px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 6px 18px;
+}
+
+.row ion-button {
+  --border-radius: 10px;
+  font-weight: 600;
+  font-size: 13px;
 }
 
 .hint {
-	font-size: 12px;
+  font-size: 12px;
+  color: #94a3b8;
 }
 
 .block-msg {
-	display: block;
-	margin-top: 12px;
+  display: block;
+  margin-top: 14px;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .actions {
-	margin-top: 14px;
+  margin-top: 20px;
+}
+
+.actions ion-button[expand="block"] {
+  --background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  --box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+  --border-radius: 14px;
+  height: 52px;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.actions ion-button[fill="clear"] {
+  font-weight: 600;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .mono {
+    background: #1e293b;
+    color: #64748b;
+  }
 }
 </style>

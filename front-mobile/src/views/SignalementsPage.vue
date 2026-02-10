@@ -191,26 +191,102 @@ onBeforeUnmount(() => {
 .meta {
   display: block;
   margin-bottom: 8px;
+  font-size: 13px;
+  color: #64748b;
+  padding: 0 4px;
 }
 
 .block-msg {
   display: block;
-  margin: 10px 0 14px;
+  margin: 14px 4px 18px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.actions {
+  padding: 8px 0 16px;
+}
+
+.actions ion-button {
+  --border-radius: 12px;
+  font-weight: 600;
 }
 
 .row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 10px;
 }
 
+.row strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ion-text-color);
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
 .sub {
-  font-size: 12px;
-  color: #666;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.6;
+  margin-top: 2px;
 }
 
 .mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 12px;
+  font-size: 11px;
+  color: #94a3b8;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+/* Details panel */
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.details > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.details > div strong {
+  color: #475569;
+  font-weight: 600;
+  min-width: 90px;
+  flex-shrink: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .row strong {
+    background: #1e3a5f;
+    color: #60a5fa;
+  }
+
+  .mono {
+    background: #1e293b;
+    color: #64748b;
+  }
+
+  .details > div {
+    background: #1e293b;
+  }
+
+  .details > div strong {
+    color: #94a3b8;
+  }
 }
 </style>
