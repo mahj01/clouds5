@@ -6,6 +6,7 @@ import { NotificationsService } from './notifications.service';
 import { NotificationsProcessor } from './notifications.processor';
 import { FcmService } from './fcm.service';
 import { FirestoreUserTokensService } from './firestore-user-tokens.service';
+import { FirestoreEmailUidService } from './firestore-email-uid.service';
 
 @Module({
   imports: [
@@ -17,7 +18,13 @@ import { FirestoreUserTokensService } from './firestore-user-tokens.service';
     NotificationsProcessor,
     FcmService,
     FirestoreUserTokensService,
+    FirestoreEmailUidService,
   ],
-  exports: [NotificationsService, FcmService, FirestoreUserTokensService],
+  exports: [
+    NotificationsService,
+    FcmService,
+    FirestoreUserTokensService,
+    FirestoreEmailUidService,
+  ],
 })
 export class NotificationsModule {}

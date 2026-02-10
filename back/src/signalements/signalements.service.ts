@@ -240,6 +240,7 @@ export class SignalementsService {
     }
 
     let createdHistoriqueId: number | undefined;
+    let statusChangedByAvancement = false;
 
     if (dto.statut !== undefined && dto.statut !== entity.statut) {
       const ancienStatut = entity.statut;
@@ -273,12 +274,57 @@ export class SignalementsService {
     // If avancement provided outside of statut change, apply it
     if (dto.avancement !== undefined && dto.statut === undefined) {
       entity.avancement = dto.avancement;
+      const av = Number(entity.avancement) || 0;
+      // If avancement reaches 100, consider the signalement resolved
+      if (av >= 100 && String(entity.statut) !== String(StatutSignalement.RESOLU)) {
+        const ancienStatut = entity.statut;
+        entity.statut = StatutSignalement.RESOLU;
+        entity.dateResolution = new Date();
+        statusChangedByAvancement = true;
+        // Try to create an historique entry for this automatic resolution
+        try {
+          const managerId = dto.utilisateurId || entity.utilisateur?.id;
+          if (managerId) {
+            const hist = await this.historiqueService.create({
+              ancienStatut,
+              nouveauStatut: StatutSignalement.RESOLU,
+              signalementId: id,
+              managerId,
+            });
+            createdHistoriqueId = hist.id;
+          }
+        } catch (e) {
+          console.error('Erreur enregistrement historique (avancement->resolu):', e);
+        }
+      }
+      // If avancement is 0, mark as en_cours (prise en charge)
+      else if (av === 0 && String(entity.statut) !== String(StatutSignalement.EN_COURS)) {
+        const ancienStatut = entity.statut;
+        entity.statut = StatutSignalement.EN_COURS;
+        // clear any previous resolution date
+        entity.dateResolution = undefined;
+        statusChangedByAvancement = true;
+        try {
+          const managerId = dto.utilisateurId || entity.utilisateur?.id;
+          if (managerId) {
+            const hist = await this.historiqueService.create({
+              ancienStatut,
+              nouveauStatut: StatutSignalement.EN_COURS,
+              signalementId: id,
+              managerId,
+            });
+            createdHistoriqueId = hist.id;
+          }
+        } catch (e) {
+          console.error('Erreur enregistrement historique (avancement->en_cours):', e);
+        }
+      }
     }
 
     const saved = await this.repo.save(entity);
 
-    // If we changed status, push pending diffs to Firestore (no Firestore reads)
-    if (dto.statut !== undefined) {
+    // If we changed status (either explicit statut change or avancement->resolu), push pending diffs to Firestore (no Firestore reads)
+    if (dto.statut !== undefined || statusChangedByAvancement) {
       try {
         await this.firestoreDiffSync.flushPendingStatusDiffs(25);
       } catch (e) {
@@ -290,19 +336,17 @@ export class SignalementsService {
       // Notifications (best-effort): create local outbox row, then try immediate delivery
       if (createdHistoriqueId && saved.utilisateur?.id) {
         try {
-          // Ensure we have firebaseUid loaded.
+          // Recipient must be the signalement creator (owner), not the manager who performed the update.
           const utilisateur = await this.userRepo.findOne({
             where: { id: saved.utilisateur.id },
           });
           if (utilisateur) {
-            const hist =
-              await this.historiqueService.findOne(createdHistoriqueId);
-            const outbox =
-              await this.notificationsService.enqueueSignalementStatusChange({
-                historique: hist,
-                signalement: saved,
-                utilisateur,
-              });
+            const hist = await this.historiqueService.findOne(createdHistoriqueId);
+            const outbox = await this.notificationsService.enqueueSignalementStatusChange({
+              historique: hist,
+              signalement: saved,
+              utilisateur,
+            });
             await this.notificationsService.tryDeliverNow(outbox.id);
           }
         } catch (e) {
@@ -370,18 +414,17 @@ export class SignalementsService {
     // Notifications (best-effort)
     if (createdHistoriqueId && saved.utilisateur?.id) {
       try {
+        // Recipient must be the signalement creator (owner), not the manager who performed the update.
         const utilisateur = await this.userRepo.findOne({
           where: { id: saved.utilisateur.id },
         });
         if (utilisateur) {
-          const hist =
-            await this.historiqueService.findOne(createdHistoriqueId);
-          const outbox =
-            await this.notificationsService.enqueueSignalementStatusChange({
-              historique: hist,
-              signalement: saved,
-              utilisateur,
-            });
+          const hist = await this.historiqueService.findOne(createdHistoriqueId);
+          const outbox = await this.notificationsService.enqueueSignalementStatusChange({
+            historique: hist,
+            signalement: saved,
+            utilisateur,
+          });
           await this.notificationsService.tryDeliverNow(outbox.id);
         }
       } catch (e) {
