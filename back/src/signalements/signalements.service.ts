@@ -134,7 +134,8 @@ export class SignalementsService {
   findByStatut(statut: string) {
     return this.repo.find({
       where: { statut },
-      relations: ['utilisateur', 'typeProbleme', 'utilisateurResolution'],
+      // include entreprise so GeoJSON has entreprise data too
+      relations: ['utilisateur', 'entreprise', 'typeProbleme', 'utilisateurResolution'],
       order: { dateSignalement: 'DESC' },
     });
   }
@@ -393,6 +394,12 @@ export class SignalementsService {
           avancement: s.avancement,
           priorite: s.priorite,
           dateSignalement: s.dateSignalement,
+            surfaceM2: s.surfaceM2,
+            budget: s.budget,
+            entreprise: s.entreprise
+              ? { id: s.entreprise.id, nom: s.entreprise.nom }
+              : null,
+            entrepriseNom: s.entreprise ? s.entreprise.nom : undefined,
           typeProbleme: s.typeProbleme
             ? {
                 id: s.typeProbleme.id,
