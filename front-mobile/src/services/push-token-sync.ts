@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { apiPost } from './api';
-import { upsertUserFcmTokenInFirestore } from './firestore-user-profile';
+import { upsertUserFcmTokenInFirestore, findPgUserIdByEmail } from './firestore-user-profile';
 import { getSession } from './auth-storage';
 
 const STORAGE_KEY = 'push.fcmToken.v1';
@@ -47,9 +47,19 @@ export async function sendFcmTokenToBackendIfNeeded(token: string): Promise<void
   try {
     const session = await getSession();
     const uid = session?.user?.uid;
+    const email = session?.user?.email;
+
+    let pgUserId = (session as any)?.user?.pgId ?? (session as any)?.user?.id ?? null;
+
+    if (!pgUserId && email) {
+      console.log('[push] pg user id missing; resolving via Firestore utilisateur collection by email');
+      pgUserId = await findPgUserIdByEmail(email);
+      console.log('[push] resolved pg user id:', pgUserId);
+    }
+
     if (uid) {
       console.log('[push] syncing token to Firestore user doc');
-      await upsertUserFcmTokenInFirestore({ firebaseUid: uid, token });
+      await upsertUserFcmTokenInFirestore({ firebaseUid: uid, token, pgUserId });
       console.log('[push] token synced to Firestore');
     } else {
       console.log('[push] no firebase uid in session yet (skip Firestore token sync)');

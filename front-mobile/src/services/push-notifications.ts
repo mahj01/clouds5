@@ -1,4 +1,5 @@
 import { PushNotifications } from '@capacitor/push-notifications';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { setStoredFcmToken, sendFcmTokenToBackendIfNeeded } from './push-token-sync';
 
 let inFlightRegistration: Promise<string> | null = null;
@@ -138,8 +139,28 @@ export function attachPushListeners(opts?: {
 }) {
   attachInternalRegistrationListenersOnce();
 
-  PushNotifications.addListener('pushNotificationReceived', (notification) => {
+  PushNotifications.addListener('pushNotificationReceived', async (notification) => {
     console.log('[push] pushNotificationReceived', notification);
+
+    // Android won't show a heads-up/system notification while the app is foregrounded.
+    // So we mirror it as a local notification to make it visible in the notification bar.
+    try {
+      await LocalNotifications.requestPermissions();
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: Date.now() % 2147483647,
+            title: notification?.title || 'Notification',
+            body: notification?.body || '',
+            extra: notification?.data || {},
+          },
+        ],
+      });
+      console.log('[push] mirrored as local notification');
+    } catch (e) {
+      console.warn('[push] failed to mirror push as local notification', e);
+    }
+
     opts?.onNotification?.(notification);
   });
 

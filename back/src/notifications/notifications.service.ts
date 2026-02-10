@@ -12,6 +12,7 @@ import { Signalement } from '../signalements/signalement.entity';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { FcmService } from './fcm.service';
 import { FirestoreUserTokensService } from './firestore-user-tokens.service';
+import { FirestoreEmailUidService } from './firestore-email-uid.service';
 
 export type FirestoreUserNotification = {
   pg_notification_id: number;
@@ -36,6 +37,7 @@ export class NotificationsService {
     private readonly repo: Repository<NotificationOutbox>,
     private readonly fcm: FcmService,
     private readonly userTokens: FirestoreUserTokensService,
+    private readonly emailUid: FirestoreEmailUidService,
   ) {}
 
   private computeBackoffNextAttempt(attempts: number): Date {
@@ -86,10 +88,31 @@ export class NotificationsService {
     }
   }
 
+  private firebaseUidLooksSynthetic(uid: string | null | undefined): boolean {
+    if (!uid) return true;
+    const v = String(uid).trim();
+    if (!v) return true;
+    return v.startsWith('synced_');
+  }
+
+  private async resolveRecipientFirebaseUid(
+    u: Utilisateur,
+  ): Promise<string | null> {
+    const current = u?.firebaseUid;
+    if (!this.firebaseUidLooksSynthetic(current)) return String(current).trim();
+
+    const email = u?.email;
+    if (!email) return null;
+
+    return this.emailUid.getUidForEmail(email);
+  }
+
   private async pushToFirestore(n: NotificationOutbox): Promise<void> {
-    const firebaseUid = n.utilisateur?.firebaseUid;
+    const firebaseUid = await this.resolveRecipientFirebaseUid(n.utilisateur);
     if (!firebaseUid) {
-      throw new Error(`Utilisateur ${n.utilisateur?.id} has no firebaseUid`);
+      throw new Error(
+        `Utilisateur ${n.utilisateur?.id} has no resolvable firebaseUid`,
+      );
     }
 
     const docId = `pg_${n.id}`;
@@ -138,14 +161,67 @@ export class NotificationsService {
 
       // 2) OS-level push (FCM) for killed/backgrounded app (best-effort)
       // Prefer local PG token, but fallback to Firestore user doc tokens when missing.
-      const firebaseUid = notif.utilisateur?.firebaseUid;
-      const firestoreTokens = firebaseUid
+      const firebaseUid = await this.resolveRecipientFirebaseUid(
+        notif.utilisateur,
+      );
+
+      const pgUserId = notif.utilisateur?.id;
+      const docChecks: Array<{ path: string; exists: boolean }> = [];
+
+      if (firebaseUid) {
+        const exists = await this.userTokens.debugCheckDocExists({
+          collection: 'users',
+          docId: firebaseUid,
+        });
+        docChecks.push({ path: `users/${firebaseUid}`, exists: exists.exists });
+      } else {
+        docChecks.push({ path: 'users/{firebaseUid}', exists: false });
+      }
+
+      // Also log the raw PG firebaseUid for mismatch debugging.
+      const rawPgFirebaseUid = notif.utilisateur?.firebaseUid;
+      if (rawPgFirebaseUid && rawPgFirebaseUid !== firebaseUid) {
+        const pgUidExists = await this.userTokens.debugCheckDocExists({
+          collection: 'users',
+          docId: rawPgFirebaseUid,
+        });
+
+        docChecks.push({
+          path: `users/${rawPgFirebaseUid} (pg.firebaseUid)`,
+          exists: pgUidExists.exists,
+        });
+      }
+
+      if (pgUserId) {
+        const exists = await this.userTokens.debugCheckDocExists({
+          collection: 'utilisateur',
+          docId: String(pgUserId),
+        });
+        docChecks.push({
+          path: `utilisateur/${pgUserId}`,
+          exists: exists.exists,
+        });
+      } else {
+        docChecks.push({ path: 'utilisateur/{pgId}', exists: false });
+      }
+
+      this.logger.log(
+        `notif ${notif.id}: token lookup doc checks: ${docChecks
+          .map((c) => `${c.path} exists=${c.exists}`)
+          .join(' | ')}`,
+      );
+
+      const firestoreTokensByUid = firebaseUid
         ? await this.userTokens.getTokensForFirebaseUid(firebaseUid)
+        : [];
+      const firestoreTokensByPgId = pgUserId
+        ? await this.userTokens.getTokensForPgUserId(pgUserId)
         : [];
 
       const candidateTokens = [
         notif.utilisateur?.fcmToken,
-        ...firestoreTokens,
+        ...firestoreTokensByUid,
+        ...firestoreTokensByPgId,
       ].filter((t): t is string => typeof t === 'string');
 
       const tokens = Array.from(
@@ -154,9 +230,12 @@ export class NotificationsService {
 
       if (tokens.length === 0) {
         this.logger.log(
-          `notif ${notif.id}: no valid FCM token for user ${notif.utilisateur?.id} (skip push)`,
+          `notif ${notif.id}: no valid FCM token for user ${notif.utilisateur?.id} (skip push). firebaseUid=${firebaseUid ?? 'null'}`,
         );
       } else {
+        this.logger.log(
+          `notif ${notif.id}: sending push to ${tokens.length} token(s) (pg=${notif.utilisateur?.fcmToken ? '1' : '0'}, fs_uid=${firestoreTokensByUid.length}, fs_pg=${firestoreTokensByPgId.length})`,
+        );
         for (const token of tokens) {
           try {
             await this.fcm.sendToToken({

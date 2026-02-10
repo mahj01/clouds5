@@ -228,19 +228,17 @@ export class SignalementsService {
       // Notifications (best-effort): create local outbox row, then try immediate delivery
       if (createdHistoriqueId && saved.utilisateur?.id) {
         try {
-          // Ensure we have firebaseUid loaded.
+          // Recipient must be the signalement creator (owner), not the manager who performed the update.
           const utilisateur = await this.userRepo.findOne({
             where: { id: saved.utilisateur.id },
           });
           if (utilisateur) {
-            const hist =
-              await this.historiqueService.findOne(createdHistoriqueId);
-            const outbox =
-              await this.notificationsService.enqueueSignalementStatusChange({
-                historique: hist,
-                signalement: saved,
-                utilisateur,
-              });
+            const hist = await this.historiqueService.findOne(createdHistoriqueId);
+            const outbox = await this.notificationsService.enqueueSignalementStatusChange({
+              historique: hist,
+              signalement: saved,
+              utilisateur,
+            });
             await this.notificationsService.tryDeliverNow(outbox.id);
           }
         } catch (e) {
@@ -308,18 +306,17 @@ export class SignalementsService {
     // Notifications (best-effort)
     if (createdHistoriqueId && saved.utilisateur?.id) {
       try {
+        // Recipient must be the signalement creator (owner), not the manager who performed the update.
         const utilisateur = await this.userRepo.findOne({
           where: { id: saved.utilisateur.id },
         });
         if (utilisateur) {
-          const hist =
-            await this.historiqueService.findOne(createdHistoriqueId);
-          const outbox =
-            await this.notificationsService.enqueueSignalementStatusChange({
-              historique: hist,
-              signalement: saved,
-              utilisateur,
-            });
+          const hist = await this.historiqueService.findOne(createdHistoriqueId);
+          const outbox = await this.notificationsService.enqueueSignalementStatusChange({
+            historique: hist,
+            signalement: saved,
+            utilisateur,
+          });
           await this.notificationsService.tryDeliverNow(outbox.id);
         }
       } catch (e) {

@@ -113,9 +113,10 @@ async function onLogin() {
       // Store on Firestore user doc (fallback path for backend)
       try {
         const uid = res.data?.user?.uid;
+        const pgUserId = (res.data as any)?.user?.pgId ?? (res.data as any)?.user?.id ?? null;
         if (uid) {
-          await upsertUserFcmTokenInFirestore({ firebaseUid: uid, token });
-          console.log('[login] push token stored in Firestore users/' + uid);
+          await upsertUserFcmTokenInFirestore({ firebaseUid: uid, token, pgUserId });
+          console.log('[login] push token stored in Firestore users/' + uid + (pgUserId ? (' and utilisateur/' + pgUserId) : ''));
         } else {
           console.log('[login] no firebase uid in session (skip Firestore token write)');
         }
