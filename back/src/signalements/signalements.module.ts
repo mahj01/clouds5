@@ -9,6 +9,7 @@ import { TypeProbleme } from '../problemes/type-probleme.entity';
 import { JournalModule } from '../journal/journal.module';
 import { HistoriqueSignalementModule } from '../historique_signalement/historique-signalement.module';
 import { FirestoreModule } from '../firestore/firestore.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { FirestoreModule } from '../firestore/firestore.module';
     JournalModule,
     HistoriqueSignalementModule,
     FirestoreModule,
+    NotificationsModule,
   ],
   providers: [SignalementsService],
   controllers: [SignalementsController],

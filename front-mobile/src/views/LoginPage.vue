@@ -48,6 +48,9 @@ import { useRouter } from 'vue-router';
 import { IonPage, IonContent, IonItem, IonInput, IonButton, IonCheckbox } from '@ionic/vue';
 
 import authService from '@/services/auth';
+import { registerForPushNotifications } from '@/services/push-notifications';
+import { apiPost } from '@/services/api';
+import { checkAndRequestGPSPermission } from '@/services/gps-permission';
 
 const router = useRouter();
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
@@ -89,6 +92,26 @@ async function onLogin() {
         errorMessage.value = res.error.message || 'Invalid email or password.';
       }
       return;
+    }
+
+    // IMPORTANT: request GPS permission first, then push permissions.
+    // We've seen concurrency issues on Android if multiple permission/token flows overlap.
+    try {
+      console.log('[login] requesting GPS permission (pre-push)');
+      await checkAndRequestGPSPermission();
+    } catch (e) {
+      console.warn('[login] GPS permission flow failed (continuing)', e);
+    }
+
+    // Register device for push notifications and send token to backend (best-effort)
+    try {
+      console.log('[login] starting push registration (post-gps)');
+      const token = await registerForPushNotifications();
+      console.log('[login] push token acquired, sending to backend');
+      await apiPost('/utilisateurs/me/fcm-token', { fcmToken: token });
+      console.log('[login] push token sent to backend');
+    } catch (e) {
+      console.warn('[push] token registration failed', e);
     }
 
     await router.replace('/home');

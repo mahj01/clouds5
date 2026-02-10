@@ -4,23 +4,28 @@ import { Capacitor } from '@capacitor/core';
 export async function checkAndRequestGPSPermission() {
   if (Capacitor.getPlatform() === 'android') {
     try {
+      console.log('[gps] checking permissions');
       const permissionStatus = await Geolocation.checkPermissions();
+      console.log('[gps] current permission', permissionStatus);
 
       if (permissionStatus.location != 'granted') {
+        console.log('[gps] requesting permission…');
         const requestStatus = await Geolocation.requestPermissions();
+        console.log('[gps] permission request result', requestStatus);
 
         if (requestStatus.location === 'denied') {
-          console.warn('GPS permission denied. The app may not function properly.');
+          console.warn('[gps] permission denied. The app may not function properly.');
         } else {
-          console.log('GPS permission granted.');
+          console.log('[gps] permission granted.');
         }
       } else {
-        console.log('GPS permission already granted.');
+        console.log('[gps] permission already granted.');
       }
     } catch (error) {
-      console.error('Error checking or requesting GPS permission:', error);
+      console.error('[gps] error checking or requesting permission:', error);
+      throw error;
     }
   } else {
-    console.log('GPS permission check is only required on Android.');
+    console.log('[gps] permission check is only required on Android.');
   }
 }
