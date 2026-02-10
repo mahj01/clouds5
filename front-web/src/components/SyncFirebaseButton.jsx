@@ -54,7 +54,7 @@ export default function SyncFirebaseButton() {
         title={unsyncedCount > 0 ? `${unsyncedCount} utilisateur(s) à synchroniser` : 'Tous les utilisateurs sont synchronisés'}
       >
         <i className={`fa fa-cloud-upload ${loading ? 'animate-pulse' : ''}`} aria-hidden="true" />
-        <span>{loading ? 'Synchronisation...' : 'Synchroniser Firebase'}</span>
+        <span>{loading ? 'Synchronisation...' : 'Synchroniser les utilisateurs'}</span>
         
         {unsyncedCount > 0 && !loading && (
           <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
