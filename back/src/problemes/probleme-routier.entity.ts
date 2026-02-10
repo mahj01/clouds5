@@ -80,4 +80,6 @@ export class ProblemeRoutier {
   @OneToOne('Signalement', 'problemeRoutier', { nullable: true, cascade: true })
   @JoinColumn({ name: 'id_signalement' })
   signalement?: Signalement;
+
+  
 }

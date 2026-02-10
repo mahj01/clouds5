@@ -6,10 +6,12 @@ import { SignalementsController } from './signalements.controller';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { Entreprise } from '../entreprises/entreprise.entity';
 import { TypeProbleme } from '../problemes/type-probleme.entity';
+import { NiveauReparation } from '../niveaux_reparation/niveau-reparation.entity';
 import { JournalModule } from '../journal/journal.module';
 import { HistoriqueSignalementModule } from '../historique_signalement/historique-signalement.module';
 import { FirestoreModule } from '../firestore/firestore.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { ParametresModule } from '../parametres/parametres.module';
 
 @Module({
   imports: [
@@ -18,11 +20,13 @@ import { NotificationsModule } from '../notifications/notifications.module';
       Utilisateur,
       Entreprise,
       TypeProbleme,
+      NiveauReparation,
     ]),
     JournalModule,
     HistoriqueSignalementModule,
     FirestoreModule,
     NotificationsModule,
+    ParametresModule,
   ],
   providers: [SignalementsService],
   controllers: [SignalementsController],

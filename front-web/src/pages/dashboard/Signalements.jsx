@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getSignalements, updateSignalement, deleteSignalement, resoudreSignalement, getEntreprises, getHistoriqueBySignalement, uploadPhotoSignalement } from '../../api/client.js'
+import { getSignalements, updateSignalement, deleteSignalement, resoudreSignalement, getEntreprises, getHistoriqueBySignalement, uploadPhotoSignalement, getNiveauxReparation, assignerNiveauSignalement } from '../../api/client.js'
 import { getTypesProblemeActifs } from '../../api/problemes.js'
 
 const STATUTS = [
@@ -61,6 +61,7 @@ export default function Signalements() {
   const [signalements, setSignalements] = useState([])
   const [types, setTypes] = useState([])
   const [entreprises, setEntreprises] = useState([])
+  const [niveaux, setNiveaux] = useState([])
   const [filtreStatut, setFiltreStatut] = useState(null)
   
   // Modals
@@ -83,14 +84,16 @@ export default function Signalements() {
     setLoading(true)
     setError(null)
     try {
-      const [sigs, typesData, entreprisesData] = await Promise.all([
+      const [sigs, typesData, entreprisesData, niveauxData] = await Promise.all([
         getSignalements(),
         getTypesProblemeActifs(),
         getEntreprises(),
+        getNiveauxReparation(),
       ])
       setSignalements(Array.isArray(sigs) ? sigs : [])
       setTypes(Array.isArray(typesData) ? typesData : [])
       setEntreprises(Array.isArray(entreprisesData) ? entreprisesData : [])
+      setNiveaux(Array.isArray(niveauxData) ? niveauxData : [])
     } catch (e) {
       setError(e?.message || String(e))
     } finally {
@@ -140,6 +143,7 @@ export default function Signalements() {
       surfaceM2: s?.surfaceM2 ?? '',
       budget: s?.budget ?? '',
       entrepriseId: s?.entreprise?.id ?? '',
+      avancement: s?.avancement ?? avancementFromStatut(s?.statut),
     })
   }
 
@@ -153,6 +157,12 @@ export default function Signalements() {
     setSaving(true)
     setError(null)
     try {
+      // If status changed, require avancement to be provided
+      if (form.statut !== editing.statut && (form.avancement === undefined || form.avancement === '')) {
+        setError('Veuillez saisir le niveau de réparation (avancement) lors du changement de statut.')
+        setSaving(false)
+        return
+      }
       // 1) Upload photo si une nouvelle a été sélectionnée
       let uploadedPhotoUrl = null
       if (form._photoFile) {
@@ -178,7 +188,18 @@ export default function Signalements() {
       if (form.typeProblemeId) payload.typeProblemeId = parseInt(form.typeProblemeId)
       if (form.surfaceM2) payload.surfaceM2 = parseFloat(form.surfaceM2)
       if (form.budget) payload.budget = parseFloat(form.budget)
-      if (form.entrepriseId) payload.entrepriseId = parseInt(form.entrepriseId)
+      // entrepriseId: allow selecting none (empty string) to clear
+      if (form.entrepriseId !== undefined) {
+        if (form.entrepriseId === '' || form.entrepriseId === null) {
+          payload.entrepriseId = null
+        } else {
+          payload.entrepriseId = parseInt(form.entrepriseId)
+        }
+      }
+      // Avancement: include if user provided (especially after statut change)
+      if (form.avancement !== undefined && form.avancement !== null && form.avancement !== '') {
+        payload.avancement = parseInt(form.avancement)
+      }
 
       await updateSignalement(editing.id, payload)
       setSuccess('Signalement mis à jour avec succès.' + (uploadedPhotoUrl ? ' Photo enregistrée.' : ''))
@@ -219,6 +240,18 @@ export default function Signalements() {
     try {
       await deleteSignalement(s.id)
       setSuccess('Signalement supprimé.')
+      await refresh()
+    } catch (e) {
+      setError(e?.message || String(e))
+    }
+  }
+
+  async function handleAssignerNiveau(signalementId, niveauId) {
+    if (!niveauId) return
+    setError(null)
+    try {
+      await assignerNiveauSignalement(signalementId, parseInt(niveauId))
+      setSuccess('Niveau assigné et budget recalculé.')
       await refresh()
     } catch (e) {
       setError(e?.message || String(e))
@@ -343,6 +376,11 @@ export default function Signalements() {
                     )}
                     {getStatutBadge(s.statut)}
                     {getPrioriteBadge(s.priorite)}
+                    {s.niveauReparation && (
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                        <i className="fa fa-wrench mr-1" />Niv. {s.niveauReparation.niveau}
+                      </span>
+                    )}
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900">{s.titre || 'Sans titre'}</h3>
                   {s.description && (
@@ -429,6 +467,21 @@ export default function Signalements() {
                   >
                     <i className="fa fa-trash mr-1" />
                   </button>
+                  
+                  {/* Assignation niveau */}
+                  <select
+                    value={s.niveauReparation?.id || ''}
+                    onChange={(e) => handleAssignerNiveau(s.id, parseInt(e.target.value))}
+                    className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-sm text-purple-700 hover:bg-purple-100 cursor-pointer"
+                    title="Assigner un niveau de réparation"
+                  >
+                    <option value="">-- Niveau --</option>
+                    {niveaux.map(n => (
+                      <option key={n.id} value={n.id}>
+                        Niv. {n.niveau} - {n.libelle}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
@@ -910,26 +963,43 @@ export default function Signalements() {
                 />
               </div>
 
-              {/* Avancement auto-calculé */}
-              <div className="sm:col-span-2 rounded-xl border-2 border-slate-200 bg-slate-50 p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold text-slate-700">
-                    <i className="fa fa-tasks mr-2" />Avancement (auto-calculé)
-                  </span>
-                  <span className="text-lg font-bold text-slate-800">
-                    {avancementFromStatut(form.statut)}%
-                  </span>
-                </div>
-                <div className="h-3 rounded-full bg-slate-200 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${avancementColor(avancementFromStatut(form.statut))}`}
-                    style={{ width: `${avancementFromStatut(form.statut)}%` }}
+              {/* Avancement — si le statut a été modifié, demander la saisie manuelle */}
+              {form.statut !== editing.statut ? (
+                <div className="sm:col-span-2 rounded-xl border-2 border-slate-200 bg-yellow-50 p-4">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Niveau de réparation (0–100%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={form.avancement}
+                    onChange={(e) => setForm(f => ({ ...f, avancement: e.target.value }))}
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
                   />
+                  <p className="text-xs text-slate-500 mt-2">
+                    Saisissez le niveau d'avancement suite au changement de statut (ex: 0, 50, 100).
+                  </p>
                 </div>
-                <p className="text-xs text-slate-500 mt-2">
-                  Nouveau/Actif = 0% · En cours = 50% · Résolu = 100%
-                </p>
-              </div>
+              ) : (
+                <div className="sm:col-span-2 rounded-xl border-2 border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-slate-700">
+                      <i className="fa fa-tasks mr-2" />Avancement (auto-calculé)
+                    </span>
+                    <span className="text-lg font-bold text-slate-800">
+                      {avancementFromStatut(form.statut)}%
+                    </span>
+                  </div>
+                  <div className="h-3 rounded-full bg-slate-200 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${avancementColor(avancementFromStatut(form.statut))}`}
+                      style={{ width: `${avancementFromStatut(form.statut)}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">
+                    Nouveau/Actif = 0% · En cours = 50% · Résolu = 100%
+                  </p>
+                </div>
+              )}
 
               {/* Infos lecture seule */}
               <div className="sm:col-span-2 pt-2 border-t border-gray-100">

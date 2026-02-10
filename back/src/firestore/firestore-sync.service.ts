@@ -128,8 +128,8 @@ export class FirestoreSyncService implements OnModuleInit {
     for (const doc of snapshot.docs) {
       const data = doc.data();
 
-      // Ignorer les docs poussés depuis PG (ID numérique = vient de syncAll)
-      if (/^\d+$/.test(doc.id)) {
+      // Ignorer les docs poussés depuis PG (ID numérique ou préfixé pg_ = vient de syncAll)
+      if (/^\d+$/.test(doc.id) || doc.id.startsWith('pg_')) {
         skipped++;
         continue;
       }

@@ -14,6 +14,18 @@ export class FirestoreController {
     return this.sync.syncAll();
   }
 
+  @Post('full-sync')
+  async fullSync() {
+    // Synchronisation bidirectionnelle complète
+    const syncResult = await this.sync.syncAll();
+    const signalementResult = await this.sync.syncSignalementsFromFirestore();
+    return {
+      message: 'Synchronisation complète terminée',
+      sync: syncResult,
+      signalements: signalementResult,
+    };
+  }
+
   @Post('sync-signalements')
   async syncSignalements() {
     return this.sync.syncSignalementsFromFirestore();

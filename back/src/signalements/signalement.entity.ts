@@ -10,6 +10,7 @@ import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { Entreprise } from '../entreprises/entreprise.entity';
 import { HistoriqueSignalement } from '../historique_signalement/historique-signalement.entity';
 import { TypeProbleme } from '../problemes/type-probleme.entity';
+import { NiveauReparation } from '../niveaux_reparation/niveau-reparation.entity';
 
 export enum StatutSignalement {
   ACTIF = 'actif',
@@ -129,6 +130,13 @@ export class Signalement {
   @JoinColumn({ name: 'id_entreprise' })
   entreprise?: Entreprise;
 
+  // Niveau de réparation assigné (pour le calcul du budget)
+  @ManyToOne(() => NiveauReparation, { nullable: true })
+  @JoinColumn({ name: 'id_niveau_reparation' })
+  niveauReparation?: NiveauReparation;
+
   @OneToMany(() => HistoriqueSignalement, (h) => h.signalement)
   historiques: HistoriqueSignalement[];
+
+  
 }

@@ -15,10 +15,12 @@ import { UpdateSignalementDto } from './dto/update-signalement.dto';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { Entreprise } from '../entreprises/entreprise.entity';
 import { TypeProbleme } from '../problemes/type-probleme.entity';
+import { NiveauReparation } from '../niveaux_reparation/niveau-reparation.entity';
 import { JournalService } from '../journal/journal.service';
 import { HistoriqueSignalementService } from '../historique_signalement/historique-signalement.service';
 import { FirestoreDiffSyncService } from '../firestore/firestore-diff-sync.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PrixForfaitaireService } from '../parametres/prix-forfaitaire.service';
 
 @Injectable()
 export class SignalementsService {
@@ -27,10 +29,12 @@ export class SignalementsService {
     @InjectRepository(Utilisateur) private userRepo: Repository<Utilisateur>,
     @InjectRepository(Entreprise) private entRepo: Repository<Entreprise>,
     @InjectRepository(TypeProbleme) private typeRepo: Repository<TypeProbleme>,
+    @InjectRepository(NiveauReparation) private niveauRepo: Repository<NiveauReparation>,
     private readonly journalService: JournalService,
     private readonly historiqueService: HistoriqueSignalementService,
     private readonly firestoreDiffSync: FirestoreDiffSyncService,
     private readonly notificationsService: NotificationsService,
+    private readonly prixForfaitaireService: PrixForfaitaireService,
   ) {}
 
   private async logAction(
@@ -80,6 +84,25 @@ export class SignalementsService {
     }
 
     const statut = dto.statut ?? StatutSignalement.ACTIF;
+
+    // Calcul automatique du budget si une surface est fournie
+    let budgetCalcule: string | undefined = dto.budget !== undefined ? String(dto.budget) : undefined;
+    if (dto.surfaceM2 !== undefined && dto.surfaceM2 > 0) {
+      try {
+        const prixForfaitaires = await this.prixForfaitaireService.findAll();
+        if (prixForfaitaires.length > 0) {
+          // Prendre le premier prix forfaitaire configuré
+          const prixM2 = Number(prixForfaitaires[0].prixM2);
+          if (prixM2 > 0) {
+            const budget = dto.surfaceM2 * prixM2;
+            budgetCalcule = String(Math.round(budget * 100) / 100);
+          }
+        }
+      } catch (e) {
+        console.warn('Impossible de calculer le budget automatiquement:', e);
+      }
+    }
+
     const entity = this.repo.create({
       titre: dto.titre,
       description: dto.description,
@@ -91,7 +114,7 @@ export class SignalementsService {
       photoUrl: dto.photoUrl,
       surfaceM2:
         dto.surfaceM2 !== undefined ? String(dto.surfaceM2) : undefined,
-      budget: dto.budget !== undefined ? String(dto.budget) : undefined,
+      budget: budgetCalcule,
       avancement: avancementFromStatut(statut),
       utilisateur: user,
       typeProbleme,
@@ -118,6 +141,7 @@ export class SignalementsService {
         'entreprise',
         'typeProbleme',
         'utilisateurResolution',
+        'niveauReparation',
       ],
       order: { dateSignalement: 'DESC' },
     });
@@ -134,7 +158,8 @@ export class SignalementsService {
   findByStatut(statut: string) {
     return this.repo.find({
       where: { statut },
-      relations: ['utilisateur', 'typeProbleme', 'utilisateurResolution'],
+      // include entreprise so GeoJSON has entreprise data too
+      relations: ['utilisateur', 'entreprise', 'typeProbleme', 'utilisateurResolution'],
       order: { dateSignalement: 'DESC' },
     });
   }
@@ -155,6 +180,7 @@ export class SignalementsService {
         'entreprise',
         'typeProbleme',
         'utilisateurResolution',
+        'niveauReparation',
       ],
     });
     if (!item) throw new NotFoundException('Signalement non trouvé');
@@ -181,18 +207,49 @@ export class SignalementsService {
     if (dto.photoUrl !== undefined) entity.photoUrl = dto.photoUrl;
     if (dto.commentaireResolution !== undefined)
       entity.commentaireResolution = dto.commentaireResolution;
-    if (dto.surfaceM2 !== undefined)
+    if (dto.surfaceM2 !== undefined) {
       entity.surfaceM2 =
         dto.surfaceM2 != null ? String(dto.surfaceM2) : undefined;
+      // Recalculer le budget automatiquement si la surface change
+      if (dto.surfaceM2 != null && dto.surfaceM2 > 0) {
+        try {
+          const prixForfaitaires = await this.prixForfaitaireService.findAll();
+          if (prixForfaitaires.length > 0) {
+            const prixM2 = Number(prixForfaitaires[0].prixM2);
+            if (prixM2 > 0) {
+              const budget = dto.surfaceM2 * prixM2;
+              entity.budget = String(Math.round(budget * 100) / 100);
+            }
+          }
+        } catch (e) {
+          console.warn('Impossible de recalculer le budget:', e);
+        }
+      }
+    }
     if (dto.budget !== undefined)
       entity.budget = dto.budget != null ? String(dto.budget) : undefined;
+    // Entreprise: allow setting or clearing entreprise on update
+    if (dto.entrepriseId !== undefined) {
+      if (dto.entrepriseId == null) {
+        entity.entreprise = undefined;
+      } else {
+        const ent = await this.entRepo.findOne({ where: { id: dto.entrepriseId } });
+        if (!ent) throw new NotFoundException('Entreprise non trouvée');
+        entity.entreprise = ent;
+      }
+    }
 
     let createdHistoriqueId: number | undefined;
 
     if (dto.statut !== undefined && dto.statut !== entity.statut) {
       const ancienStatut = entity.statut;
       entity.statut = dto.statut;
-      entity.avancement = avancementFromStatut(dto.statut);
+      // Prefer explicit avancement if provided in DTO, otherwise compute from statut
+      if (dto.avancement !== undefined) {
+        entity.avancement = dto.avancement;
+      } else {
+        entity.avancement = avancementFromStatut(dto.statut);
+      }
       if (String(dto.statut) === String(StatutSignalement.RESOLU)) {
         entity.dateResolution = new Date();
       }
@@ -211,6 +268,11 @@ export class SignalementsService {
           console.error('Erreur enregistrement historique:', e);
         }
       }
+    }
+
+    // If avancement provided outside of statut change, apply it
+    if (dto.avancement !== undefined && dto.statut === undefined) {
+      entity.avancement = dto.avancement;
     }
 
     const saved = await this.repo.save(entity);
@@ -373,6 +435,12 @@ export class SignalementsService {
           avancement: s.avancement,
           priorite: s.priorite,
           dateSignalement: s.dateSignalement,
+            surfaceM2: s.surfaceM2,
+            budget: s.budget,
+            entreprise: s.entreprise
+              ? { id: s.entreprise.id, nom: s.entreprise.nom }
+              : null,
+            entrepriseNom: s.entreprise ? s.entreprise.nom : undefined,
           typeProbleme: s.typeProbleme
             ? {
                 id: s.typeProbleme.id,
@@ -524,5 +592,55 @@ export class SignalementsService {
       },
       tauxResolution,
     };
+  }
+
+  /**
+   * Assigne un niveau de réparation à un signalement et recalcule le budget.
+   * Formule: budget = prix_par_m2 × niveau × surface_m2
+   */
+  async assignerNiveau(
+    signalementId: number,
+    niveauId: number,
+  ): Promise<Signalement> {
+    const signalement = await this.findOne(signalementId);
+
+    // Récupérer le niveau de réparation
+    const niveau = await this.niveauRepo.findOne({ where: { id: niveauId } });
+    if (!niveau) {
+      throw new NotFoundException(`Niveau de réparation #${niveauId} non trouvé`);
+    }
+
+    signalement.niveauReparation = niveau;
+
+    // Recalculer le budget si surface et prix forfaitaire sont disponibles
+    const surfaceM2 = signalement.surfaceM2 ? Number(signalement.surfaceM2) : 0;
+    if (surfaceM2 > 0) {
+      try {
+        const prixForfaitaires = await this.prixForfaitaireService.findAll();
+        if (prixForfaitaires.length > 0) {
+          const prixM2 = Number(prixForfaitaires[0].prixM2);
+          if (prixM2 > 0) {
+            // Formule: prix_par_m2 × niveau × surface_m2
+            const budget = prixM2 * niveau.niveau * surfaceM2;
+            signalement.budget = String(Math.round(budget * 100) / 100);
+          }
+        }
+      } catch (e) {
+        console.warn('Impossible de recalculer le budget:', e);
+      }
+    }
+
+    const saved = await this.repo.save(signalement);
+
+    // Log l'assignation
+    await this.logAction(
+      'ASSIGN_NIVEAU',
+      'signalements',
+      undefined,
+      'info',
+      `Niveau ${niveau.libelle} (${niveau.niveau}) assigné au signalement #${signalementId}. Budget: ${signalement.budget || 'N/A'}`,
+    );
+
+    return saved;
   }
 }
