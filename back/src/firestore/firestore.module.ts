@@ -10,6 +10,7 @@ import { Session } from '../sessions/session.entity';
 import { StatutCompte } from '../statut_compte/statut-compte.entity';
 import { HistoriqueSignalement } from '../historique_signalement/historique-signalement.entity';
 import { FirestoreDiffSyncService } from './firestore-diff-sync.service';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { FirestoreDiffSyncService } from './firestore-diff-sync.service';
       StatutCompte,
       HistoriqueSignalement,
     ]),
+    NotificationsModule,
   ],
   providers: [FirestoreSyncService, FirestoreDiffSyncService],
   controllers: [FirestoreController],

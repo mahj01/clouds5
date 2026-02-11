@@ -15,6 +15,7 @@ import { JournalAcces } from '../journal/journal.entity';
 import { TentativeConnexion } from '../tentative_connexion/tentative-connexion.entity';
 import { Synchronisation } from '../synchronisations/synchronisation.entity';
 import { FirestoreDiffSyncService } from './firestore-diff-sync.service';
+import { EmailUidSyncService } from '../notifications/email-uid-sync.service';
 
 @Injectable()
 export class FirestoreSyncService implements OnModuleInit {
@@ -22,12 +23,24 @@ export class FirestoreSyncService implements OnModuleInit {
   constructor(
     private readonly ds: DataSource,
     private readonly diffSync: FirestoreDiffSyncService,
+    private readonly emailUidSync: EmailUidSyncService,
   ) {}
 
   async onModuleInit() {
     // Run sync in background - don't block app startup
     // This allows the backend to start even without internet
     this.syncInBackground();
+
+    // Also keep email->uid mapping fresh (optional)
+    if (String(process.env.EMAIL_UID_SYNC_ON_STARTUP ?? 'true').toLowerCase() !== 'false') {
+      this.emailUidSync
+        .syncAllEmailUidMappings({ reason: 'startup' })
+        .catch((e) =>
+          this.logger.warn(
+            'Email->uid sync failed (no internet?): ' + String(e?.message ?? e),
+          ),
+        );
+    }
   }
 
   private syncInBackground() {
@@ -512,6 +525,15 @@ export class FirestoreSyncService implements OnModuleInit {
     push: { totalCreated: number; totalUpdated: number; details: any[] };
     pull: { totalImported: number; totalSkipped: number; details: any[]; errors: string[] };
   }> {
+    // Keep email->uid mapping fresh before attempting any UID->email lookups
+    try {
+      await this.emailUidSync.syncAllEmailUidMappings({ reason: 'fullBidirectionalSync' });
+    } catch (e) {
+      this.logger.warn(
+        'Email->uid sync failed before full sync: ' + String((e as any)?.message ?? e),
+      );
+    }
+
     // === D'abord synchroniser les utilisateurs non synchronisés ===
     const unsyncedUsersResult = await this.syncUnsyncedUsersToFirestore();
 
