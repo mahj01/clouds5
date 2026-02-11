@@ -3,6 +3,8 @@ import { firestore } from '../firebase-admin';
 
 type EmailUidDoc = {
   uid?: unknown;
+  email?: unknown;
+  updatedAt?: unknown;
 };
 
 @Injectable()
@@ -36,6 +38,43 @@ export class FirestoreEmailUidService {
       const msg = e instanceof Error ? e.message : String(e);
       this.logger.warn(`Failed to read email_uid/${email}: ${msg}`);
       return null;
+    }
+  }
+
+  async upsertEmailUid(emailRaw: string, uid: string): Promise<void> {
+    const email = this.normalizeEmail(emailRaw);
+    const cleanUid = String(uid || '').trim();
+    if (!email || !cleanUid) return;
+
+    try {
+      await firestore
+        .collection(FirestoreEmailUidService.COLLECTION)
+        .doc(email)
+        .set(
+          {
+            email,
+            uid: cleanUid,
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true },
+        );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      this.logger.warn(`Failed to upsert email_uid/${email}: ${msg}`);
+    }
+  }
+
+  async deleteEmail(emailRaw: string): Promise<void> {
+    const email = this.normalizeEmail(emailRaw);
+    if (!email) return;
+    try {
+      await firestore
+        .collection(FirestoreEmailUidService.COLLECTION)
+        .doc(email)
+        .delete();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      this.logger.warn(`Failed to delete email_uid/${email}: ${msg}`);
     }
   }
 }

@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import admin, { firestore } from '../firebase-admin';
+import { DataSource, IsNull, Not } from 'typeorm';
+import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 
 export type EmailUidSyncResult = {
   totalWritten: number;
@@ -10,6 +12,8 @@ export class EmailUidSyncService {
   private readonly logger = new Logger(EmailUidSyncService.name);
   private inFlight: Promise<EmailUidSyncResult> | null = null;
 
+  constructor(private readonly ds: DataSource) {}
+
   static readonly COLLECTION = 'email_uid';
   static readonly LOCK_DOC_PATH = 'locks/email_uid_sync';
 
@@ -18,7 +22,7 @@ export class EmailUidSyncService {
   }
 
   /**
-   * Syncs all Firebase Auth users into Firestore collection `email_uid`.
+   * Syncs Postgres Utilisateur rows (email + firebaseUid) into Firestore collection `email_uid`.
    * Safe & idempotent: docs keyed by normalized email, written with merge.
    */
   syncAllEmailUidMappings(options?: {
@@ -40,15 +44,6 @@ export class EmailUidSyncService {
     return this.inFlight;
   }
 
-  private hasServiceAccountCredentials(): boolean {
-    // When initialized via admin.initializeApp() with application default creds,
-    // firebase-admin will often have no explicit certificate credentials.
-    // In local/dev this typically means serviceAccountKey.json isn't loaded.
-    const app = admin.app();
-    const cred: any = (app?.options as any)?.credential;
-    return Boolean(cred && typeof cred === 'object' && (cred.privateKey || cred.clientEmail));
-  }
-
   private async runSync(options?: {
     pageSize?: number;
     leaseMs?: number;
@@ -58,28 +53,13 @@ export class EmailUidSyncService {
     const leaseMs = options?.leaseMs ?? 10 * 60 * 1000;
     const reason = options?.reason ?? 'manual';
 
-    // If we don't have proper credentials, attempting listUsers() will fail.
-    // Treat this as a configuration issue and skip the run.
-    if (!this.hasServiceAccountCredentials()) {
-      this.logger.warn(
-        'Skipping email->uid sync: Firebase Admin SDK has no service account credentials. ' +
-          'Provide GOOGLE_APPLICATION_CREDENTIALS or src/serviceAccountKey.json.',
-      );
-      return { totalWritten: 0 };
-    }
-
     const lockRef = firestore.doc(EmailUidSyncService.LOCK_DOC_PATH);
     const leaseUntil = Date.now() + leaseMs;
 
     const lockAcquired = await firestore.runTransaction(async (tx) => {
       const snap = await tx.get(lockRef);
-      const data = (snap.data() ?? {}) as {
-        leaseUntil?: number;
-      };
-
-      if (typeof data.leaseUntil === 'number' && data.leaseUntil > Date.now()) {
-        return false;
-      }
+      const data = (snap.data() ?? {}) as { leaseUntil?: number };
+      if (typeof data.leaseUntil === 'number' && data.leaseUntil > Date.now()) return false;
 
       tx.set(
         lockRef,
@@ -98,40 +78,43 @@ export class EmailUidSyncService {
       return { totalWritten: 0 };
     }
 
-    let nextPageToken: string | undefined;
     let totalWritten = 0;
-
     this.logger.log(`Starting email->uid sync (reason=${reason})...`);
 
     try {
-      do {
-        const res = await admin.auth().listUsers(pageSize, nextPageToken);
-        nextPageToken = res.pageToken;
+      const repo = this.ds.getRepository(Utilisateur);
+
+      let skip = 0;
+      while (true) {
+        const users = await repo.find({
+          select: ['id', 'email', 'firebaseUid'],
+          where: { firebaseUid: Not(IsNull()) },
+          order: { id: 'ASC' },
+          skip,
+          take: pageSize,
+        });
+
+        if (!users.length) break;
+        skip += users.length;
 
         const batch = firestore.batch();
         let batchCount = 0;
 
-        for (const u of res.users) {
-          const email = u.email;
-          if (!email) continue;
+        for (const u of users) {
+          const email = this.normalizeEmail(String(u.email || ''));
+          const uid = String(u.firebaseUid || '').trim();
+          if (!email || !uid) continue;
 
-          const docId = this.normalizeEmail(email);
-          if (!docId) continue;
-
-          const ref = firestore
-            .collection(EmailUidSyncService.COLLECTION)
-            .doc(docId);
-
+          const ref = firestore.collection(EmailUidSyncService.COLLECTION).doc(email);
           batch.set(
             ref,
             {
-              email: docId,
-              uid: u.uid,
+              email,
+              uid,
               updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             },
             { merge: true },
           );
-
           batchCount++;
           totalWritten++;
         }
@@ -140,20 +123,15 @@ export class EmailUidSyncService {
           await batch.commit();
           this.logger.log(`Wrote ${batchCount} mappings (total ${totalWritten})`);
         }
-      } while (nextPageToken);
+      }
 
       this.logger.log(`Email->uid sync done. total mappings: ${totalWritten}`);
       return { totalWritten };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      if (msg.includes('PERMISSION_DENIED') || msg.includes('Caller does not have required permission')) {
-        this.logger.warn('Email->uid sync permission error: ' + msg);
-      } else {
-        this.logger.warn('Email->uid sync failed: ' + msg);
-      }
+      this.logger.warn('Email->uid sync failed: ' + msg);
       throw e;
     } finally {
-      // Best-effort release. If we crash, lease expiry will free it.
       try {
         await lockRef.set(
           {

@@ -1,6 +1,6 @@
 /*
   One-time sync script:
-  - Lists Firebase Auth users (Admin SDK)
+  - Reads Postgres Utilisateur rows (email + firebaseUid)
   - Writes email->uid mapping to Firestore collection `email_uid`
 
   Usage (PowerShell):
@@ -8,19 +8,29 @@
     npx ts-node scripts/sync-email-uid.ts
 
   Notes:
-  - Requires back/src/serviceAccountKey.json to be valid.
+  - Requires DB connection env vars to be set (same as backend).
+  - Requires Firebase Admin credentials to write to Firestore.
   - Safe & idempotent: merges into docs keyed by normalized email.
 */
 
+import { NestFactory } from '@nestjs/core'
+import { AppModule } from '../src/app.module'
 import { EmailUidSyncService } from '../src/notifications/email-uid-sync.service'
 
 async function main() {
   console.log('[sync-email-uid] starting…')
 
-  const svc = new EmailUidSyncService()
-  const res = await svc.syncAllEmailUidMappings({ reason: 'cli' })
+  const app = await NestFactory.createApplicationContext(AppModule, {
+    logger: ['error', 'warn', 'log'],
+  })
 
-  console.log(`[sync-email-uid] done. total mappings: ${res.totalWritten}`)
+  try {
+    const svc = app.get(EmailUidSyncService)
+    const res = await svc.syncAllEmailUidMappings({ reason: 'cli' })
+    console.log(`[sync-email-uid] done. total mappings: ${res.totalWritten}`)
+  } finally {
+    await app.close()
+  }
 }
 
 main().catch((e) => {

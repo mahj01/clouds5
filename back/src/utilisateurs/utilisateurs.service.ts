@@ -14,6 +14,7 @@ import { UpdateUtilisateurDto } from './dto/update-utilisateur.dto';
 import { Role } from '../roles/role.entity';
 
 import { MAX_LOGIN_ATTEMPTS } from '../auth/auth.constants';
+import { FirestoreEmailUidService } from '../notifications/firestore-email-uid.service';
 
 function toSafeUser(u: Utilisateur) {
   return {
@@ -33,6 +34,7 @@ export class UtilisateursService {
   constructor(
     @InjectRepository(Utilisateur) private repo: Repository<Utilisateur>,
     @InjectRepository(Role) private roleRepo: Repository<Role>,
+    private readonly emailUid: FirestoreEmailUidService,
   ) {}
 
   async create(dto: CreateUtilisateurDto, actorUserId?: number) {
@@ -71,7 +73,21 @@ export class UtilisateursService {
       if (!role) throw new NotFoundException('Role not found');
       entity.role = role;
     }
-    return this.repo.save(entity);
+    const saved = await this.repo.save(entity);
+
+    // Ensure email_uid mapping exists immediately.
+    // If firebaseUid is already present, publish it to Firestore.
+    try {
+      const email = String(saved.email || '').trim();
+      const uid = String(saved.firebaseUid || '').trim();
+      if (email && uid) {
+        await this.emailUid.upsertEmailUid(email, uid);
+      }
+    } catch {
+      // best-effort; don't block user creation if Firestore isn't configured
+    }
+
+    return saved;
   }
 
   findAll() {
@@ -98,6 +114,7 @@ export class UtilisateursService {
 
   async update(id: number, dto: UpdateUtilisateurDto) {
     const user = await this.findOne(id);
+    const oldEmail = user.email;
     let shouldMarkUnsynced = false;
     if (dto.email !== undefined && dto.email !== user.email) {
       user.email = dto.email;
@@ -131,7 +148,24 @@ export class UtilisateursService {
     if (shouldMarkUnsynced) {
       user.firebaseUid = null;
     }
-    return this.repo.save(user);
+    const saved = await this.repo.save(user);
+
+    // If email changed, refresh mapping.
+    if (oldEmail && saved.email && oldEmail !== saved.email) {
+      try {
+        await this.emailUid.deleteEmail(oldEmail);
+
+        const email = String(saved.email || '').trim();
+        const uid = String(saved.firebaseUid || '').trim();
+        if (email && uid) {
+          await this.emailUid.upsertEmailUid(email, uid);
+        }
+      } catch {
+        // best-effort
+      }
+    }
+
+    return saved;
   }
 
   async remove(id: number) {
