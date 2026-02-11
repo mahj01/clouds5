@@ -40,6 +40,15 @@ export class EmailUidSyncService {
     return this.inFlight;
   }
 
+  private hasServiceAccountCredentials(): boolean {
+    // When initialized via admin.initializeApp() with application default creds,
+    // firebase-admin will often have no explicit certificate credentials.
+    // In local/dev this typically means serviceAccountKey.json isn't loaded.
+    const app = admin.app();
+    const cred: any = (app?.options as any)?.credential;
+    return Boolean(cred && typeof cred === 'object' && (cred.privateKey || cred.clientEmail));
+  }
+
   private async runSync(options?: {
     pageSize?: number;
     leaseMs?: number;
@@ -48,6 +57,16 @@ export class EmailUidSyncService {
     const pageSize = options?.pageSize ?? 1000;
     const leaseMs = options?.leaseMs ?? 10 * 60 * 1000;
     const reason = options?.reason ?? 'manual';
+
+    // If we don't have proper credentials, attempting listUsers() will fail.
+    // Treat this as a configuration issue and skip the run.
+    if (!this.hasServiceAccountCredentials()) {
+      this.logger.warn(
+        'Skipping email->uid sync: Firebase Admin SDK has no service account credentials. ' +
+          'Provide GOOGLE_APPLICATION_CREDENTIALS or src/serviceAccountKey.json.',
+      );
+      return { totalWritten: 0 };
+    }
 
     const lockRef = firestore.doc(EmailUidSyncService.LOCK_DOC_PATH);
     const leaseUntil = Date.now() + leaseMs;
@@ -125,6 +144,14 @@ export class EmailUidSyncService {
 
       this.logger.log(`Email->uid sync done. total mappings: ${totalWritten}`);
       return { totalWritten };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes('PERMISSION_DENIED') || msg.includes('Caller does not have required permission')) {
+        this.logger.warn('Email->uid sync permission error: ' + msg);
+      } else {
+        this.logger.warn('Email->uid sync failed: ' + msg);
+      }
+      throw e;
     } finally {
       // Best-effort release. If we crash, lease expiry will free it.
       try {
@@ -142,4 +169,3 @@ export class EmailUidSyncService {
     }
   }
 }
-
