@@ -96,4 +96,4 @@ back/src/serviceAccountKey.json
 back/uploads/*
 !back/uploads/.gitkeep
 ~$cumentation-Technique-2701.docx
-back/serviceAccountKey.json
+back/src/serviceAccountKey.json
